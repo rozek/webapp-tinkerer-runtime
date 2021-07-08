@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "chibijs": "^3.0.9",
-    "javascript-interface-library": "^0.1.13"
+    "javascript-interface-library": "^0.1.13",
+    "jquery": "file:../../GitHub-Releases/jquery-1.12.4"
   }
 }
