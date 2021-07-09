@@ -35,7 +35,6 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "chibijs": "^3.0.9",
     "javascript-interface-library": "^0.1.13",
     "jquery": "file:../../GitHub-Releases/jquery-1.12.4"
   }
