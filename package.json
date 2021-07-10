@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Runtime for the WebApp Tinkerer",
   "browser": "./dist/webapp-tinkerer-runtime.js",
+  "module": "./dist/webapp-tinkerer-runtime.esm.js",
   "types": "./dist/webapp-tinkerer-runtime.d.ts",
   "exports": {
     "./package.json": "./package.json"
