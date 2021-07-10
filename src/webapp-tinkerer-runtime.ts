@@ -40,6 +40,9 @@ namespace WAT {
   type WAT_Version = {     // not to be exported, users should stick with SemVer
     major:number, minor?:number, Patch?:number, Build?:number
   }
+  type WAT_normalizedVersion = {                           // not to be exported
+    major:number, minor:number, Patch:number, Build:number
+  }
 
 /**** layout setting types ****/
 
@@ -779,6 +782,131 @@ namespace WAT {
         }
       }
     )
+  }
+
+//----------------------------------------------------------------------------//
+//                              Version Handling                              //
+//----------------------------------------------------------------------------//
+
+/**** parsedVersion - parses "SemVer" into "Version" ****/
+
+  const VersionPattern = /^(\d+)(?:[.](\d+)(?:[.](\d+)(-[-0-9A-Za-z.]+)?)?)?$/
+// pattern is not perfect, see https://semver.org/
+
+  function parsedVersion (              // for syntactically valid SemVers only!
+    Version:WAT_SemVer, toBeNormalized:boolean = true
+  ):WAT_Version {
+    let MatchList = VersionPattern.exec(Version) as string[]
+      let major = parseInt(MatchList[1],10)
+      let minor = (MatchList[2] == null ? undefined : parseInt(MatchList[2],10))
+      let Patch = (MatchList[3] == null ? undefined : parseInt(MatchList[3],10))
+      let Build = (MatchList[4] == null ? undefined : parseInt(MatchList[4].slice(1),16))
+    if (toBeNormalized) {
+      minor = minor || 0
+      Patch = Patch || ((major === 0) && (minor === 0) ? 1 : 0)
+      Build = 1
+    }
+
+    return { major, minor, Patch, Build }
+  }
+
+/**** serializedVersion ****/
+
+  function serializedVersion (Version:WAT_Version):WAT_SemVer {
+    return (
+      Version.major + '.' + (Version.minor || '0') + '.' + (Version.Patch || '0') + (
+        Version.Build == null ? '' : '.' + Version.Build.toString(16)
+      )
+    )
+  }
+
+/**** VersionAeqB ****/
+
+  function VersionAeqB (
+    VersionA:WAT_Version, VersionB:WAT_Version
+  ):boolean {
+    return (
+       (VersionA.major       ===  VersionB.major) &&
+      ((VersionA.minor || 0) === (VersionB.minor || 0)) &&
+      ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
+      ((VersionA.Build || 1) === (VersionB.Build || 1))
+    )
+  }
+
+/**** VersionAgtB ****/
+
+  function VersionAgtB (
+    VersionA:WAT_Version, VersionB:WAT_Version
+  ):boolean {
+    return (
+      (VersionA.major  >  VersionB.major) ||
+      (VersionA.major === VersionB.major) && (
+        ((VersionA.minor || 0)  >  (VersionB.minor || 0)) ||
+        ((VersionA.minor || 0) === (VersionB.minor || 0)) && (
+          ((VersionA.Patch || 0)  >  (VersionB.Patch || 0)) ||
+          ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
+            ((VersionA.Build || 1)  >  (VersionB.Build || 1))
+        )
+      )
+    )
+  }
+
+/**** VersionAmatchesB - A was requested and B is already loaded ****/
+
+  function VersionAmatchesB (
+    VersionA:WAT_Version, VersionB:WAT_normalizedVersion
+  ):boolean {
+    if (VersionA.major == null)              { return true }
+    if (VersionA.major !== VersionB.major)   { return false }    // inkompatible
+
+    if (VersionA.minor == null)              { return true }
+    if (VersionB.major === 0) {
+      if (VersionA.minor !== VersionB.minor) { return false }    // inkompatible
+    } else {
+      if (VersionA.minor  >  VersionB.minor) { return false }   // missing feat.
+    }
+
+    return (VersionA.Patch == null) || (VersionA.Patch <= VersionB.Patch)
+  }
+
+/**** RelationshipAreplacingB ****/
+
+  const WAT_VersionRelationships = [
+    'compatibleDowngrade','incompatibleDowngrade',
+    'sameVersion',
+    'compatibleUpgrade','incompatibleUpgrade'
+  ]
+  type WAT_VersionRelationship = typeof WAT_VersionRelationships[number]
+
+  function RelationshipAreplacingB (
+    VersionA:WAT_normalizedVersion, VersionB:WAT_normalizedVersion
+  ):WAT_VersionRelationship {
+    switch (true) {
+      case VersionAeqB(VersionA,VersionB):    return 'sameVersion'
+      case (VersionA.major < VersionB.major): return 'incompatibleDowngrade'
+      case (VersionA.major > VersionB.major): return 'incompatibleUpgrade'
+      case (VersionA.major === 0) && (VersionA.minor < VersionB.minor): return 'incompatibleDowngrade'
+      case (VersionA.major === 0) && (VersionA.minor > VersionB.minor): return 'incompatibleUpgrade'
+      case (VersionA.major === 0) && (VersionA.Patch < VersionB.Patch): return 'incompatibleDowngrade'
+      case (VersionA.major === 0) && (VersionA.Patch > VersionB.Patch): return 'compatibleUpgrade'
+      case (VersionA.major === 0) && (VersionA.Build < VersionB.Build): return 'compatibleDowngrade'
+      case (VersionA.major === 0) && (VersionA.Build > VersionB.Build): return 'compatibleUpgrade'
+      case (VersionA.minor < VersionB.minor): return 'incompatibleDowngrade'
+      case (VersionA.minor > VersionB.minor): return 'compatibleUpgrade'
+      case (VersionA.Patch < VersionB.Patch): return 'compatibleDowngrade'
+      case (VersionA.Patch > VersionB.Patch): return 'compatibleUpgrade'
+      case (VersionA.Build < VersionB.Build): return 'compatibleDowngrade'
+      case (VersionA.Build > VersionB.Build): return 'compatibleUpgrade'
+      default: throwError('InternalError: unforeseen version relationship')
+    }
+  }
+
+/**** currentTimestamp ****/
+
+  const initialTimestamp = new Date('2020-02-02').getTime()
+
+  function currentTimestamp ():number {
+    return Date.now()-initialTimestamp
   }
 
 //----------------------------------------------------------------------------//
