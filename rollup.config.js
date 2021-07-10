@@ -3,23 +3,30 @@
 import commonjs   from '@rollup/plugin-commonjs'
 import resolve    from '@rollup/plugin-node-resolve'
 import typescript from '@rollup/plugin-typescript';
-//import { terser } from 'rollup-plugin-terser'
+import { terser } from 'rollup-plugin-terser'
 
 export default {
   input: './src/webapp-tinkerer-runtime.ts',
   external:[                                 // list of (unbundled) dependencies
     'jquery',                                // partial bundling
   ],
-  output: {
+  output: [{
     file:      './dist/webapp-tinkerer-runtime.js',
     format:    'iife',
     name:      'WAT', // required for UMD modules
     globals:   { 'jquery':'jQuery' },
     noConflict:true,
     sourcemap: true,
-  },
+  },{
+    file:      './dist/webapp-tinkerer-runtime.min.js',
+    format:    'iife',
+    name:      'WAT', // required for UMD modules
+    globals:   { 'jquery':'jQuery' },
+    noConflict:true,
+    sourcemap: true,
+    plugins: [ terser({ format:{ comments:false, safari10:true } }) ],
+  }],
   plugins: [
     resolve(), commonjs(), typescript(),
-//    terser({ format:{ comments:false, safari10:true } })
   ],
 };
