@@ -34,11 +34,13 @@
 
 /**** Error Indicator ****/
 
-  .WAT-ErrorIndicator:after {
+  .WAT-ErrorIndicator {
     display:block; visibility:visible; position:absolute;
     left:0px; top:0px; width:32px; height:32px;
-    background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABAElEQVRYR9WXURLCIAxE5UTerQfxbj0RnaIoYBJ2Q8eMfqfZ19eAkG7Bv7SSn3PO5/MpJXcf94Ml/HF/8m+7G8IF0IVXhU6I/wMY1RcBC5+CNhAKIIbXGXBaoAyEApjhCxZgA6EA5uA1+4BnRUAGQgFU9XXqRwPkvjA1EAoALTvJAGHBNBAKMF121gwQ+4JqIBRgGt5+Y20GQAuiAQhgGDT1aDf5k/oCgMOZw6QBsQbQNDZ5UADq7ZFV0FIpEJ2BUAAqXJhwaCQEC28DLgAotSnSAH4SruwLxYB40WDfjq1/XWQ+ANLuxjZF67e9VJ53yn4G0AYX1NXs6YHkgiyzxQEKtfohsVAqawAAAABJRU5ErkJggg==");
+    background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABAElEQVRYR9WXURLCIAxE5UTerQfxbj0RnaIoYBJ2Q8eMfqfZ19eAkG7Bv7SSn3PO5/MpJXcf94Ml/HF/8m+7G8IF0IVXhU6I/wMY1RcBC5+CNhAKIIbXGXBaoAyEApjhCxZgA6EA5uA1+4BnRUAGQgFU9XXqRwPkvjA1EAoALTvJAGHBNBAKMF121gwQ+4JqIBRgGt5+Y20GQAuiAQhgGDT1aDf5k/oCgMOZw6QBsQbQNDZ5UADq7ZFV0FIpEJ2BUAAqXJhwaCQEC28DLgAotSnSAH4SruwLxYB40WDfjq1/XWQ+ANLuxjZF67e9VJ53yn4G0AYX1NXs6YHkgiyzxQEKtfohsVAqawAAAABJRU5ErkJggg==");
+    border:none; margin:0px; padding:0px;
     z-index:999999; /* WAT Designer starts at 1000000 */
-    content:'';
     pointer-events:all;
+
+    appearance:none; -moz-appearance:none; -webkit-appearance:none;
   }
