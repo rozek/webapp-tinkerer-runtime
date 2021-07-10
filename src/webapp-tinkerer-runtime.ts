@@ -11,6 +11,7 @@ import {
   global, throwError, quoted,
   ValueIsString, ValueIsStringMatching, ValueIsFiniteNumber, ValueIsNumberInRange,
   ValueIsTextline,
+  expectText,
   ValidatorForClassifier, acceptNil, rejectNil
 } from 'javascript-interface-library'
 import * as JIL from 'javascript-interface-library'
@@ -907,6 +908,415 @@ namespace WAT {
 
   function currentTimestamp ():number {
     return Date.now()-initialTimestamp
+  }
+
+//----------------------------------------------------------------------------//
+//                            Resource Management                             //
+//----------------------------------------------------------------------------//
+
+  type HTMLAttributeSet = { [normalizedName:string]:HTMLAttribute }
+
+  const WAT_ResourceForms = ['literalStyle','externalStyle','literalScript','externalScript']
+  type  WAT_ResourceForm  = typeof WAT_ResourceForms[number]
+
+  type WAT_ResourceInfo = {            // used when parsing a plain resource set
+    Form:WAT_ResourceForm,
+    Type:string, Media?:string, Title?:string, noModule?:boolean,
+    Value:string|WAT_URL|undefined, AttributeSet?:HTMLAttributeSet
+  }
+
+  const UsageCountOfResource = new WeakMap()
+
+/**** ResourcesInDocument ****/
+
+  function ResourcesInDocument ():string {
+    let ResourceInfoList:WAT_ResourceInfo[] = []
+
+    function includeResource (ResourceInfo:WAT_ResourceInfo):void {
+      for (let i = 0, l = ResourceInfoList.length; i < l; i++) {
+        if (ResourceInfosAreMatching(ResourceInfoList[i],ResourceInfo)) {
+          ResourceInfoList[i] = ResourceInfo
+          return
+        }
+      }
+      ResourceInfoList.push(ResourceInfo)
+    }
+
+    $(document.head).children('link,style,script').each(function () {
+      let Element = $(this), Type, Media, Title, noModule, Value
+      switch (Element[0].tagName) {
+        case 'LINK':
+          Type  = Element.attr('type')  || 'text/css'
+          Media = Element.attr('media') || 'all'
+          Title = Element.attr('title') || undefined
+          Value = Element.attr('href')
+          if ((Type === 'text/css') && (Value != null)) {
+            includeResource({ Form:'externalStyle', Type, Media, Title, Value })
+          }
+          break
+        case 'STYLE':
+          Type  = Element.attr('type')  || 'text/css'
+          Media = Element.attr('media') || 'all'
+          Title = Element.attr('title') || undefined
+          Value = Element.html()
+          if ((Type === 'text/css') && (Value.trim() !== '')) {
+            includeResource({ Form:'literalStyle', Type, Media, Title, Value })
+          }
+          break
+        case 'SCRIPT':
+          Type     = Element.attr('type') || 'application/javascript'
+            if (Type === 'text/javascript') { Type = 'application/javascript' }
+          noModule = (Element.attr('nomodule') != null)
+          Value    = Element.attr('src') || Element.html()
+
+          if ((Type === 'application/javascript') && (Value.trim() !== '')) {
+            if (Element.attr('src') == null) {
+              includeResource({ Form:'literalScript',  Type, noModule, Value })
+            } else {
+              includeResource({ Form:'externalScript', Type, noModule, Value })
+            }
+          }
+      }
+    })
+
+    return ResourceInfoList.join('\n')
+  }
+
+/**** registerResources ****/
+
+  export function registerResources (Resources:string):void {
+    expectText('resource',Resources)
+    processResources(Resources || '','register')
+  }
+
+/**** unregisterResources ****/
+
+  export function unregisterResources (Resources:string):void {
+    expectText('resource',Resources)
+    processResources(Resources || '','unregister')
+  }
+
+/**** collectResources ****/
+
+  function collectResources (Resources:string):void {
+    processResources(Resources || '','collect')
+  }
+
+/**** processResources ****/
+
+  type WAT_ResourceProcessingMode = 'register' | 'unregister' | 'collect'
+
+  function processResources (
+    Resources:string, Mode:WAT_ResourceProcessingMode
+  ):void {
+    if (Resources.trim() === '') { return }
+
+    let ResourceInfoList = parsedResources(Resources)  // also avoids duplicates
+    ResourceInfoList.forEach(
+      (ResourceInfo) => { processResource(ResourceInfo,Mode) }
+    )
+  }
+
+/**** processResource - for registration, deregistration and collection ****/
+
+  function processResource (
+    ResourceInfo:WAT_ResourceInfo, Mode:WAT_ResourceProcessingMode
+  ):void {
+    let matchingResource = ElementMatchingResourceInfo(ResourceInfo)
+    if (matchingResource == null) {
+      switch (Mode) {
+        case 'register':   break              // installation will be done below
+        case 'unregister': return                        // already unregistered
+        case 'collect':    throwError('NoSuchResource: an expected resource has already been removed')
+      }
+    } else {
+      switch (Mode) {
+        case 'register':   reuseResource(matchingResource);   return
+        case 'unregister': unuseResource(matchingResource);   return
+        case 'collect':    collectResource(matchingResource); return
+      }
+    }
+
+  /**** now install the requested resource ****/
+
+    let Resource
+    switch (ResourceInfo.Form) {
+      case 'literalStyle':
+        Resource = $('<style></style>')
+        Resource.html(ResourceInfo.Value || '')
+        break
+      case 'externalStyle':
+        Resource = $('<link></link>')
+        break
+      case 'literalScript':
+        Resource = $('<' + 'script><' + '/script>')
+        Resource.html(ResourceInfo.Value || '')
+        break
+      case 'externalScript':
+        Resource = $('<' + 'script><' + '/script>')
+        break
+      default: throwError('InternalError: unforeseen resource form')
+    }
+      let AttributeSet = ResourceInfo.AttributeSet || {}
+      for (let AttributeName in AttributeSet) {
+        if (AttributeSet.hasOwnProperty(AttributeName)) {
+          Resource.attr(AttributeName,AttributeSet[AttributeName].Value)
+        }
+      }
+    switch (ResourceInfo.Form) {
+      case 'literalStyle':
+      case 'externalStyle':
+        $(document.head).append(Resource)
+        break
+      case 'literalScript':
+        try {
+          $(document.head).append(Resource)
+        } catch (Signal) {
+          console.warn('could not attach literal script', Signal)
+          throw Signal
+        }
+        break
+      case 'externalScript':
+//      $(document.head).append(Resource)     // does not work, pure JS required
+        document.head.appendChild(Resource[0])
+        break
+      default: throwError('InternalError: unforeseen resource form')
+    }
+
+    UsageCountOfResource.set(Resource[0],1)
+  }
+
+/**** parsedResources - parses resources string into ResourceInfo list ****/
+
+  function parsedResources (Resources:string):WAT_ResourceInfo[] {
+    let ResourceInfoList:WAT_ResourceInfo[] = []
+      function AttributeSetFrom (AttributeList:HTMLAttribute[]):HTMLAttributeSet {
+        let Result:HTMLAttributeSet = {}
+          for (let i = 0, l = AttributeList.length; i < l; i++) {
+            Result[ (AttributeList[i].Name as string).toLowerCase() ] = AttributeList[i]
+          }
+        return Result
+      }
+
+      function processResource (newResourceInfo:WAT_ResourceInfo):void {
+        ResourceInfoList.forEach((ResourceInfo) => {
+          if (ResourceInfosAreMatching(ResourceInfo,newResourceInfo)) {
+            throwError(
+              'DuplicateResources: the given set of resources contains duplicates'
+            )
+          } else {
+            ResourceInfoList.push(newResourceInfo)
+          }
+        })
+      }
+
+      let ResourceAttributes:HTMLAttributeSet, ResourceContent:string|undefined
+      let HTMLParserCallbacks = {
+        processStartTag: function processStartTag (
+          TagName:string, Attributes:HTMLAttribute[], isUnary:boolean, isTopLevel:boolean
+        ) {
+          if (isTopLevel) {
+            switch (TagName) {
+              case 'link':
+                if (AttributeFrom('rel',Attributes) === 'stylesheet') {
+                  processResource({
+                    Form: 'externalStyle',
+                    Type: AttributeFrom ('type',Attributes) || 'text/css',
+                    Media:AttributeFrom('media',Attributes) || 'all',
+                    Title:AttributeFrom('title',Attributes) || undefined,
+                    Value:AttributeFrom('href',Attributes),
+                    AttributeSet:AttributeSetFrom(Attributes)
+                  })
+                }
+                return
+              case 'script':
+              case 'style':
+                ResourceAttributes = AttributeSetFrom(Attributes)
+                ResourceContent    = ''
+                return
+              default:
+                throwError(
+                  'InvalidResourceSet: a WAT resource set must only contain ' +
+                  'style, script or link elements (the latter only with ' +
+                  'relation "stylesheet")'
+                )
+            }
+          } else {
+            if (ResourceContent !== undefined) {
+              ResourceContent += deserializedTag(TagName,Attributes,isUnary)
+            }
+          }
+        },
+        processEndTag: function processEndTag (TagName:string, isTopLevel:boolean) {
+          if (isTopLevel) {
+            switch (TagName) {
+              case 'script':
+                processResource({
+                  Form:    (ResourceAttributes.src == null ? 'literalScript' : 'externalScript'),
+                  Type:    ResourceAttributes?.type.Value || 'application/javascript',
+                  noModule:('nomodule' in ResourceAttributes),
+                  Value:   (
+                    ResourceAttributes.src == null
+                    ? ResourceContent
+                    : ResourceAttributes.src.Value
+                  ),
+                  AttributeSet:ResourceAttributes
+                })
+                break
+              case 'style':
+                processResource({
+                  Form: 'literalStyle',
+                  Type: ResourceAttributes?.type.Value  || 'text/css',
+                  Media:ResourceAttributes?.media.Value || 'all',
+                  Title:ResourceAttributes?.title.Value || undefined,
+                  Value:ResourceContent,
+                  AttributeSet:ResourceAttributes
+                })
+            }
+            ResourceAttributes = {}; ResourceContent = undefined
+          } else {
+            if (ResourceContent !== undefined) {
+              ResourceContent += '</' + TagName + '>'
+            }
+          }
+        },
+        processText: function processText (Text:string, isTopLevel:boolean) {
+          if (ResourceContent !== undefined) {
+            ResourceContent += Text
+          }
+        },
+      }
+
+      parseHTML(Resources, HTMLParserCallbacks)
+    return ResourceInfoList
+  }
+
+/**** reuseResource ****/
+
+  function reuseResource (Resource:JQuery):void {
+    let Element = Resource[0]
+    UsageCountOfResource.set(
+      Element, (UsageCountOfResource.get(Element) || 0) + 1
+    )
+  }
+
+/**** unuseResource ****/
+
+  function unuseResource (Resource:JQuery):void {
+    let Element = Resource[0]
+    UsageCountOfResource.set(
+      Element, Math.max(0, (UsageCountOfResource.get(Element) || 0) - 1)
+    )
+  }
+
+  let ResourceCollection:Element[]
+
+/**** clearResourceCollection - to be called prior to a resource collection ****/
+
+  function clearResourceCollection ():void {
+    ResourceCollection = []
+  }
+
+/**** collectResource ****/
+
+  function collectResource (Resource:JQuery):void {
+    let ResourceElement = Resource[0]
+      for (let i = 0, l = ResourceCollection.length; i < l; i++) {
+        if (ResourceCollection[i] === ResourceElement) { return }
+      }
+    ResourceCollection.push(ResourceElement)
+  }
+
+/**** collectedResources ****/
+
+  function collectedResources ():string {
+    let Result = ''
+      for (let i = 0, l = ResourceCollection.length; i < l; i++) {
+        Result += ResourceCollection[i].outerHTML + '\n'
+      }
+    return Result
+  }
+
+/**** ResourceInfosAreMatching ****/
+
+  function ResourceInfosAreMatching (
+    Info_A:WAT_ResourceInfo, Info_B:WAT_ResourceInfo
+  ):boolean {
+    if (Info_A.Form !== Info_B.Form) { return false }
+
+    switch (Info_A.Form) {
+      case 'literalStyle':
+      case 'externalStyle': return (
+        (Info_A.Type  === Info_B.Type)  &&
+        (Info_A.Media === Info_B.Media) &&
+        (Info_A.Title === Info_B.Title) &&
+        ((Info_A.Value || '').trim() === (Info_B.Value || '').trim())
+      )
+      case 'literalScript':
+      case 'externalScript': return (
+        (Info_A.Type     === Info_B.Type)     &&
+        (Info_A.noModule === Info_B.noModule) &&
+        ((Info_A.Value || '').trim() === (Info_B.Value || '').trim())
+      )
+      default: throwError('InternalError: unforeseen resource form')
+    }
+  }
+
+/**** ResourceInfoMatchesElement ****/
+
+  function ResourceInfoMatchesElement (
+    ResourceInfo:WAT_ResourceInfo, Element:JQuery
+  ):boolean {
+    switch (ResourceInfo.Form) {
+      case 'literalStyle': return (
+        (Element[0].tagName === 'STYLE') &&
+        ((Element.attr('type')  || 'text/css') === 'text/css')  &&
+        ((Element.attr('media') || 'all')      === ResourceInfo.Media) &&
+        ((Element.attr('title') || undefined)  === ResourceInfo.Title) &&
+        (Element.text().trim() === ResourceInfo.Value)
+      )
+      case 'externalStyle': return (
+        (Element[0].tagName === 'LINK') && (Element.attr('rel') === 'stylesheet') &&
+        ((Element.attr('type')  || 'text/css') === 'text/css')  &&
+        ((Element.attr('media') || 'all')      === ResourceInfo.Media) &&
+        ((Element.attr('title') || undefined)  === ResourceInfo.Title) &&
+        (Element.attr('href') === ResourceInfo.Value)     // TODO: normalize URL
+      )
+      case 'literalScript': return (
+        (Element[0].tagName === 'SCRIPT') && (
+          (Element.attr('type') == null) ||
+          (Element.attr('type') === 'application/javascript') ||
+          (Element.attr('type') === 'text/javascript')
+        ) &&
+        ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
+        (Element.text().trim() === ResourceInfo.Value)
+      )
+      case 'externalScript': return (
+        (Element[0].tagName === 'SCRIPT') && (
+          (Element.attr('type') == null) ||
+          (Element.attr('type') === 'application/javascript') ||
+          (Element.attr('type') === 'text/javascript')
+        ) &&
+        ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
+        (Element.attr('src') === ResourceInfo.Value)      // TODO: normalize URL
+      )
+      default: throwError('InternalError: unforeseen resource form')
+    }
+  }
+
+/**** ElementMatchingResourceInfo ****/
+
+  function ElementMatchingResourceInfo (
+    ResourceInfo:WAT_ResourceInfo
+  ):JQuery {
+    let matchingElement:JQuery|undefined = undefined
+      $(document.head).children('link,style,script').each(function () {
+        let Element = $(this)
+        if (ResourceInfoMatchesElement(ResourceInfo,Element)) {
+          matchingElement = Element
+        }
+      })
+    return matchingElement || $()
   }
 
 //----------------------------------------------------------------------------//
