@@ -10,6 +10,54 @@ Build modern Web Applications from Components, live in your Browser, supported b
 
 Apart from the types and values shown below, the `webapp-tinkerer-runtime` also re-exports all functions from the [javascript-interface-library](https://github.com/rozek/javascript-interface-library)
 
+### exported Types and Type-related Values ###
+
+The following exports are for TypeScript users only, JavaScript users may simply ignore them.
+
+* `WAT_Categories`
+* `WAT_Category`<br>&nbsp;<br>
+* `WAT_SemVer`<br>&nbsp;<br>
+* `WAT_Location`
+* `WAT_Dimension`
+* `WAT_Position`
+* `WAT_Size`
+* `WAT_Geometry`<br>&nbsp;<br>
+* `WAT_horizontalAnchorings`
+* `WAT_horizontalAnchoring`
+* `WAT_verticalAnchorings`
+* `WAT_verticalAnchoring`
+* `WAT_horizontalOffsets`
+* `WAT_verticalOffsets`<br>&nbsp;<br>
+* `WAT_FontWeights`
+* `WAT_FontWeight`<br>&nbsp;<br>
+* `WAT_FontStyles`
+* `WAT_FontStyle`<br>&nbsp;<br>
+* `WAT_TextDecorationLines`
+* `WAT_TextDecorationLine`
+* `WAT_TextDecorationStyles`
+* `WAT_TextDecorationStyle`
+* `WAT_TextDecoration`<br>&nbsp;<br>
+* `WAT_TextShadow`<br>&nbsp;<br>
+* `WAT_TextAlignments`
+* `WAT_TextAlignment`<br>&nbsp;<br>
+* `WAT_BackgroundModes`
+* `WAT_BackgroundMode`
+* `WAT_BackgroundTexture`<br>&nbsp;<br>
+* `WAT_BorderStyles`
+* `WAT_BorderStyle`<br>&nbsp;<br>
+* `WAT_BoxShadow`<br>&nbsp;<br>
+* `WAT_Cursors`
+* `WAT_Cursor`
+* `WAT_customCursor`<br>&nbsp;<br>
+* `WAT_Overflows`
+* `WAT_Overflow`<br>&nbsp;<br>
+* `WAT_TextOverflows`
+* `WAT_TextOverflow`<br>&nbsp;<br>
+* `WAT_Text`
+* `WAT_Textline`
+* `WAT_Color`
+* `WAT_URL`
+
 
 ## Build Instructions ##
 
