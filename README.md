@@ -107,15 +107,28 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 * `movePropertyOfMasterToBottom`
 * `movePropertyOfMasterTo`
 * `removePropertyOfMaster`
+* `ErrorInfoOfMaster`
+* `UsageCountOfMaster`
+* `Masters`
+* `instantiableMasters`
+* `instantiableLayerMasters`
+* `instantiableComponentMasters`
 
-
+### Error Information Handling ###
 
 ### Miscellaneous ###
 
+* `Version`
 * `throwReadOnlyError`
 * `throwWriteOnlyError`
+* `ready`
+* `running`
+* `newUniqueId`
+* `VisualForElement`
+* `AppletPeersInDocument`
+* `registerDesigner`
 
-### exported Types and Type-related Values ###
+### exported Types, Classes and related Values ###
 
 The following exports are for TypeScript users only, JavaScript users may simply ignore them.
 
@@ -165,16 +178,21 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_Textline`
 * `WAT_Color`
 * `WAT_URL`
-* `WAT_Id`
+* `WAT_Id`<br>&nbsp;<br>
 * `WAT_PropertyEditorTypes`
 * `WAT_PropertyEditorType`
-* `WAT_Property`
-* ``
-* ``
-* ``
-* ``
-* ``
-
+* `WAT_Property`<br>&nbsp;<br>
+* `WAT_ErrorInfo`<br>&nbsp;<br>
+* `WAT_Visual`
+* `WAT_Applet`
+* `WAT_Container`
+* `WAT_Layer`
+* `WAT_Card`
+* `WAT_Overlay`
+* `WAT_Component`
+* `WAT_Compound`
+* `WAT_Control`<br>&nbsp;<br>
+* `WAT_Designer`
 
 ## Build Instructions ##
 
