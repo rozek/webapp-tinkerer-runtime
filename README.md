@@ -12,8 +12,8 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 
 ### additional Classification and Validation Functions ###
 
-* **`ValueIsElement (Value:any):boolean`**
-* **`ValueIs$Instance (Value:any):boolean`**
+* **`ValueIsElement (Value:any):boolean`**<br>returns `true` if the given argument is a DOM element - or `false` otherwise
+* **`ValueIs$Instance (Value:any):boolean`**<br>returns `true` if the given argument is a jQuery collection - or `false` otherwise
 * **`ValueIsVisual (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Visual` - or `false` otherwise
 * **`ValueIsApplet (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Applet` - or `false` otherwise
 * **`ValueIsCard (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Card` - or `false` otherwise
@@ -22,9 +22,9 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 * **`ValueIsCompound (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Compound` - or `false` otherwise
 * **`ValueIsComponent (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Component` - or `false` otherwise
 * **`ValueIsContainer (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Container` - or `false` otherwise
-* **`ValueIsUniqueId (Value:any):boolean`**
-* **`ValueIsId (Value:any):boolean`**
-* **`ValueIsName (Value:any):boolean`**
+* **`ValueIsUniqueId (Value:any):boolean`**<br>returns `true` if the given argument looks like a unique WAT id - or `false` otherwise
+* **`ValueIsId (Value:any):boolean`**<br>returns `true` if the given argument looks like a valid HTML id - or `false` otherwise
+* **`ValueIsName (Value:any):boolean`**<br>returns `true` if the given argument may be used as a WAT name - or `false` otherwise
 * **`ValueIsUniversalName (Value:any):boolean`**
 * **`ValueIsLabel (Value:any):boolean`**
 * **`ValueIsIdentifier (Value:any):boolean`**
