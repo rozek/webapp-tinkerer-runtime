@@ -12,25 +12,25 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 
 ### additional Classification and Validation Functions ###
 
-* **`ValueIsElement (Value:any):boolean`**<br>returns `true` if the given argument is a DOM element - or `false` otherwise
-* **`ValueIs$Instance (Value:any):boolean`**<br>returns `true` if the given argument is a jQuery collection - or `false` otherwise
-* **`ValueIsVisual (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Visual` - or `false` otherwise
-* **`ValueIsApplet (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Applet` - or `false` otherwise
-* **`ValueIsCard (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Card` - or `false` otherwise
-* **`ValueIsOverlay (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Overlay` - or `false` otherwise
-* **`ValueIsControl (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Control` - or `false` otherwise
-* **`ValueIsCompound (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Compound` - or `false` otherwise
-* **`ValueIsComponent (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Component` - or `false` otherwise
-* **`ValueIsContainer (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Container` - or `false` otherwise
-* **`ValueIsUniqueId (Value:any):boolean`**<br>returns `true` if the given argument looks like a unique WAT id - or `false` otherwise
-* **`ValueIsId (Value:any):boolean`**<br>returns `true` if the given argument looks like a valid HTML id - or `false` otherwise
-* **`ValueIsName (Value:any):boolean`**<br>returns `true` if the given argument may be used as a WAT name - or `false` otherwise
-* **`ValueIsUniversalName (Value:any):boolean`**
-* **`ValueIsLabel (Value:any):boolean`**
-* **`ValueIsIdentifier (Value:any):boolean`**
-* **`ValueIsLocation (Value:any):boolean`**
-* **`ValueIsDimension (Value:any):boolean`**
-* **`ValueIsSemVer (Value:any):boolean`**
+* **`ValueIsElement (Value:any):boolean`**<br>returns `true` if the given `Value` is a DOM element - or `false` otherwise
+* **`ValueIs$Instance (Value:any):boolean`**<br>returns `true` if the given `Value` is a jQuery collection - or `false` otherwise
+* **`ValueIsVisual (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Visual` - or `false` otherwise
+* **`ValueIsApplet (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Applet` - or `false` otherwise
+* **`ValueIsCard (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Card` - or `false` otherwise
+* **`ValueIsOverlay (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Overlay` - or `false` otherwise
+* **`ValueIsControl (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Control` - or `false` otherwise
+* **`ValueIsCompound (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Compound` - or `false` otherwise
+* **`ValueIsComponent (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Component` - or `false` otherwise
+* **`ValueIsContainer (Value:any):boolean`**<br>returns `true` if the given `Value` is a `WAT_Container` - or `false` otherwise
+* **`ValueIsUniqueId (Value:any):boolean`**<br>returns `true` if the given `Value` looks like a unique WAT id - or `false` otherwise
+* **`ValueIsId (Value:any):boolean`**<br>returns `true` if the given `Value` looks like a valid HTML id - or `false` otherwise
+* **`ValueIsName (Value:any):boolean`**<br>returns `true` if the given `Value` may be used as a WAT name - or `false` otherwise
+* **`ValueIsUniversalName (Value:any):boolean`**<br>returns `true` if the given `Value` may be used as a "universal name" for reactive statements - or `false` otherwise
+* **`ValueIsLabel (Value:any):boolean`**<br>returns `true` if the given `Value` may be used as a WAT label - or `false` otherwise
+* **`ValueIsIdentifier (Value:any):boolean`**<br>returns `true` if the given `Value` looks like a valid JavaScript identifier (containing ASCII characters, decimal digits, `$` and `_` only) - or `false` otherwise
+* **`ValueIsLocation (Value:any):boolean`**<br>returns `true` if the given `Value` may be used to specify the position of a WAT visual - or `false` otherwise
+* **`ValueIsDimension (Value:any):boolean`**<br>returns `true` if the given `Value` may be used to specify the size of a WAT visual - or `false` otherwise
+* **`ValueIsSemVer (Value:any):boolean`**<br>returns `true` if the given `Value` looks like a [SemVer](https://semver.org/)-compliant version specification - or `false` otherwise
 
 ### Resource Handling ###
 
