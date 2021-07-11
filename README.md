@@ -14,14 +14,14 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 
 * **`ValueIsElement (Value:any):boolean`**
 * **`ValueIs$Instance (Value:any):boolean`**
-* **`ValueIsVisual (Value:any):boolean`**
-* **`ValueIsApplet (Value:any):boolean`**
-* **`ValueIsCard (Value:any):boolean`**
-* **`ValueIsOverlay (Value:any):boolean`**
-* **`ValueIsControl (Value:any):boolean`**
-* **`ValueIsCompound (Value:any):boolean`**
-* **`ValueIsComponent (Value:any):boolean`**
-* **`ValueIsContainer (Value:any):boolean`**
+* **`ValueIsVisual (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Visual` - or `false` otherwise
+* **`ValueIsApplet (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Applet` - or `false` otherwise
+* **`ValueIsCard (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Card` - or `false` otherwise
+* **`ValueIsOverlay (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Overlay` - or `false` otherwise
+* **`ValueIsControl (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Control` - or `false` otherwise
+* **`ValueIsCompound (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Compound` - or `false` otherwise
+* **`ValueIsComponent (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Component` - or `false` otherwise
+* **`ValueIsContainer (Value:any):boolean`**<br>returns `true` if the given argument is a `WAT_Container` - or `false` otherwise
 * **`ValueIsUniqueId (Value:any):boolean`**
 * **`ValueIsId (Value:any):boolean`**
 * **`ValueIsName (Value:any):boolean`**
