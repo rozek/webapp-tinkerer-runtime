@@ -54,13 +54,15 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### Serialization and Deserialization ###
 
-* `serializedMaster`
-* `parsedSerialization`
-* `deserializedMaster`
-* `AppletDeserializedFrom`
-* `deserializeCardInto`
-* `deserializeOverlayInto`
-* `deserializeComponentInto`
+"Serializations" of whole applets or individual visuals are the HTML markup needed to restore them (or make copies). They may contain any required masters and resources or go without them.
+
+* **`serializedMaster`**<br>
+* **`parsedSerialization`**<br>
+* **`deserializedMaster`**<br>
+* **`AppletDeserializedFrom`**<br>
+* **`deserializeCardInto`**<br>
+* **`deserializeOverlayInto`**<br>
+* **`deserializeComponentInto`**<br>
 
 ### Master Management ###
 
