@@ -32,6 +32,38 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 * `ValueIsDimension`
 * `ValueIsSemVer`
 
+### Resource Handling ###
+
+* `registerResources`
+* `unregisterResources`
+
+### Backup Handling ###
+
+* `AppletsMayBePreserved`
+* `AppletMayBePreserved`
+* `AppletHasBackup`
+* `preserveApplet`
+* `restoreApplet`
+* `removeBackupOfApplet`
+
+### Serialization and Deserialization ###
+
+* `serializedMaster`
+* `parsedSerialization`
+* `deserializedMaster`
+* `AppletDeserializedFrom`
+* `deserializeCardInto`
+* `deserializeOverlayInto`
+* `deserializeComponentInto`
+
+
+
+
+### Miscellaneous ###
+
+* `throwReadOnlyError`
+* `throwWriteOnlyError`
+
 ### exported Types and Type-related Values ###
 
 The following exports are for TypeScript users only, JavaScript users may simply ignore them.
