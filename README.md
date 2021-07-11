@@ -41,6 +41,8 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 
 ### Backup Handling ###
 
+`webapp-tinkerer-runtime` uses [localforage](https://github.com/localForage/localForage) to store snapshots of an applet within a browser's storage area. This prevents changes from getting lost if a browser is accidentally closed, the web page containing an applet is refreshed, the system is restarted etc. However, it is not a really *safe* way to store an applet (as browsers usually provide mechanisms for the users to wipe their storage area) - only an export to the local file system can help here.
+
 * `AppletsMayBePreserved`
 * `AppletMayBePreserved`
 * `AppletHasBackup`
