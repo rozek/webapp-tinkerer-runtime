@@ -56,13 +56,13 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 "Serializations" of whole applets or individual visuals are the HTML markup needed to restore them (or make copies). They may contain any required masters and resources or go without them.
 
-* **`serializedMaster`**<br>
-* **`parsedSerialization`**<br>
-* **`deserializedMaster`**<br>
-* **`AppletDeserializedFrom`**<br>
-* **`deserializeCardInto`**<br>
-* **`deserializeOverlayInto`**<br>
-* **`deserializeComponentInto`**<br>
+* **`serializedMaster (Master:WAT_Name, withPendingSettings?:'withPendingSettings'):string`**<br>serializes the given `Master` into a string. If `withPendingSettings` is set to `"withPendingSettings"`, pendings settings are included in the serialization, otherwise they are not
+* **`parsedSerialization (Serialization:string):WAT_parsedSerialization`**<br>parses a given `Serialization` into its parts (i.e., the contained serialized resources, masters, applets, cards, overlays and components)
+* **`deserializedMaster (Serialization:string):WAT_MasterInfo`**<br>deserializes a given `Serialization` and returns a description record for the contained master 
+* **`AppletDeserializedFrom(oldApplet:WAT_Applet, Serialization:string):WAT_Applet`**<br>deserializes a given `Serialization` (which must contain a WAT applet) and uses the result to replace the given `oldApplet`
+* **`deserializeCardInto (Serialization:string, Applet:WAT_Applet, Index:number):void`**<br>deserializes a given `Serialization` (which must contain a WAT card) and inserts the result into the given `Applet` at the given `Index`
+* **`deserializeOverlayInto (Serialization:string, Applet:WAT_Applet, Index:number):void`**<br>deserializes a given `Serialization` (which must contain a WAT overlay) and inserts the result into the given `Applet` at the given `Index`
+* **`deserializeComponentInto (Serialization:string, Container:WAT_Container, Index:number):void`**<br>deserializes a given `Serialization` (which must contain a WAT component) and inserts the result into the given `Container` at the given `Index`
 
 ### Master Management ###
 
@@ -190,6 +190,7 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_PropertyEditorTypes`
 * `WAT_PropertyEditorType`
 * `WAT_Property`<br>&nbsp;<br>
+* `WAT_parsedSerialization`<br>&nbsp;<br>
 * `WAT_ErrorInfo` - incorrect visuals are flagged with a non-empty error information record containing the type of error and other details needed to directly jump into a designer in order to correct the mistake. For the user, such visuals display an error indicator which may be clicked (or tapped) in order to reveal an error message<br>&nbsp;<br>
 * `WAT_Visual` - the generic superclass of all visual elements
 * `WAT_Applet` - represents a single WAT Applet. A web page may contain multiple such applets, but they must not be nested
