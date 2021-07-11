@@ -12,25 +12,25 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 
 ### additional Classification and Validation Functions ###
 
-* `ValueIsElement`
-* `ValueIs$Instance`
-* `ValueIsVisual`
-* `ValueIsApplet`
-* `ValueIsCard`
-* `ValueIsOverlay`
-* `ValueIsControl`
-* `ValueIsCompound`
-* `ValueIsComponent`
-* `ValueIsContainer`
-* `ValueIsUniqueId`
-* `ValueIsId`
-* `ValueIsName`
-* `ValueIsUniversalName`
-* `ValueIsLabel`
-* `ValueIsIdentifier`
-* `ValueIsLocation`
-* `ValueIsDimension`
-* `ValueIsSemVer`
+* `ValueIsElement (Value:any):boolean`
+* `ValueIs$Instance (Value:any):boolean`
+* `ValueIsVisual (Value:any):boolean`
+* `ValueIsApplet (Value:any):boolean`
+* `ValueIsCard (Value:any):boolean`
+* `ValueIsOverlay (Value:any):boolean`
+* `ValueIsControl (Value:any):boolean`
+* `ValueIsCompound (Value:any):boolean`
+* `ValueIsComponent (Value:any):boolean`
+* `ValueIsContainer (Value:any):boolean`
+* `ValueIsUniqueId (Value:any):boolean`
+* `ValueIsId (Value:any):boolean`
+* `ValueIsName (Value:any):boolean`
+* `ValueIsUniversalName (Value:any):boolean`
+* `ValueIsLabel (Value:any):boolean`
+* `ValueIsIdentifier (Value:any):boolean`
+* `ValueIsLocation (Value:any):boolean`
+* `ValueIsDimension (Value:any):boolean`
+* `ValueIsSemVer (Value:any):boolean`
 
 ### Resource Handling ###
 
