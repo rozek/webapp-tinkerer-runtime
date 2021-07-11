@@ -182,7 +182,7 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_PropertyEditorTypes`
 * `WAT_PropertyEditorType`
 * `WAT_Property`<br>&nbsp;<br>
-* `WAT_ErrorInfo`<br>&nbsp;<br>
+* `WAT_ErrorInfo` - incorrect visuals are flagged with a non-empty error information record containing the type of error and other details needed to directly jump into a designer in order to correct the mistake. For the user, such visuals display an error indicator which may be clicked (or tapped) in order to reveal an error message<br>&nbsp;<br>
 * `WAT_Visual` - the generic superclass of all visual elements
 * `WAT_Applet` - represents a single WAT Applet. A web page may contain multiple such applets, but they must not be nested
 * `WAT_Container` - a "container" is a visual which may contain inner "components". Cards, overlays and compounds are containers
