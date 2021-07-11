@@ -6,6 +6,10 @@ Build modern Web Applications from Components, live in your Browser, supported b
 
 (currently under development, please stay tuned)
 
+## WebApp Tinkerer API ##
+
+Apart from the types and values shown below, the `webapp-tinkerer-runtime` also re-exports all functions from the [javascript-interface-library](https://github.com/rozek/javascript-interface-library)
+
 
 ## Build Instructions ##
 
