@@ -10,6 +10,28 @@ Build modern Web Applications from Components, live in your Browser, supported b
 
 Apart from the types and values shown below, the `webapp-tinkerer-runtime` also re-exports all functions from the [javascript-interface-library](https://github.com/rozek/javascript-interface-library)
 
+### additional Classification and Validation Functions ###
+
+* `ValueIsElement`
+* `ValueIs$Instance`
+* `ValueIsVisual`
+* `ValueIsApplet`
+* `ValueIsCard`
+* `ValueIsOverlay`
+* `ValueIsControl`
+* `ValueIsCompound`
+* `ValueIsComponent`
+* `ValueIsContainer`
+* `ValueIsUniqueId`
+* `ValueIsId`
+* `ValueIsName`
+* `ValueIsUniversalName`
+* `ValueIsLabel`
+* `ValueIsIdentifier`
+* `ValueIsLocation`
+* `ValueIsDimension`
+* `ValueIsSemVer`
+
 ### exported Types and Type-related Values ###
 
 The following exports are for TypeScript users only, JavaScript users may simply ignore them.
@@ -17,6 +39,9 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_Categories`
 * `WAT_Category`<br>&nbsp;<br>
 * `WAT_SemVer`<br>&nbsp;<br>
+* `WAT_Name`
+* `WAT_Label`
+* `WAT_Identifier`
 * `WAT_Location`
 * `WAT_Dimension`
 * `WAT_Position`
@@ -57,6 +82,8 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_Textline`
 * `WAT_Color`
 * `WAT_URL`
+* `WAT_Id`
+
 
 
 ## Build Instructions ##
