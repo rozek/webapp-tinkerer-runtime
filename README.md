@@ -56,6 +56,57 @@ Apart from the types and values shown below, the `webapp-tinkerer-runtime` also 
 * `deserializeOverlayInto`
 * `deserializeComponentInto`
 
+### Master Management ###
+
+* `registerMasterFromSerialization`
+* `hasMaster`
+* `lacksMaster`
+* `createMaster`
+* `DuplicateOfMaster`
+* `renameMaster`
+* `NameOfMaster`
+* `setNameOfMaster`
+* `CategoryOfMaster`
+* `VersionOfMaster`
+* `setVersionOfMaster`
+* `ResourcesOfMaster`
+* `pendingResourcesOfMaster`
+* `setPendingResourcesOfMaster`
+* `activatePendingResourcesOfMaster`
+* `TemplateOfMaster`
+* `pendingTemplateOfMaster`
+* `setPendingTemplateOfMaster`
+* `activatePendingTemplateOfMaster`
+* `ClassesOfMaster`
+* `pendingClassesOfMaster`
+* `setPendingClassesOfMaster`
+* `activatePendingClassesOfMaster`
+* `StylesOfMaster`
+* `pendingStylesOfMaster`
+* `setPendingStylesOfMaster`
+* `activatePendingStylesOfMaster`
+* `ScriptOfMaster`
+* `pendingScriptOfMaster`
+* `setPendingScriptOfMaster`
+* `activatePendingScriptOfMaster`
+* `PropertiesOfMaster`
+* `PropertyNamesOfMaster`
+* `PropertyOfMaster`
+* `MasterHasProperty`
+* `MasterLacksProperty`
+* `insertPropertyOfMasterAt`
+* `renamePropertyOfMaster`
+* `changePropertyOfMaster`
+* `IndexOfPropertyOfMaster`
+* `PropertyCountOfMaster`
+* `PropertyOfMasterMayBeMovedUp`
+* `PropertyOfMasterMayBeMovedDown`
+* `movePropertyOfMasterToTop`
+* `movePropertyOfMasterUp`
+* `movePropertyOfMasterDown`
+* `movePropertyOfMasterToBottom`
+* `movePropertyOfMasterTo`
+* `removePropertyOfMaster`
 
 
 
@@ -115,7 +166,14 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_Color`
 * `WAT_URL`
 * `WAT_Id`
-
+* `WAT_PropertyEditorTypes`
+* `WAT_PropertyEditorType`
+* `WAT_Property`
+* ``
+* ``
+* ``
+* ``
+* ``
 
 
 ## Build Instructions ##
