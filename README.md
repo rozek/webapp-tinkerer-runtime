@@ -457,7 +457,11 @@ The following exports are for TypeScript users only, JavaScript users may simply
 
 Out-of-the-box, the `webapp-tinkerer-runtime` emits the following events
 
-* **``**<br>
+* **`applet-started`**<br>
+* **`before-serialization`**<br>
+* **`after-serialization`**<br>
+* **`prepare-refresh`**<br>
+* **`value-changed`**<br>
 
 ### reserved "data" Attributes ###
 
