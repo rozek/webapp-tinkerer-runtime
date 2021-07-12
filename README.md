@@ -286,6 +286,20 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_ErrorInfo` - incorrect visuals are flagged with a non-empty error information record containing the type of error and other details needed to directly jump into a designer in order to correct the mistake. For the user, such visuals display an error indicator which may be clicked (or tapped) in order to reveal an error message<br>&nbsp;<br>
 * `WAT_Designer` - users may provide their own custom "Designer", this is the interface any Designer must adhere to
 
+### reserved "data" Attributes ###
+
+The `webapp-tinkerer-runtime` reserves all data attributes starting with `wat-` for its own internal use. Currently, the following attributes are used:
+
+* **`wat-master`** - contains the name of a WAT visual's configured `Master`
+* **`wat-master-version`** - contains the current version of a WAT visual's configured `Master`
+* **`wat-name`** - contains the configured `Name` of a WAT visual
+* **`wat-label`** - contains the configured `Label` of a WAT visual
+* **`wat-script`** - contains the active script of a WAT visual
+* **`wat-pending-script`** - contains the pending script of a WAT visual
+* **`wat-state`** - contains the serialized `State` of a WAT visual
+* **`wat-designability`** - if set to `false` the WAT visual must not be altered by the WAT Designer
+* **`wat-deletability`** - if set to `false` the WAT visual must not be deleted by the WAT Designer
+
 ## Build Instructions ##
 
 You may easily build this package yourself.
