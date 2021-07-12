@@ -313,11 +313,7 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 `abstract class WAT_Layer extends WAT_Container`<br>
 
-"Layers" are the direct descendants of an applet. Cards and overlays are layers.
-
-In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual) and [WAT_Container](#wat_container), any `WAT_Layer` offers:
-
-* **``**<br>
+"Layers" are the direct descendants of an applet. Cards and overlays are layers. `WAT_Layer` is basically a "marker interface" and does not provide any own properties or methods.
 
 ### WAT_Card ###
 
