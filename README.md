@@ -323,7 +323,17 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Card` offers:
 
-* **``**<br>
+* **`mayBeDisplaced:boolean`**<br>
+* **`mayBeDeformed:boolean`**<br>
+* **`Index:number`**<br>
+* **`mayBeShiftedUp:boolean`**<br>
+* **`mayBeShiftedDown:boolean`**<br>
+* **`mayBeShiftedTo:boolean`**<br>
+* **`shiftUp ():void`**<br>
+* **`shiftDown ():void`**<br>
+* **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>
+* **`mayBeRemoved:boolean`**<br>
+* **`remove ():void`**<br>
 
 ### WAT_Overlay ###
 
@@ -333,7 +343,20 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Overlay` offers:
 
-* **``**<br>
+* **`mayBeDisplaced:boolean`**<br>
+* **`mayBeDeformed:boolean`**<br>
+* **`Index:number`**<br>
+* **`mayBeShiftedUp:boolean`**<br>
+* **`mayBeShiftedDown:boolean`**<br>
+* **`mayBeShiftedTo:boolean`**<br>
+* **`shiftUp ():void`**<br>
+* **`shiftDown ():void`**<br>
+* **`shiftTo (InsertionPoint:WAT_Overlay|WAT_Name|number):void`**<br>
+* **`mayBeRemoved:boolean`**<br>
+* **`remove ():void`**<br>
+* **`showAround (x:number,y:number, Constraint:'withinApplet'|'withinViewport' = 'withinViewport'):void`**<br>
+* **`isFrontmostOfClass (ClassName:WAT_Name):boolean`**<br>
+* **`bringToFrontOfClass (ClassName:WAT_Name):void`**<br>
 
 ### WAT_Component ###
 
