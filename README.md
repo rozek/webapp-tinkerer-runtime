@@ -142,31 +142,51 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 `abstract class WAT_Visual`<br>
 
-"WAT_Visual" is the generic superclass of all visual WAT elements
+"WAT_Visual" is the generic superclass of all visual WAT elements.
+
+Any `WAT_Visual` offers the following properties and methods:
+
+* **``**<br>
 
 ### WAT_Applet ###
 
 `class WAT_Applet extends WAT_Visual`<br>
 
-"Applets" represent single WAT applications. A web page may contain multiple such applets, but they must not be nested
+"Applets" represent single WAT applications. A web page may contain multiple such applets, but they must not be nested.
+
+In addition to the  properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Applet` offers:
+
+* **``**<br>
 
 ### WAT_Container ###
 
 `abstract class WAT_Container extends WAT_Visual`<br>
 
-"Containers" are visuals which may contain inner "components". Cards, overlays and compounds are containers
+"Containers" are visuals which may contain inner "components". Cards, overlays and compounds are containers.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Container` offers:
+
+* **``**<br>
 
 ### WAT_Layer ###
 
 `abstract class WAT_Layer extends WAT_Container`<br>
 
-"Layers" are the direct descendants of an applet. Cards and overlays are layers
+"Layers" are the direct descendants of an applet. Cards and overlays are layers.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual) and [WAT_Container](#wat_container), any `WAT_Layer` offers:
+
+* **``**<br>
 
 ### WAT_Card ###
 
 `class WAT_Card extends WAT_Layer`<br>
 
-"Cards" are direct descendants of an applet, covering its whole visible area. Applets must contain one card, at least, but usally they contain multiple of them. Only one card may be visible at any time
+"Cards" are direct descendants of an applet, covering its whole visible area. Applets must contain one card, at least, but usally they contain multiple of them. Only one card may be visible at any time.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Card` offers:
+
+* **``**<br>
 
 ### WAT_Overlay ###
 
@@ -174,23 +194,39 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 "Overlays" are direct descendants of an applet. In contrast to a "card", an overlay may have an arbitrary size and position and multiple overlays may be visible simultaneously. Overlays are commonly used to implement dialogs, palettes, toasts, menues and similar
 
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Overlay` offers:
+
+* **``**<br>
+
 ### WAT_Component ###
 
 `interface WAT_Component`<br>
 
-"Components" are the building blocks of cards and overlays. They often represent a single user interface element and may contain other components themselves
+"Components" are the building blocks of cards and overlays. They often represent a single user interface element and may contain other components themselves.
+
+Any `WAT_Component` offers the following properties and methods:
+
+* **``**<br>
 
 ### WAT_Compound ###
 
 `class WAT_Compound extends WAT_Container implements WAT_Component`<br>
 
-"Compounds" are nested controls, i.e. controls which contain inner controls
+"Compounds" are nested controls, i.e. controls which contain inner controls.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Component](#wat_component), any `WAT_Compound` offers:
+
+* **``**<br>
 
 ### WAT_Control ###
 
 `class WAT_Control extends WAT_Visual implements WAT_Component`<br>
 
-A "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well
+A "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual) and [WAT_Component](#wat_component), any `WAT_Control` offers:
+
+* **``**<br>
 
 ### exported Types, Classes and related Values ###
 
