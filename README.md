@@ -68,73 +68,76 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### Master Management ###
 
-* **`registerMasterFromSerialization`**<br>
-* **`hasMaster`**<br>
-* **`lacksMaster`**<br>
-* **`createMaster`**<br>
-* **`DuplicateOfMaster`**<br>
-* **`renameMaster`**<br>
-* **`NameOfMaster`**<br>
-* **`setNameOfMaster`**<br>
-* **`CategoryOfMaster`**<br>
-* **`VersionOfMaster`**<br>
-* **`setVersionOfMaster`**<br>
-* **`ResourcesOfMaster`**<br>
-* **`pendingResourcesOfMaster`**<br>
-* **`setPendingResourcesOfMaster`**<br>
-* **`activatePendingResourcesOfMaster`**<br>
-* **`TemplateOfMaster`**<br>
-* **`pendingTemplateOfMaster`**<br>
-* **`setPendingTemplateOfMaster`**<br>
-* **`activatePendingTemplateOfMaster`**<br>
-* **`ClassesOfMaster`**<br>
-* **`pendingClassesOfMaster`**<br>
-* **`setPendingClassesOfMaster`**<br>
-* **`activatePendingClassesOfMaster`**<br>
-* **`StylesOfMaster`**<br>
-* **`pendingStylesOfMaster`**<br>
-* **`setPendingStylesOfMaster`**<br>
-* **`activatePendingStylesOfMaster`**<br>
-* **`ScriptOfMaster`**<br>
-* **`pendingScriptOfMaster`**<br>
-* **`setPendingScriptOfMaster`**<br>
-* **`activatePendingScriptOfMaster`**<br>
-* **`PropertiesOfMaster`**<br>
-* **`PropertyNamesOfMaster`**<br>
-* **`PropertyOfMaster`**<br>
-* **`MasterHasProperty`**<br>
-* **`MasterLacksProperty`**<br>
-* **`insertPropertyOfMasterAt`**<br>
-* **`renamePropertyOfMaster`**<br>
-* **`changePropertyOfMaster`**<br>
-* **`IndexOfPropertyOfMaster`**<br>
-* **`PropertyCountOfMaster`**<br>
-* **`PropertyOfMasterMayBeMovedUp`**<br>
-* **`PropertyOfMasterMayBeMovedDown`**<br>
-* **`movePropertyOfMasterToTop`**<br>
-* **`movePropertyOfMasterUp`**<br>
-* **`movePropertyOfMasterDown`**<br>
-* **`movePropertyOfMasterToBottom`**<br>
-* **`movePropertyOfMasterTo`**<br>
-* **`removePropertyOfMaster`**<br>
-* **`ErrorInfoOfMaster`**<br>
-* **`UsageCountOfMaster`**<br>
-* **`Masters`**<br>
-* **`instantiableMasters`**<br>
-* **`instantiableLayerMasters`**<br>
-* **`instantiableComponentMasters`**<br>
+* **`registerMasterFromSerialization (Serialization:string):void`**<br>
+* **`hasMaster (Name:WAT_Name):boolean`**<br>
+* **`lacksMaster (Name:WAT_Name):boolean`**<br>
+* **`createMaster (Name:WAT_Name, Category:WAT_Category, Version?:WAT_SemVer, Template?:WAT_Text):void`**<br>
+* **`DuplicateOfMaster (oldName:WAT_Name, newName:WAT_Name, newVersion?:WAT_normalizedVersion):WAT_MasterInfo`**<br>
+* **`renameMaster (oldName:WAT_Name, newName:WAT_Name, updateInstances:boolean = true):void`**<br>
+* **`NameOfMaster (Name:WAT_Name):WAT_Name`**<br>
+* **`setNameOfMaster (oldName:WAT_Name, newName:WAT_Name):void`**<br>
+* **`CategoryOfMaster (Name:WAT_Name):WAT_Category`**<br>
+* **`VersionOfMaster (Name:WAT_Name):WAT_SemVer`**<br>
+* **`setVersionOfMaster (Name:WAT_Name, newSemVer:WAT_SemVer):void`**<br>
+* **`ResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>
+* **`pendingResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>
+* **`setPendingResourcesOfMaster (Name:WAT_Name, newResources?:WAT_Text):void`**<br>
+* **`activatePendingResourcesOfMaster (Name:WAT_Name):void`**<br>
+* **`TemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
+* **`pendingTemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
+* **`setPendingTemplateOfMaster (Name:WAT_Name, newTemplate?:WAT_Text):void`**<br>
+* **`activatePendingTemplateOfMaster (Name:WAT_Name):void`**<br>
+* **`ClassesOfMaster (Name:WAT_Name):WAT_Text`**<br>
+* **`pendingClassesOfMaster (Name:WAT_Name):WAT_Text`**<br>
+* **`setPendingClassesOfMaster (Name:WAT_Name, newClasses?:WAT_Text):void`**<br>
+* **`activatePendingClassesOfMaster (Name:WAT_Name):void`**<br>
+* **`StylesOfMaster (Name:WAT_Name):WAT_Text`**<br>
+* **`pendingStylesOfMaster (Name:WAT_Name):WAT_Text`**<br>
+* **`setPendingStylesOfMaster (Name:WAT_Name, newStyles?:WAT_Text):void`**<br>
+* **`activatePendingStylesOfMaster (Name:WAT_Name):void`**<br>
+* **`ScriptOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
+* **`pendingScriptOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
+* **`setPendingScriptOfMaster (Name:WAT_Name, newScript?:WAT_Text):void`**<br>
+* **`activatePendingScriptOfMaster (Name:WAT_Name):void`**<br>
+* **`PropertiesOfMaster (Name:WAT_Name):WAT_Property[]`**<br>
+* **`PropertyNamesOfMaster (Name:WAT_Name):WAT_Identifier[]`**<br>
+* **`PropertyOfMaster (Name:WAT_Name, Identifier:WAT_Identifier):WAT_Property | undefined`**<br>
+* **`MasterHasProperty (Name:WAT_Name, Identifier:WAT_Identifier):boolean`**<br>
+* **`MasterLacksProperty (Name:WAT_Name, Identifier:WAT_Identifier):boolean`**<br>
+* **`insertPropertyOfMasterAt (Name:WAT_Name, Specification:WAT_Property, Index?:number):void`**<br>
+* **`renamePropertyOfMaster (Name:WAT_Name, oldIdentifier:WAT_Identifier, newIdentifier:WAT_Identifier):void`**<br>
+* **`changePropertyOfMaster (Name:WAT_Name, Identifier:WAT_Identifier, Specification:WAT_Property):void`**<br>
+* **`IndexOfPropertyOfMaster (Name:WAT_Name, Identifier:WAT_Identifier):number`**<br>
+* **`PropertyCountOfMaster (Name:WAT_Name):number`**<br>
+* **`PropertyOfMasterMayBeMovedUp (Name:WAT_Name, Identifier:WAT_Identifier):boolean`**<br>
+* **`PropertyOfMasterMayBeMovedDown (Name:WAT_Name, Identifier:WAT_Identifier):boolean`**<br>
+* **`movePropertyOfMasterToTop (Name:WAT_Name, Identifier:WAT_Identifier):void`**<br>
+* **`movePropertyOfMasterUp (Name:WAT_Name, Identifier:WAT_Identifier):void`**<br>
+* **`movePropertyOfMasterDown (Name:WAT_Name, Identifier:WAT_Identifier):void`**<br>
+* **`movePropertyOfMasterToBottom (Name:WAT_Name, Identifier:WAT_Identifier):void`**<br>
+* **`movePropertyOfMasterTo (Name:WAT_Name, Identifier:WAT_Identifier, newIndex:number):void`**<br>
+* **`removePropertyOfMaster (Name:WAT_Name, Identifier:WAT_Identifier):void`**<br>
+* **`ErrorInfoOfMaster (Name:WAT_Name):WAT_ErrorInfo | undefined`**<br>
+* **`UsageCountOfMaster (Name:WAT_Name):number`**<br>
+* **`Masters ():WAT_Name[]`**<br>
+* **`instantiableMasters ():WAT_Name[]`**<br>
+* **`instantiableLayerMasters ():WAT_Name[]`**<br>
+* **`instantiableComponentMasters ():WAT_Name[]`**<br>
+* **`missingMasters ():WAT_Name[]`**<br>
+* **`unusedMasters ():WAT_Name[]`**<br>
+* **`MastersUsedByVisuals (VisualList:WAT_Visual[], withoutIntrinsics?:'withoutIntrinsics'):WAT_Name[]`**<br>
 
 ### Miscellaneous ###
 
-* **`Version`**<br>
-* **`throwReadOnlyError`**<br>
-* **`throwWriteOnlyError`**<br>
-* **`ready`**<br>
-* **`running`**<br>
-* **`newUniqueId`**<br>
-* **`VisualForElement`**<br>
-* **`AppletPeersInDocument`**<br>
-* **`registerDesigner`**<br>
+* **`Version:WAT_SemVer`**<br>
+* **`throwReadOnlyError (Name:WAT_Name):never`**<br>
+* **`throwWriteOnlyError (Name:WAT_Name):never`**<br>
+* **`ready (FunctionToCall:Function):void`**<br>
+* **`running (FunctionToCall:Function):void`**<br>
+* **`newUniqueId ():number`**<br>
+* **`VisualForElement (Element:HTMLElement):WAT_Visual`**<br>
+* **`AppletPeersInDocument ():JQuery`**<br>
+* **`registerDesigner (newDesigner:WAT_Designer):void`**<br>
 
 ### WAT_Visual ###
 
