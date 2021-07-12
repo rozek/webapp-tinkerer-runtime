@@ -385,9 +385,7 @@ Any `WAT_Component` offers the following properties and methods:
 
 "Compounds" are nested controls, i.e. controls which contain inner controls.
 
-In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Component](#wat_component), any `WAT_Compound` offers:
-
-* **``**<br>
+Apart from those already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Component](#wat_component),  `WAT_Compound`s do not offer any additional properties and methods.
 
 ### WAT_Control ###
 
@@ -395,9 +393,7 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 A "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well.
 
-In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual) and [WAT_Component](#wat_component), any `WAT_Control` offers:
-
-* **``**<br>
+Apart from those already mentioned for [WAT_Visual](#wat_visual) and [WAT_Component](#wat_component), `WAT_Control`s do not offer any additional properties and methods.
 
 ### exported Types, Classes and related Values ###
 
@@ -456,6 +452,12 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_parsedSerialization`<br>&nbsp;<br>
 * `WAT_ErrorInfo` - incorrect visuals are flagged with a non-empty error information record containing the type of error and other details needed to directly jump into a designer in order to correct the mistake. For the user, such visuals display an error indicator which may be clicked (or tapped) in order to reveal an error message<br>&nbsp;<br>
 * `WAT_Designer` - users may provide their own custom "Designer", this is the interface any Designer must adhere to
+
+### intrinsic Events ###
+
+Out-of-the-box, the `webapp-tinkerer-runtime` emits the following events
+
+* **``**<br>
 
 ### reserved "data" Attributes ###
 
