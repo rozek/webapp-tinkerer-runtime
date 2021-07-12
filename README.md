@@ -289,7 +289,25 @@ In addition to the  properties and methods already mentioned for [WAT_Visual](#w
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Container` offers:
 
-* **``**<br>
+* **`ComponentList:WAT_Component[]`**<br>
+* **`ComponentLabelList:WAT_Label[]`**<br>
+* **`ComponentCount:number`**<br>
+* **`Component (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):WAT_Component|undefined`**<br>
+* **`ComponentAtIndex (Index:number):WAT_Component|undefined`**<br>
+* **`ComponentNamed (Name:WAT_Name):WAT_Component|undefined`**<br>
+* **`ComponentLabelled (Label:WAT_Label):WAT_Component|undefined`**<br>
+* **`IndexOfComponent (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):number`**<br>
+* **`acceptsComponentAt (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number, InsertionPoint?:WAT_Component|WAT_Name|number):boolean`**<br>
+* **`acceptsNewComponentAt (Master:WAT_Name, InsertionPoint?:WAT_Component|WAT_Name|number):boolean`**<br>
+* **`newComponentInsertedAt (Master:WAT_Name, ComponentOrNameOrIndex?:WAT_Component|WAT_Name|number):WAT_Component`**<br>
+* **`DuplicateOfComponent (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):WAT_Component`**<br>
+* **`ComponentDeserializedFrom (Serialization:string, ComponentOrNameOrIndex?:WAT_Component|WAT_Name|number):WAT_Component`**<br>
+* **`ComponentMayBeShiftedUp (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):boolean`**<br>
+* **`ComponentMayBeShiftedTo (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number, InsertionPoint:WAT_Component|WAT_Name|number):boolean`**<br>
+* **`shiftComponentUp (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):void`**<br>
+* **`shiftComponentDown (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):void`**<br>
+* **`shiftComponentTo (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number, InsertionPoint:WAT_Component|WAT_Name|number):void`**<br>
+* **`removeComponent (ComponentOrNameOrIndex:WAT_Component|WAT_Name|number):void`**<br>
 
 ### WAT_Layer ###
 
