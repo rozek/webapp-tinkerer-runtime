@@ -74,21 +74,21 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 * **`hasMaster (Name:WAT_Name):boolean`**<br>returns `true` if a master with the given `Name` is "known" (i.e., has been registered before) - or `false` otherwise
 * **`lacksMaster (Name:WAT_Name):boolean`**<br>returns `true` if a master with the given `Name` is *not* "known" (i.e., has never been registered before or already removed from the registry again) - or `false` otherwise
 * **`createMaster (Name:WAT_Name, Category:WAT_Category, Version?:WAT_SemVer, Template?:WAT_Text):void`**<br>creates a new master with the (not yet registered) `Name`, provided for visuals of the given `Category` and of the optionally given `Version` (defaulting to `'0.1.0'`) and with the optional HTML `Template` (defaulting to nothing) and adds it to the master registry
-* **`DuplicateOfMaster (oldName:WAT_Name, newName:WAT_Name, newVersion?:WAT_normalizedVersion):WAT_MasterInfo`**<br>
-* **`renameMaster (oldName:WAT_Name, newName:WAT_Name, updateInstances:boolean = true):void`**<br>
-* **`NameOfMaster (Name:WAT_Name):WAT_Name`**<br>
-* **`setNameOfMaster (oldName:WAT_Name, newName:WAT_Name):void`**<br>
-* **`CategoryOfMaster (Name:WAT_Name):WAT_Category`**<br>
-* **`VersionOfMaster (Name:WAT_Name):WAT_SemVer`**<br>
-* **`setVersionOfMaster (Name:WAT_Name, newSemVer:WAT_SemVer):void`**<br>
-* **`ResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>
-* **`pendingResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>
-* **`setPendingResourcesOfMaster (Name:WAT_Name, newResources?:WAT_Text):void`**<br>
-* **`activatePendingResourcesOfMaster (Name:WAT_Name):void`**<br>
-* **`TemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
-* **`pendingTemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>
-* **`setPendingTemplateOfMaster (Name:WAT_Name, newTemplate?:WAT_Text):void`**<br>
-* **`activatePendingTemplateOfMaster (Name:WAT_Name):void`**<br>
+* **`DuplicateOfMaster (oldName:WAT_Name, newName:WAT_Name, newVersion?:WAT_normalizedVersion):WAT_MasterInfo`**<br>creates a duplicate of the master with the given `oldName` and registers it under the given `newName` (provided that the master registry does not yet contain another master called `newName`). If specified, the duplicate's version is set to `newVersion` (which may be lower than that of the original master)
+* **`renameMaster (oldName:WAT_Name, newName:WAT_Name, updateInstances:boolean = true):void`**<br>renames the master with the given `oldName` to `newName` (provided that the master registry does not yet contain another master called `newName`). If `updateInstances` is missing or is set to `true`, all visuals using master `oldName` will be switched to `newName` - otherwise, their old master setting is kept (leading to error indicators for them as a master called `oldName` will no longer be available)
+* **`NameOfMaster (Name:WAT_Name):WAT_Name`**<br>returns the name of a master with the given `Name` - i.e., it will either return the argument itself or throw an error if a master with the given `Name` does not exist in the master registry
+* **`setNameOfMaster (oldName:WAT_Name, newName:WAT_Name):void`**<br>changes the name of the master with the name `oldName` (which must exist in the master registry, otherwise an error is thrown) to `newName` and updates all visuals using this master accordingly
+* **`CategoryOfMaster (Name:WAT_Name):WAT_Category`**<br>returns the "category" of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown)
+* **`VersionOfMaster (Name:WAT_Name):WAT_SemVer`**<br>returns the version of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown) in [SemVer](https://semver.org/) format
+* **`setVersionOfMaster (Name:WAT_Name, newSemVer:WAT_SemVer):void`**<br>changes the version of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown) to `newSemVer` (which must be greater than or equal to the master's current version)
+* **`ResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>returns the resources text of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown)
+* **`pendingResourcesOfMaster (Name:WAT_Name):WAT_Text|undefined`**<br>returns the pending resources text of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown)
+* **`setPendingResourcesOfMaster (Name:WAT_Name, newResources?:WAT_Text):void`**<br>changes the pending resources text of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown) to `newResources`. If `newResources` is missing, undefined or an empty string, pending resources are removed
+* **`activatePendingResourcesOfMaster (Name:WAT_Name):void`**<br>"activates" the pending resources text of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown). I.e., previously active resources are removed and pending ones become active and get installed 
+* **`TemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>returns the HTML template of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown)
+* **`pendingTemplateOfMaster (Name:WAT_Name):WAT_Text | undefined`**<br>returns the pending HTML template of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown)
+* **`setPendingTemplateOfMaster (Name:WAT_Name, newTemplate?:WAT_Text):void`**<br>changes the pending template text of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown) to `newTemplate`. If `newTemplate` is missing, undefined or an empty string, the pending template is removed
+* **`activatePendingTemplateOfMaster (Name:WAT_Name):void`**<br>"activates" the pending HTML template of the master with the name `Name` (which must exist in the master registry, otherwise an error is thrown): the pending template becomes the active one, but already existing visuals using master `Name` will *not* get updated
 * **`ClassesOfMaster (Name:WAT_Name):WAT_Text`**<br>
 * **`pendingClassesOfMaster (Name:WAT_Name):WAT_Text`**<br>
 * **`setPendingClassesOfMaster (Name:WAT_Name, newClasses?:WAT_Text):void`**<br>
