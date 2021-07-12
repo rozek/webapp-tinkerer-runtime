@@ -140,37 +140,55 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### WAT_Visual ###
 
+`abstract class WAT_Visual`<br>
+
 "WAT_Visual" is the generic superclass of all visual WAT elements
 
 ### WAT_Applet ###
+
+`class WAT_Applet extends WAT_Visual`<br>
 
 "Applets" represent single WAT applications. A web page may contain multiple such applets, but they must not be nested
 
 ### WAT_Container ###
 
+`abstract class WAT_Container extends WAT_Visual`<br>
+
 "Containers" are visuals which may contain inner "components". Cards, overlays and compounds are containers
 
 ### WAT_Layer ###
+
+`abstract class WAT_Layer extends WAT_Container`<br>
 
 "Layers" are the direct descendants of an applet. Cards and overlays are layers
 
 ### WAT_Card ###
 
+`class WAT_Card extends WAT_Layer`<br>
+
 "Cards" are direct descendants of an applet, covering its whole visible area. Applets must contain one card, at least, but usally they contain multiple of them. Only one card may be visible at any time
 
 ### WAT_Overlay ###
+
+`class WAT_Overlay extends WAT_Layer`<br>
 
 "Overlays" are direct descendants of an applet. In contrast to a "card", an overlay may have an arbitrary size and position and multiple overlays may be visible simultaneously. Overlays are commonly used to implement dialogs, palettes, toasts, menues and similar
 
 ### WAT_Component ###
 
+`interface WAT_Component`<br>
+
 "Components" are the building blocks of cards and overlays. They often represent a single user interface element and may contain other components themselves
 
 ### WAT_Compound ###
 
+`class WAT_Compound extends WAT_Container implements WAT_Component`<br>
+
 "Compounds" are nested controls, i.e. controls which contain inner controls
 
 ### WAT_Control ###
+
+`class WAT_Control extends WAT_Visual implements WAT_Component`<br>
 
 A "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well
 
