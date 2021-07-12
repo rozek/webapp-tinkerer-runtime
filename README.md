@@ -249,12 +249,13 @@ In addition to the  properties and methods already mentioned for [WAT_Visual](#w
 * **`newCardInsertedAt (Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a new card based on the given `Master` and inserts it at the given `InsertionPoint`. If `InsertionPoint` is missing, the new card is appended to the list of already existing cards
 * **`DuplicateOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a duplicate of the given `CardOrNameOrIndex`and inserts it right after the original 
 * **`CardDeserializedFrom (Serialization:string, InsertionPoint?:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a new card from the given `Serialization` and inserts it at the given `InsertionPoint`. If `InsertionPoint` is missing, the new card is appended to the list of already existing cards
-* **`CardMayBeShiftedUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
-* **`CardMayBeShiftedTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>
-* **`shiftCardUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
-* **`shiftCardDown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
-* **`shiftCardTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>
-* **`removeCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
+* **`CardMayBeShiftedUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>returns `true` if the given `CardOrNameOrIndex` may be moved one position "up" (i.e. towards lower indices) in the list of cards of this applet - or `false` otherwise
+* **`CardMayBeShiftedDown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>returns `true` if the given `CardOrNameOrIndex` may be moved one position "down" (i.e. towards higher indices) in the list of cards of this applet - or `false` otherwise
+* **`CardMayBeShiftedTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>returns `true` if the given `CardOrNameOrIndex` may be moved the position given by `InsertionPoint` in the list of cards of this applet - or `false` otherwise
+* **`shiftCardUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>moves the given `CardOrNameOrIndex` one position "up" (i.e. towards lower indices) in the list of cards of this applet - provided that this is possible
+* **`shiftCardDown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>moves the given `CardOrNameOrIndex` one position "down" (i.e. towards higher indices) in the list of cards of this applet - provided that this is possible
+* **`shiftCardTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>moves the given `CardOrNameOrIndex` to the position given by `InsertionPoint` in the list of cards of this applet - provided that this is possible
+* **`removeCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>removes the given `CardOrNameOrIndex` - provided that this is possible
 * **`shownCard:WAT_Card`**<br>
 * **`shownCardIndex:number`**<br>
 * **`CardIsShown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
