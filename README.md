@@ -125,7 +125,7 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 * **`instantiableMasters ():WAT_Name[]`**<br>contains a list with the names of all currently registered "instantiable" masters (a master is "instantiable" if it is not a master for an applet)
 * **`instantiableLayerMasters ():WAT_Name[]`**<br>contains a list with the names of all currently registered masters for cards and overlays
 * **`instantiableComponentMasters ():WAT_Name[]`**<br>contains a list with the names of all currently registered masters for components (i.e., controls and compounds)
-* **`missingMasters ():WAT_Name[]`**<br>contains a list with the names of all (non-intrinsic) masters, which have already been requested by any visuals but not yet registered
+* **`missingMasters ():WAT_Name[]`**<br>contains a list with the names of all (non-intrinsic) masters, which have been requested by some visuals but not yet registered
 * **`unusedMasters ():WAT_Name[]`**<br>contains a list with the names of all currently registered masters which are not currently used by any visuals
 * **`MastersUsedByVisuals (VisualList:WAT_Visual[], withoutIntrinsics?:'withoutIntrinsics'):WAT_Name[]`**<br>contains a list with the names of all masters which have been requested by the given `VisualList`. By default, this list also includes the names of any intrinsic (i.e., built-in) masters - unless `withoutIntrinsics` is set to `'withoutIntrinsics'`
 
