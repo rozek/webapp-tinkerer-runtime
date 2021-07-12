@@ -366,7 +366,18 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 Any `WAT_Component` offers the following properties and methods:
 
-* **``**<br>
+* **`Index:number`**<br>
+* **`mayBeDisplaced:boolean`**<br>
+* **`mayBeDeformed:boolean`**<br>
+* **`Index:number`**<br>
+* **`mayBeShiftedUp:boolean`**<br>
+* **`mayBeShiftedDown:boolean`**<br>
+* **`mayBeShiftedTo:boolean`**<br>
+* **`shiftUp ():void`**<br>
+* **`shiftDown ():void`**<br>
+* **`shiftTo (InsertionPoint:WAT_Control|WAT_Compound|WAT_Name|number):void`**<br>
+* **`mayBeRemoved:boolean`**<br>
+* **`remove ():void`**<br>
 
 ### WAT_Compound ###
 
