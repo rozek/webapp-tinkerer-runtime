@@ -227,7 +227,59 @@ Any `WAT_Visual` offers the following properties and methods:
 
 In addition to the  properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Applet` offers:
 
-* **``**<br>
+* **`globalVisual (globalName:WAT_Name):WAT_Visual`**<br>
+* **`isBeingPreserved:boolean`**<br>
+* **`isBeingRestored:boolean`**<br>
+* **`isBeingRemoved:boolean`**<br>
+* **`CardList:WAT_Card[]`**<br>
+* **`CardLabelList:WAT_Label[]`**<br>
+* **`CardCount:number`**<br>
+* **`Card (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card|undefined`**<br>
+* **`CardAtIndex (Index:number):WAT_Card|undefined`**<br>
+* **`CardNamed (Name:WAT_Name):WAT_Card|undefined`**<br>
+* **`CardLabelled (Label:WAT_Label):WAT_Card|undefined`**<br>
+* **`IndexOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):number`**<br>
+* **`acceptsCardAt (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>
+* **`acceptsNewCardAt (Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>
+* **`newCardInsertedAt (Master:WAT_Name, CardOrNameOrIndex?:WAT_Card|WAT_Name|number):WAT_Card`**<br>
+* **`DuplicateOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card`**<br>
+* **`CardDeserializedFrom (Serialization:string, CardOrNameOrIndex?:WAT_Card|WAT_Name|number):WAT_Card`**<br>
+* **`CardMayBeShiftedUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
+* **`CardMayBeShiftedTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>
+* **`shiftCardUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
+* **`shiftCardDown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
+* **`shiftCardTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>
+* **`removeCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
+* **`shownCard:WAT_Card`**<br>
+* **`shownCardIndex:number`**<br>
+* **`CardIsShown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
+* **`showCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
+* **`showFirstCard ():void`**<br>
+* **`showPrevCard ():void`**<br>
+* **`showPreviousCard ():void`**<br>
+* **`showNextCard ():void`**<br>
+* **`showLastCard ():void`**<br>
+* **`OverlayList:WAT_Overlay[]`**<br>
+* **`OverlayLabelList:WAT_Label[]`**<br>
+* **`OverlayCount:number`**<br>
+* **`Overlay (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):WAT_Overlay|undefined`**<br>
+* **`OverlayAtIndex (Index:number):WAT_Overlay|undefined`**<br>
+* **`OverlayNamed (Name:WAT_Name):WAT_Overlay|undefined`**<br>
+* **`OverlayLabelled (Label:WAT_Label):WAT_Overlay|undefined`**<br>
+* **`IndexOfOverlay (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):number`**<br>
+* **`acceptsOverlayAt (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number, InsertionPoint?:WAT_Overlay|WAT_Name|number):boolean`**<br>
+* **`acceptsNewOverlayAt (Master:WAT_Name, InsertionPoint?:WAT_Overlay|WAT_Name|number):boolean`**<br>
+* **`newOverlayInsertedAt (Master:WAT_Name, OverlayOrNameOrIndex?:WAT_Overlay|WAT_Name|number):WAT_Overlay`**<br>
+* **`DuplicateOfOverlay (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):WAT_Overlay`**<br>
+* **`OverlayDeserializedFrom (Serialization:string, OverlayOrNameOrIndex?:WAT_Overlay|WAT_Name|number):WAT_Overlay`**<br>
+* **`OverlayMayBeShiftedUp (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):boolean`**<br>
+* **`OverlayMayBeShiftedTo (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number, InsertionPoint:WAT_Overlay|WAT_Name|number):boolean`**<br>
+* **`shiftOverlayUp (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):void`**<br>
+* **`shiftOverlayDown (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):void`**<br>
+* **`shiftOverlayTo (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number, InsertionPoint:WAT_Overlay|WAT_Name|number):void`**<br>
+* **`removeOverlay (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number):void`**<br>
+* **`frontmostOverlayOfClass (ClassName:WAT_Name):WAT_Overlay | undefined`**<br>
+* **`bringOverlayToFrontOfClass (OverlayOrNameOrIndex:WAT_Overlay|WAT_Name|number, ClassName:WAT_Name):void`**<br>
 
 ### WAT_Container ###
 
