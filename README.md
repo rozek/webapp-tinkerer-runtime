@@ -131,15 +131,15 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### Miscellaneous ###
 
-* **`Version:WAT_SemVer`**<br>
-* **`throwReadOnlyError (Name:WAT_Name):never`**<br>
-* **`throwWriteOnlyError (Name:WAT_Name):never`**<br>
-* **`ready (FunctionToCall:Function):void`**<br>
-* **`running (FunctionToCall:Function):void`**<br>
-* **`newUniqueId ():number`**<br>
-* **`VisualForElement (Element:HTMLElement):WAT_Visual`**<br>
-* **`AppletPeersInDocument ():JQuery`**<br>
-* **`registerDesigner (newDesigner:WAT_Designer):void`**<br>
+* **`Version:WAT_SemVer`**<br>contains the current version of the `webapp-tinkerer-runtime`
+* **`throwReadOnlyError (Name:WAT_Name):never`**<br>throws an error indicating that property `Name` may only be read
+* **`throwWriteOnlyError (Name:WAT_Name):never`**<br>throws an error indicating that property `Name` may only be written
+* **`ready (FunctionToCall:Function):void`**<br>registers `FunctionToCall` to be called as soon as the DOM has been loaded and is ready to be worked with. If the DOM has already been loaded, `FunctionToCall` will be immediately invoked
+* **`running (FunctionToCall:Function):void`**<br>registers `FunctionToCall` to be called as soon as all applets found in the current HTML document are running. If this is already the case, `FunctionToCall` will be immediately invoked
+* **`newUniqueId ():number`**<br>returns a new id which is unique among all WAT applets in the current HTML document
+* **`VisualForElement (Element:HTMLElement):WAT_Visual`**<br>returns the closest WAT visual containing the given `Element` - or `undefined` if such a visual does not exist
+* **`AppletPeersInDocument ():JQuery`**<br>returns the DOM elements of all WAT applets found in the current HTML document in a single jQuery collection
+* **`registerDesigner (newDesigner:WAT_Designer):void`**<br>registers `newDesigner` as the WAT designer to be used - unless such a designer has already been registered before
 
 ### WAT_Visual ###
 
