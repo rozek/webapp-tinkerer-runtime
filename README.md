@@ -138,6 +138,42 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 * `AppletPeersInDocument`
 * `registerDesigner`
 
+### WAT_Visual ###
+
+"WAT_Visual" is the generic superclass of all visual WAT elements
+
+### WAT_Applet ###
+
+"Applets" represent single WAT applications. A web page may contain multiple such applets, but they must not be nested
+
+### WAT_Container ###
+
+"Containers" are visuals which may contain inner "components". Cards, overlays and compounds are containers
+
+### WAT_Layer ###
+
+"Layers" are the direct descendants of an applet. Cards and overlays are layers
+
+### WAT_Card ###
+
+"Cards" are direct descendants of an applet, covering its whole visible area. Applets must contain one card, at least, but usally they contain multiple of them. Only one card may be visible at any time
+
+### WAT_Overlay ###
+
+"Overlays" are direct descendants of an applet. In contrast to a "card", an overlay may have an arbitrary size and position and multiple overlays may be visible simultaneously. Overlays are commonly used to implement dialogs, palettes, toasts, menues and similar
+
+### WAT_Component ###
+
+"Components" are the building blocks of cards and overlays. They often represent a single user interface element and may contain other components themselves
+
+### WAT_Compound ###
+
+"Compounds" are nested controls, i.e. controls which contain inner controls
+
+### WAT_Control ###
+
+A "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well
+
 ### exported Types, Classes and related Values ###
 
 The following exports are for TypeScript users only, JavaScript users may simply ignore them.
@@ -194,15 +230,6 @@ The following exports are for TypeScript users only, JavaScript users may simply
 * `WAT_Property`<br>&nbsp;<br>
 * `WAT_parsedSerialization`<br>&nbsp;<br>
 * `WAT_ErrorInfo` - incorrect visuals are flagged with a non-empty error information record containing the type of error and other details needed to directly jump into a designer in order to correct the mistake. For the user, such visuals display an error indicator which may be clicked (or tapped) in order to reveal an error message<br>&nbsp;<br>
-* `WAT_Visual` - the generic superclass of all visual elements
-* `WAT_Applet` - represents a single WAT Applet. A web page may contain multiple such applets, but they must not be nested
-* `WAT_Container` - a "container" is a visual which may contain inner "components". Cards, overlays and compounds are containers
-* `WAT_Layer` - "layers" are the direct descendants of an applet. Cards and overlays are layers
-* `WAT_Card` - "cards" are direct descendants of an applet, covering its whole visible area. Applets must contain one card, at least, but usally they contain multiple of them. Only one card may be visible at any time
-* `WAT_Overlay` - "overlays" are direct descendants of an applet. In contrast to a "card", an overlay may have an arbitrary size and position and multiple overlays may be visible simultaneously. Overlays are commonly used to implement dialogs, palettes, toasts, menues and similar
-* `WAT_Component` - "components" are the building blocks of cards and overlays. They often represent a single user interface element and may contain other components themselves
-* `WAT_Compound` - "compounds" are nested controls, i.e. controls which contain inner controls
-* `WAT_Control` - a "control" represents a single (perhaps nested) HTML element. Many controls are HTML `input` elements, but `div`s and `span`s are possible as well<br>&nbsp;<br>
 * `WAT_Designer` - users may provide their own custom "Designer", this is the interface any Designer must adhere to
 
 ## Build Instructions ##
