@@ -149,65 +149,65 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 Any `WAT_Visual` offers the following properties and methods:
 
-* **`uniqueId:number`**<br>
-* **`Peer:JQuery`**<br>
-* **`isAttached:boolean`**<br>
-* **`Id?:string`**<br>
-* **`Name?:WAT_Name`**<br>
-* **`Label?:WAT_Label`**<br>
-* **`Category:WAT_Category`**<br>
-* **`Master:WAT_Name`**<br>
-* **`ErrorInfo_WAT_ErrorInfo`**<br>
-* **`Container?:WAT_Container`**<br>
-* **`Layer?:WAT_Layer`**<br>
-* **`Applet?:WAT_Applet`**<br>
-* **`mayBeDesigned:boolean`**<br>
-* **`mayBeDeleted:boolean`**<br>
-* **`isVisible:boolean`**<br>
-* **`isShown:boolean`**<br>
-* **`show ():void`**<br>
-* **`hide ():void`**<br>
-* **`isEnabled:boolean`**<br>
-* **`isDisabled:boolean`**<br>
-* **`enable ():void`**<br>
-* **`disable ():void`**<br>
-* **`PropertySet:WAT_PropertySet`**<br>
-* **`PropertyMayBeDesigned (PropertyName:WAT_Identifier):boolean`**<br>
-* **`State?:any`**<br>
-* **`Value?:any`**<br>
-* **`Script?:WAT_Text`**<br>
-* **`pendingScript?:WAT_Text`**<br>
-* **`activatePendingScript ():void`**<br>
-* **`pendingScriptError:any`**<br>
-* **`clearPendingScriptError ():void`**<br>
-* **`Classes:string`**<br>
-* **`TabIndex?:number`**<br>
-* **`PointerSensitivity:boolean`**<br>
-* **`Overflows:WAT_Overflow[]`**<br>
-* **`TextOverflow:WAT_TextOverflow`**<br>
-* **`Opacity:number`**<br>
-* **`x:WAT_Location`**<br>
-* **`y:WAT_Location`**<br>
-* **`Width:WAT_Dimension`**<br>
-* **`Height:WAT_Dimension`**<br>
-* **`Position:WAT_Position`**<br>
-* **`Size:WAT_Size`**<br>
-* **`Geometry:WAT_Geometry`**<br>
-* **`GeometryOnDisplay:WAT_Geometry`**<br>
-* **`horizontalAnchoring:WAT_horizontalAnchoring`**<br>
-* **`verticalAnchoring:WAT_verticalAnchoring`**<br>
-* **`horizontalOffsets:WAT_horizontalOffsets`**<br>
-* **`verticalOffsets:WAT_verticalOffsets`**<br>
-* **`minWidth:WAT_Dimension`**<br>
-* **`minHeight:WAT_Dimension`**<br>
-* **`maxWidth:WAT_Dimension`**<br>
-* **`maxHeight:WAT_Dimension`**<br>
-* **`coversPointOnDisplay (xOnDisplay:WAT_Location, yOnDisplay:WAT_Location):boolean`**<br>
-* **`FontFamily:WAT_Textline`**<br>
-* **`FontSize:WAT_Dimension`**<br>
-* **`FontWeight:WAT_FontWeight`**<br>
-* **`FontStyle:WAT_FontStyle`**<br>
-* **`LineHeight:WAT_Dimension`**<br>
+* **`uniqueId:number`**<br>contains the unique (and immutable) id assigned to this visual
+* **`Peer:JQuery`**<br>contains the HTML element associated with this visual as a jQuery collection
+* **`isAttached:boolean`**<br>is `true` if the HTML element for this visual is attached to the DOM - or `false` otherwise
+* **`Id?:string`**<br>contains the HTML id set for the HTML element for this visual - or `undefined` if no id has been set
+* **`Name?:WAT_Name`**<br>contains the WAT name of this visual - or `undefined` if no name has been set
+* **`Label?:WAT_Label`**<br>contains the WAT label of this visual - or `undefined` if no label has been set
+* **`Category:WAT_Category`**<br>contains the WAT category of this visual
+* **`Master:WAT_Name`**<br>contains the (name of) the WAT master this visual is based on
+* **`ErrorInfo_WAT_ErrorInfo`**<br>contains the error information record for this visual - or `undefined` if no such record exists
+* **`Container?:WAT_Container`**<br>refers to the next outer visual containing this one - or is `undefined` if no such visual exists
+* **`Layer?:WAT_Layer`**<br>refers to the WAT layer (i.e., card or overlay) equal to or containing this visual - or is `undefined` if no such layer exists
+* **`Applet?:WAT_Applet`**<br>refers to the WAT applet equal to or containing this visual - or is `undefined` if no such applet exists
+* **`mayBeDesigned:boolean`**<br>contains `true` if this visual may be altered by the WAT designer - or `false` otherwise
+* **`mayBeDeleted:boolean`**<br>contains `true` if this visual may be removed from within the WAT designer - or `false` otherwise
+* **`isVisible:boolean`**<br>contains `true` if this visual is principally visible - or `false` otherwise
+* **`isShown:boolean`**<br>contains `true` if this visual is actually visible (i.e., the visual itself and all its containers are visible) - or `false` otherwise
+* **`show ():void`**<br>sets this visual's visibility to `true`
+* **`hide ():void`**<br>sets this visual's visibility to `false`
+* **`isEnabled:boolean`**<br>contains `true` if this visual may react on mouse, touch and keyboard events - or `false` otherwise
+* **`isDisabled:boolean`**<br>contains `true` if this visual must not react on mouse, touch and keyboard events - or `false` otherwise
+* **`enable ():void`**<br>sets this visual's enabling to `true`
+* **`disable ():void`**<br>sets this visual's enabling to `false`
+* **`PropertySet:WAT_PropertySet`**<br>contains a set with the specifications of all properties defined for this visual's master
+* **`PropertyMayBeDesigned (PropertyName:WAT_Identifier):boolean`**<br>returns `true` if the property called `PropertyName` exists in this visual's master and may be altered by the WAT designer
+* **`State?:any`**<br>contains this visual's current custom state (which may be `undefined`)
+* **`Value?:any`**<br>contains this visual's current value (which may be `undefined`)
+* **`Script?:WAT_Text`**<br>contains this visual's own currently active script (which may be `undefined`)
+* **`pendingScript?:WAT_Text`**<br>contains this visual's own currently configured pending script (which may be `undefined`)
+* **`activatePendingScript ():void`**<br>activates this visual's own current pending script (if one exists)
+* **`pendingScriptError:any`**<br>contains an error found in this visual's own pending script (if one was found)
+* **`clearPendingScriptError ():void`**<br>clears this visual's `pendingScriptError`
+* **`Classes:string`**<br>contains this visual's currently configured CSS classes
+* **`TabIndex?:number`**<br>contains this visual's currently configured "tab index"
+* **`PointerSensitivity:boolean`**<br>is `true` if this visual is currently sensitive for mouse or touch events - or `false` otherwise
+* **`Overflows:WAT_Overflow[]`**<br>contains a list with this visual's currently configured horizontal and vertical overflow settings
+* **`TextOverflow:WAT_TextOverflow`**<br>contains this visual's currently configured text overflow setting
+* **`Opacity:number`**<br>contains this visual's currently configured opacity
+* **`x:WAT_Location`**<br>contains this visual's current horizontal position within its container (measured in pixels)
+* **`y:WAT_Location`**<br>contains this visual's current vertical position within its container (measured in pixels)
+* **`Width:WAT_Dimension`**<br>contains this visual's current width (measured in pixels)
+* **`Height:WAT_Dimension`**<br>contains this visual's current height (measured in pixels)
+* **`Position:WAT_Position`**<br>contains this visual's current (horizontal and vertical) position within its container (measured in pixels)
+* **`Size:WAT_Size`**<br>contains this visual's current size (i.e., width and height, measured in pixels)
+* **`Geometry:WAT_Geometry`**<br>contains this visual's current "geometry" (given by its position and size, all measured in pixels)
+* **`GeometryOnDisplay:WAT_Geometry`**<br>contains this visual's current "geometry" on the display (aka "viewport", given by its position and size on the display, all measured in pixels)
+* **`horizontalAnchoring:WAT_horizontalAnchoring`**<br>contains this visual's current horizontal anchoring within its container
+* **`verticalAnchoring:WAT_verticalAnchoring`**<br>contains this visual's current vertical anchoring within its container
+* **`horizontalOffsets:WAT_horizontalOffsets`**<br>contains this visual's current horizontal offsets (depending on its horizontal anchorings, but all measured in pixels)
+* **`verticalOffsets:WAT_verticalOffsets`**<br>contains this visual's current vertical offsets (depending on its vertical anchorings, but all measured in pixels)
+* **`minWidth:WAT_Dimension`**<br>contains this visual's currently configured minimal width (or `0` if none is configured), measured in pixels
+* **`minHeight:WAT_Dimension`**<br>contains this visual's currently configured minimal height (or `0` if none is configured), measured in pixels
+* **`maxWidth:WAT_Dimension`**<br>contains this visual's currently configured maximal width (or `Infinity` if none is configured), measured in pixels
+* **`maxHeight:WAT_Dimension`**<br>contains this visual's currently configured maximal height (or `Infinity` if none is configured), measured in pixels
+* **`coversPointOnDisplay (xOnDisplay:WAT_Location, yOnDisplay:WAT_Location):boolean`**<br>returns `true` if this visual currently covers the given location on the display - or `false` if not
+* **`FontFamily:WAT_Textline`**<br>contains this visual's currently configured CSS font-family
+* **`FontSize:WAT_Dimension`**<br>contains this visual's currently configured CSS font-size (measured in pixels)
+* **`FontWeight:WAT_FontWeight`**<br>contains this visual's currently configured CSS font-weight
+* **`FontStyle:WAT_FontStyle`**<br>contains this visual's currently configured CSS font-style
+* **`LineHeight:WAT_Dimension`**<br>contains this visual's currently configured CSS line-height (measured in pixels)
 * **`TextDecoration:WAT_TextDecoration`**<br>
 * **`TextShadow:WAT_TextShadow`**<br>
 * **`TextAlignment:WAT_TextAlignment`**<br>
