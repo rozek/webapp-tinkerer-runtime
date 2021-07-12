@@ -124,8 +124,6 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 * **`instantiableLayerMasters`**<br>
 * **`instantiableComponentMasters`**<br>
 
-### Error Information Handling ###
-
 ### Miscellaneous ###
 
 * **`Version`**<br>
@@ -146,7 +144,80 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 Any `WAT_Visual` offers the following properties and methods:
 
-* **``**<br>
+* **`uniqueId:number`**<br>
+* **`Peer:JQuery`**<br>
+* **`isAttached:boolean`**<br>
+* **`Id?:string`**<br>
+* **`Name?:WAT_Name`**<br>
+* **`Label?:WAT_Label`**<br>
+* **`Category:WAT_Category`**<br>
+* **`Master:WAT_Name`**<br>
+* **`ErrorInfo_WAT_ErrorInfo`**<br>
+* **`Container?:WAT_Container`**<br>
+* **`Layer?:WAT_Layer`**<br>
+* **`Applet?:WAT_Applet`**<br>
+* **`mayBeDesigned:boolean`**<br>
+* **`mayBeDeleted:boolean`**<br>
+* **`isVisible:boolean`**<br>
+* **`isShown:boolean`**<br>
+* **`show ():void`**<br>
+* **`hide ():void`**<br>
+* **`isEnabled:boolean`**<br>
+* **`isDisabled:boolean`**<br>
+* **`enable ():void`**<br>
+* **`disable ():void`**<br>
+* **`PropertySet:WAT_PropertySet`**<br>
+* **`PropertyMayBeDesigned (PropertyName:WAT_Identifier):boolean`**<br>
+* **`State?:any`**<br>
+* **`Value?:any`**<br>
+* **`Script?:WAT_Text`**<br>
+* **`pendingScript?:WAT_Text`**<br>
+* **`activatePendingScript ():void`**<br>
+* **`pendingScriptError:any`**<br>
+* **`clearPendingScriptError ():void`**<br>
+* **`Classes:string`**<br>
+* **`TabIndex?:number`**<br>
+* **`PointerSensitivity:boolean`**<br>
+* **`Overflows:WAT_Overflow[]`**<br>
+* **`TextOverflow:WAT_TextOverflow`**<br>
+* **`Opacity:number`**<br>
+* **`x:WAT_Location`**<br>
+* **`y:WAT_Location`**<br>
+* **`Width:WAT_Dimension`**<br>
+* **`Height:WAT_Dimension`**<br>
+* **`Position:WAT_Position`**<br>
+* **`Size:WAT_Size`**<br>
+* **`Geometry:WAT_Geometry`**<br>
+* **`GeometryOnDisplay:WAT_Geometry`**<br>
+* **`horizontalAnchoring:WAT_horizontalAnchoring`**<br>
+* **`verticalAnchoring:WAT_verticalAnchoring`**<br>
+* **`horizontalOffsets:WAT_horizontalOffsets`**<br>
+* **`verticalOffsets:WAT_verticalOffsets`**<br>
+* **`minWidth:WAT_Dimension`**<br>
+* **`minHeight:WAT_Dimension`**<br>
+* **`maxWidth:WAT_Dimension`**<br>
+* **`maxHeight:WAT_Dimension`**<br>
+* **`coversPointOnDisplay (xOnDisplay:WAT_Location, yOnDisplay:WAT_Location):boolean`**<br>
+* **`FontFamily:WAT_Textline`**<br>
+* **`FontSize:WAT_Dimension`**<br>
+* **`FontWeight:WAT_FontWeight`**<br>
+* **`FontStyle:WAT_FontStyle`**<br>
+* **`LineHeight:WAT_Dimension`**<br>
+* **`TextDecoration:WAT_TextDecoration`**<br>
+* **`TextShadow:WAT_TextShadow`**<br>
+* **`TextAlignment:WAT_TextAlignment`**<br>
+* **`ForegroundColor:WAT_Color`**<br>
+* **`Color:WAT_Color`**<br>
+* **`BackgroundColor:WAT_Color`**<br>
+* **`BackgroundTexture:WAT_BackgroundTexture`**<br>
+* **`BorderWidths:WAT_Dimension[]`**<br>
+* **`BorderColors:WAT_Color[]`**<br>
+* **`BorderStyles:WAT_BorderStyle[]`**<br>
+* **`BorderRadii:WAT_Dimension[]`**<br>
+* **`BoxShadow:WAT_BoxShadow`**<br>
+* **`Cursor:WAT_Cursor`**<br>
+* **`customCursor?:WAT_customCursor`**<br>
+* **`trigger (...ArgumentList:any):void`**<br>
 
 ### WAT_Applet ###
 
