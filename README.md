@@ -128,15 +128,15 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### Miscellaneous ###
 
-* `Version`
-* `throwReadOnlyError`
-* `throwWriteOnlyError`
-* `ready`
-* `running`
-* `newUniqueId`
-* `VisualForElement`
-* `AppletPeersInDocument`
-* `registerDesigner`
+* **`Version`**<br>
+* **`throwReadOnlyError`**<br>
+* **`throwWriteOnlyError`**<br>
+* **`ready`**<br>
+* **`running`**<br>
+* **`newUniqueId`**<br>
+* **`VisualForElement`**<br>
+* **`AppletPeersInDocument`**<br>
+* **`registerDesigner`**<br>
 
 ### WAT_Visual ###
 
