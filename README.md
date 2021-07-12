@@ -232,23 +232,23 @@ Any `WAT_Visual` offers the following properties and methods:
 
 In addition to the  properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Applet` offers:
 
-* **`globalVisual (globalName:WAT_Name):WAT_Visual`**<br>
-* **`isBeingPreserved:boolean`**<br>
-* **`isBeingRestored:boolean`**<br>
-* **`isBeingRemoved:boolean`**<br>
-* **`CardList:WAT_Card[]`**<br>
-* **`CardLabelList:WAT_Label[]`**<br>
-* **`CardCount:number`**<br>
-* **`Card (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card|undefined`**<br>
-* **`CardAtIndex (Index:number):WAT_Card|undefined`**<br>
-* **`CardNamed (Name:WAT_Name):WAT_Card|undefined`**<br>
-* **`CardLabelled (Label:WAT_Label):WAT_Card|undefined`**<br>
-* **`IndexOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):number`**<br>
-* **`acceptsCardAt (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>
-* **`acceptsNewCardAt (Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>
-* **`newCardInsertedAt (Master:WAT_Name, CardOrNameOrIndex?:WAT_Card|WAT_Name|number):WAT_Card`**<br>
-* **`DuplicateOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card`**<br>
-* **`CardDeserializedFrom (Serialization:string, CardOrNameOrIndex?:WAT_Card|WAT_Name|number):WAT_Card`**<br>
+* **`globalVisual (globalName:WAT_Name):WAT_Visual`**<br>returns this applet's visual with the given `globalName` - or `undefined` if no such visual exists
+* **`isBeingPreserved:boolean`**<br>contains `true` while this applet is being preserved - or `false` else
+* **`isBeingRestored:boolean`**<br>contains `true` while this applet is being restored from its backup - or `false` else
+* **`isBeingRemoved:boolean`**<br>contains `true` while this applet's backup is being removed - or `false` else
+* **`CardList:WAT_Card[]`**<br>contains a list with this applet's cards in their current order
+* **`CardLabelList:WAT_Label[]`**<br>contains a list with the labels of this applet's cards in their current order
+* **`CardCount:number`**<br>contains the number of cards in this applet
+* **`Card (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card|undefined`**<br>returns this applet's card with the given `CardOrNameOrIndex` - or `undefined` if no such cards exists
+* **`CardAtIndex (Index:number):WAT_Card|undefined`**<br>returns this applet's card at the given `Index` - or `undefined` if no such cards exists
+* **`CardNamed (Name:WAT_Name):WAT_Card|undefined`**<br>returns the first card in this applet with the given `Name` - or `undefined` if no such cards exists
+* **`CardLabelled (Label:WAT_Label):WAT_Card|undefined`**<br>returns the first card in this applet with the given `Label` - or `undefined` if no such cards exists
+* **`IndexOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):number`**<br>returns the index of this applet's card with the given `CardOrNameOrIndex` - or `undefined` if no such cards exists
+* **`acceptsCardAt (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>returns `true` if this applet allows the given `CardOrNameOrIndex` to be inserted at the given `InsertionPoint` - or `false` otherwise. If `InsertionPoint` is missing, it is assumed that the card should be appended 
+* **`acceptsNewCardAt (Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number):boolean`**<br>returns `true` if this applet allows a new card based on the given `Master` to be inserted at the given `InsertionPoint` - or `false` otherwise. If `InsertionPoint` is missing, it is assumed that the new card should be appended 
+* **`newCardInsertedAt (Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a new card based on the given `Master` and inserts it at the given `InsertionPoint`. If `InsertionPoint` is missing, the new card is appended to the list of already existing cards
+* **`DuplicateOfCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a duplicate of the given `CardOrNameOrIndex`and inserts it right after the original 
+* **`CardDeserializedFrom (Serialization:string, InsertionPoint?:WAT_Card|WAT_Name|number):WAT_Card`**<br>creates a new card from the given `Serialization` and inserts it at the given `InsertionPoint`. If `InsertionPoint` is missing, the new card is appended to the list of already existing cards
 * **`CardMayBeShiftedUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
 * **`CardMayBeShiftedTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>
 * **`shiftCardUp (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
