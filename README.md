@@ -68,10 +68,12 @@ By default, `localforage` is not part of the `webapp-tinkerer-runtime`: if the d
 
 ### Master Management ###
 
-* **`registerMasterFromSerialization (Serialization:string):void`**<br>
-* **`hasMaster (Name:WAT_Name):boolean`**<br>
-* **`lacksMaster (Name:WAT_Name):boolean`**<br>
-* **`createMaster (Name:WAT_Name, Category:WAT_Category, Version?:WAT_SemVer, Template?:WAT_Text):void`**<br>
+"Masters" define common properties and methods for visuals of a given "Category" (such as `Applet`, `Card`, `Overlay`, `Control` or `Compound`). Any master has a "Name" which must be unique within a HTML document and is kept in a "master registry" such that any master may be looked up by its name.
+
+* **`registerMasterFromSerialization (Serialization:string):void`**<br>deserializes a given `Serialization` and adds it to the registry
+* **`hasMaster (Name:WAT_Name):boolean`**<br>returns `true` if a master with the given `Name` is "known" (i.e., has been registered before) - or `false` otherwise
+* **`lacksMaster (Name:WAT_Name):boolean`**<br>returns `true` if a master with the given `Name` is *not* "known" (i.e., has never been registered before or already removed from the registry again) - or `false` otherwise
+* **`createMaster (Name:WAT_Name, Category:WAT_Category, Version?:WAT_SemVer, Template?:WAT_Text):void`**<br>creates a new master with the (not yet registered) `Name`, provided for visuals of the given `Category` and of the optionally given `Version` (defaulting to `'0.1.0'`) and with the optional HTML `Template` (defaulting to nothing) and adds it to the master registry
 * **`DuplicateOfMaster (oldName:WAT_Name, newName:WAT_Name, newVersion?:WAT_normalizedVersion):WAT_MasterInfo`**<br>
 * **`renameMaster (oldName:WAT_Name, newName:WAT_Name, updateInstances:boolean = true):void`**<br>
 * **`NameOfMaster (Name:WAT_Name):WAT_Name`**<br>
