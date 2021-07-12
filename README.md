@@ -208,21 +208,21 @@ Any `WAT_Visual` offers the following properties and methods:
 * **`FontWeight:WAT_FontWeight`**<br>contains this visual's currently configured CSS font-weight
 * **`FontStyle:WAT_FontStyle`**<br>contains this visual's currently configured CSS font-style
 * **`LineHeight:WAT_Dimension`**<br>contains this visual's currently configured CSS line-height (measured in pixels)
-* **`TextDecoration:WAT_TextDecoration`**<br>
-* **`TextShadow:WAT_TextShadow`**<br>
-* **`TextAlignment:WAT_TextAlignment`**<br>
-* **`ForegroundColor:WAT_Color`**<br>
-* **`Color:WAT_Color`**<br>
-* **`BackgroundColor:WAT_Color`**<br>
-* **`BackgroundTexture:WAT_BackgroundTexture`**<br>
-* **`BorderWidths:WAT_Dimension[]`**<br>
-* **`BorderColors:WAT_Color[]`**<br>
-* **`BorderStyles:WAT_BorderStyle[]`**<br>
-* **`BorderRadii:WAT_Dimension[]`**<br>
-* **`BoxShadow:WAT_BoxShadow`**<br>
-* **`Cursor:WAT_Cursor`**<br>
-* **`customCursor?:WAT_customCursor`**<br>
-* **`trigger (...ArgumentList:any):void`**<br>
+* **`TextDecoration:WAT_TextDecoration`**<br>contains this visual's currently configured CSS text decoration
+* **`TextShadow:WAT_TextShadow`**<br>contains this visual's currently configured CSS text shadow
+* **`TextAlignment:WAT_TextAlignment`**<br>contains this visual's currently configured text alignment
+* **`ForegroundColor:WAT_Color`**<br>contains this visual's currently configured CSS foreground color
+* **`Color:WAT_Color`**<br>is just a synonym for `ForegroundColor`
+* **`BackgroundColor:WAT_Color`**<br>contains this visual's currently configured CSS background color
+* **`BackgroundTexture:WAT_BackgroundTexture`**<br>contains this visual's currently configured CSS background texture
+* **`BorderWidths:WAT_Dimension[]`**<br>contains a list with this visual's currently configured CSS border widths
+* **`BorderColors:WAT_Color[]`**<br>contains a list with this visual's currently configured CSS border colors
+* **`BorderStyles:WAT_BorderStyle[]`**<br>contains a list with this visual's currently configured CSS border styles
+* **`BorderRadii:WAT_Dimension[]`**<br>contains a list with this visual's currently configured CSS border radii
+* **`BoxShadow:WAT_BoxShadow`**<br>contains this visual's currently configured CSS box shadow
+* **`Cursor:WAT_Cursor`**<br>contains this visual's currently configured standard CSS cursor
+* **`customCursor?:WAT_customCursor`**<br>contains this visual's currently configured custom CSS cursor
+* **`trigger (...ArgumentList:any):void`**<br>triggers a WAT event with the given parameters
 
 ### WAT_Applet ###
 
