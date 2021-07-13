@@ -344,8 +344,8 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Card` offers:
 
-* **`mayBeShiftedTo(InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>contains `true` if this card may be shifted to the the position given by `InsertionPoint` in this applet's list of cards. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that the given card should be appended
-* **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>moves this card to the position given by `InsertionPoint` in the list of cards of this applet - provided that this is possible. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that the given card should be appended
+* **`mayBeShiftedTo(InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>contains `true` if this card may be shifted to the the position given by `InsertionPoint` in this applet's list of cards. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that this card should be appended
+* **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>moves this card to the position given by `InsertionPoint` in the list of cards of this applet - provided that this is possible. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that this card should be appended
 
 ### WAT_Overlay ###
 
@@ -355,11 +355,11 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Overlay` offers:
 
-* **`mayBeShiftedToInsertionPoint:WAT_Overlay|WAT_Name|number:boolean`**<br>
-* **`shiftTo (InsertionPoint:WAT_Overlay|WAT_Name|number):void`**<br>
-* **`showAround (x:number,y:number, Constraint:'withinApplet'|'withinViewport' = 'withinViewport'):void`**<br>
-* **`isFrontmostOfClass (ClassName:WAT_Name):boolean`**<br>
-* **`bringToFrontOfClass (ClassName:WAT_Name):void`**<br>
+* **`mayBeShiftedToInsertionPoint:WAT_Overlay|WAT_Name|number:boolean`**<br>contains `true` if this overlay may be shifted to the the position given by `InsertionPoint` in this applet's list of overlays. `InsertionPoint` may be set to a concrete overlay, an overlay name or an overlay's index in the list of overlays in this applet. If it is missing, it is assumed that this overlay should be appended
+* **`shiftTo (InsertionPoint:WAT_Overlay|WAT_Name|number):void`**<br>moves this overlay to the position given by `InsertionPoint` in the list of overlays of this applet - provided that this is possible. `InsertionPoint` may be set to a concrete overlay, an overlay name or an overlay's index in the list of overlays in this applet. If it is missing, it is assumed that this overlay should be appended
+* **`showAround (x:number,y:number, Constraint:'withinApplet'|'withinViewport' = 'withinViewport'):void`**<br>makes this overlay visible and tries to position it as close to the given `x` and `y` as possibile such that the whole overlay remains within the bounds of the given applet (if `Constraint` is set to `'withinApplet'`) or viewport (if `Constraint` is missing or set to `'withinViewport'`)
+* **`isFrontmostOfClass (ClassName:WAT_Name):boolean`**<br>returns `true` if this overlay is the frontmost visible overlay of this applet with the given CSS `ClassName` - or `false` otherwise
+* **`bringToFrontOfClass (ClassName:WAT_Name):void`**<br>makes this overlay the frontmost one of this applet with the given CSS `ClassName`- provided that this overlay is visible
 
 ### WAT_Component ###
 
