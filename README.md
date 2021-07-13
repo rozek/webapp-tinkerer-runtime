@@ -257,15 +257,15 @@ In addition to the  properties and methods already mentioned for [WAT_Visual](#w
 * **`shiftCardDown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>moves the given `CardOrNameOrIndex` one position "down" (i.e. towards higher indices) in the list of cards of this applet - provided that this is possible. `CardOrNameOrIndex` may be set to a concrete card, a card name or a card's index in the list of cards in this applet
 * **`shiftCardTo (CardOrNameOrIndex:WAT_Card|WAT_Name|number, InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>moves the given `CardOrNameOrIndex` to the position given by `InsertionPoint` in the list of cards of this applet - provided that this is possible. Both `CardOrNameOrIndex` and `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that the given card should be appended
 * **`removeCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>removes the given `CardOrNameOrIndex` - provided that this is possible. `CardOrNameOrIndex` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. It is permitted to remove a non-existing card - in that case, the function is simply ignored
-* **`shownCard:WAT_Card`**<br>
-* **`shownCardIndex:number`**<br>
-* **`CardIsShown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>
-* **`showCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>
-* **`showFirstCard ():void`**<br>
-* **`showPrevCard ():void`**<br>
-* **`showPreviousCard ():void`**<br>
-* **`showNextCard ():void`**<br>
-* **`showLastCard ():void`**<br>
+* **`shownCard:WAT_Card`**<br>contains the card this applet currently shows
+* **`shownCardIndex:number`**<br>contains the index of the currently shown card (within this applet's list of cards)
+* **`CardIsShown (CardOrNameOrIndex:WAT_Card|WAT_Name|number):boolean`**<br>contains `true` if the given `CardOrNameOrIndex` is shown - or `false` otherwise. `CardOrNameOrIndex` may be set to a concrete card, a card name or a card's index in the list of cards in this applet
+* **`showCard (CardOrNameOrIndex:WAT_Card|WAT_Name|number):void`**<br>makes the given `CardOrNameOrIndex` the shown card of this applet. `CardOrNameOrIndex` may be set to a concrete card, a card name or a card's index in the list of cards in this applet
+* **`showFirstCard ():void`**<br>makes the first card (in the list of cards of this applet) the shown one
+* **`showPrevCard ():void`**<br>makes the predecessor of the currently shown card (in the list of cards of this applet) the shown one
+* **`showPreviousCard ():void`**<br>is just a synonym for `showPrevCard`
+* **`showNextCard ():void`**<br>makes the successor of the currently shown card (in the list of cards of this applet) the shown one
+* **`showLastCard ():void`**<br>makes the last card (in the list of cards of this applet) the shown one
 * **`OverlayList:WAT_Overlay[]`**<br>
 * **`OverlayLabelList:WAT_Label[]`**<br>
 * **`OverlayCount:number`**<br>
