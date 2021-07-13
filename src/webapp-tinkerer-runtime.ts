@@ -503,7 +503,7 @@ namespace WAT {
 
 /**** throwReadOnlyError ****/
 
-  export function throwReadOnlyError (Name:WAT_Name):void {
+  export function throwReadOnlyError (Name:WAT_Name):never {
     throwError(
       'ReadOnlyProperty: property ' + quoted(Name) + ' must not be set'
     )
@@ -511,7 +511,7 @@ namespace WAT {
 
 /**** throwWriteOnlyError ****/
 
-  export function throwWriteOnlyError (Name:WAT_Name):void {
+  export function throwWriteOnlyError (Name:WAT_Name):never {
     throwError(
       'WriteOnlyProperty: property ' + quoted(Name) + ' must not be read'
     )
@@ -2939,7 +2939,7 @@ namespace WAT {
 
 /**** unregisterMaster ****/
 
-  function unregisterMaster (Name:WAT_Name):void {
+  export function unregisterMaster (Name:WAT_Name):void {
     if (MasterIsIntrinsic(Name)) throwError(
       'ForbiddenOperation: an intrinsic master must not be unregistered'
     )
@@ -3202,7 +3202,7 @@ namespace WAT {
   }
 
   export function setPendingResourcesOfMaster (
-    Name:WAT_Name, newResources:WAT_Text
+    Name:WAT_Name, newResources?:WAT_Text
   ):void {
 //  expectName        ('master name',Name)  // t.b.d. by "existingInfoForMaster"
     allowText('new master resources',newResources)
@@ -3242,7 +3242,7 @@ namespace WAT {
   }
 
   export function setPendingTemplateOfMaster (
-    Name:WAT_Name, newTemplate:WAT_Text
+    Name:WAT_Name, newTemplate?:WAT_Text
   ):void {
 //  expectName       ('master name',Name)   // t.b.d. by "existingInfoForMaster"
     allowText('new master template',newTemplate)
@@ -3283,7 +3283,7 @@ namespace WAT {
   }
 
   export function setPendingClassesOfMaster (
-    Name:WAT_Name, newClasses:WAT_Text
+    Name:WAT_Name, newClasses?:WAT_Text
   ):void {
 //  expectName      ('master name',Name)    // t.b.d. by "existingInfoForMaster"
     allowText('new master classes',newClasses)
@@ -3327,7 +3327,7 @@ namespace WAT {
   }
 
   export function setPendingStylesOfMaster (
-    Name:WAT_Name, newStyles:WAT_Text
+    Name:WAT_Name, newStyles?:WAT_Text
   ):void {
 //  expectName     ('master name',Name)     // t.b.d. by "existingInfoForMaster"
     allowText('new master styles',newStyles)
@@ -3379,7 +3379,7 @@ namespace WAT {
   }
 
   export function setPendingScriptOfMaster (
-    Name:WAT_Name, newScript:WAT_Text
+    Name:WAT_Name, newScript?:WAT_Text
   ):void {
 //  expectName     ('master name',Name)     // t.b.d. by "existingInfoForMaster"
     allowText('new master script',newScript)
@@ -3831,7 +3831,7 @@ namespace WAT {
 
 /**** missingMasters ****/
 
-  function missingMasters ():WAT_Name[] {
+  export function missingMasters ():WAT_Name[] {
     let missingMasterSet = Object.create(null)
       $(document.body).find('.WAT[data-wat-master]').each(function () {
         let Master = $(this).data('wat-master')
@@ -3848,7 +3848,7 @@ namespace WAT {
 
 /**** unusedMasters ****/
 
-  function unusedMasters ():WAT_Name[] {
+  export function unusedMasters ():WAT_Name[] {
     let unusedMasterList = []
       for (let Master in MasterRegistry) {
         let MasterInfo = MasterRegistry[Master]
@@ -3861,7 +3861,7 @@ namespace WAT {
 
 /**** MastersUsedByVisuals ****/
 
-  function MastersUsedByVisuals (
+  export function MastersUsedByVisuals (
     VisualList:WAT_Visual[], withoutIntrinsics?:'withoutIntrinsics'
   ):WAT_Name[] {
     let MasterSet = Object.create(null)
@@ -6703,7 +6703,7 @@ namespace WAT {
   /**** newCardInsertedAt - but only for an existing master ****/
 
     public newCardInsertedAt (
-      Master:WAT_Name, CardOrNameOrIndex?:WAT_Card|WAT_Name|number
+      Master:WAT_Name, InsertionPoint?:WAT_Card|WAT_Name|number
     ):WAT_Card {
 //    expectName('master name',Master)                  // will be checked below
 
@@ -6713,9 +6713,9 @@ namespace WAT {
       )
 
       let Index = (
-        CardOrNameOrIndex == null
+        InsertionPoint == null
         ? this.CardCount
-        : this.IndexOfCard(CardOrNameOrIndex)
+        : this.IndexOfCard(InsertionPoint)
       )
       if (Index < 0) throwError(
         'InvalidArgument: the given insertion point does not exist or is not ' +
@@ -6741,14 +6741,14 @@ namespace WAT {
   /**** CardDeserializedFrom ****/
 
     public CardDeserializedFrom (
-      Serialization:string, CardOrNameOrIndex?:WAT_Card|WAT_Name|number
+      Serialization:string, InsertionPoint?:WAT_Card|WAT_Name|number
     ):WAT_Card {
       expectText('card serialization',Serialization)
 
       let Index = (
-        CardOrNameOrIndex == null
+        InsertionPoint == null
         ? this.CardCount
-        : this.IndexOfCard(CardOrNameOrIndex)
+        : this.IndexOfCard(InsertionPoint)
       )
       if (Index < 0) throwError(
         'InvalidArgument: the given insertion point does not exist or is not ' +
@@ -7107,7 +7107,7 @@ namespace WAT {
   /**** newOverlayInsertedAt - but only for an existing master ****/
 
     public newOverlayInsertedAt (
-      Master:WAT_Name, OverlayOrNameOrIndex?:WAT_Overlay|WAT_Name|number
+      Master:WAT_Name, InsertionPoint?:WAT_Overlay|WAT_Name|number
     ):WAT_Overlay {
 //    expectName('master name',Master)                  // will be checked below
 
@@ -7117,9 +7117,9 @@ namespace WAT {
       )
 
       let Index = (
-        OverlayOrNameOrIndex == null
+        InsertionPoint == null
         ? this.OverlayCount
-        : this.IndexOfOverlay(OverlayOrNameOrIndex)
+        : this.IndexOfOverlay(InsertionPoint)
       )
       if (Index < 0) throwError(
         'InvalidArgument: the given insertion point does not exist or is not ' +
@@ -7145,14 +7145,14 @@ namespace WAT {
   /**** OverlayDeserializedFrom ****/
 
     public OverlayDeserializedFrom (
-      Serialization:string, OverlayOrNameOrIndex?:WAT_Overlay|WAT_Name|number
+      Serialization:string, InsertionPoint?:WAT_Overlay|WAT_Name|number
     ):WAT_Overlay {
       expectText('overlay serialization',Serialization)
 
       let Index = (
-        OverlayOrNameOrIndex == null
+        InsertionPoint == null
         ? this.OverlayCount
-        : this.IndexOfOverlay(OverlayOrNameOrIndex)
+        : this.IndexOfOverlay(InsertionPoint)
       )
       if (Index < 0) throwError(
         'InvalidArgument: the given insertion point does not exist or is not ' +
@@ -7921,10 +7921,10 @@ namespace WAT {
     mayBeDeformed:boolean
     mayBeShiftedUp:boolean
     mayBeShiftedDown:boolean
-    mayBeShiftedTo (newIndex:number):boolean
+    mayBeShiftedTo (InsertionPoint:WAT_Control|WAT_Compound|WAT_Name|number):boolean
     shiftUp ():void
     shiftDown ():void
-    shiftTo (newIndex:number):void
+    shiftTo (InsertionPoint:WAT_Control|WAT_Compound|WAT_Name|number):void
     remove ():void
   }
 
