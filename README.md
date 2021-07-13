@@ -322,7 +322,19 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 `abstract class WAT_Layer extends WAT_Container`<br>
 
-"Layers" are the direct descendants of an applet. Cards and overlays are layers. `WAT_Layer` is basically a "marker interface" and does not provide any own properties or methods.
+"Layers" are the direct descendants of an applet. Cards and overlays are layers.
+
+In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), any `WAT_Layer` offers:
+
+* **`mayBeDisplaced:boolean`**<br>contains `true` if the WAT designer is allowed to change the position of this layer - or `false` otherwise
+* **`mayBeDeformed:boolean`**<br>contains `true` if the WAT designer is allowed to change the size of this layer - or `false` otherwise
+* **`Index:number`**<br>contains the index of this layer in the corresponding list of this applet's layers
+* **`mayBeShiftedUp:boolean`**<br>contains `true` if this layer may be shifted "up" (i.e., towards lower indices) in the corresponding list of this applet's layers - or `false` otherwise
+* **`mayBeShiftedDown:boolean`**<br>contains `true` if this layer may be shifted "down" (i.e., towards higher indices) in the corresponding list of this applet's layers - or `false` otherwise
+* **`shiftUp ():void`**<br>shifts this layer one position "up" (i.e., towards lower indices) in the corresponding list of this applet's layers - provided that this is possible
+* **`shiftDown ():void`**<br>shifts this layer one position "down" (i.e., towards higher indices) in the corresponding list of this applet's layers - provided that this is possible
+* **`mayBeRemoved:boolean`**<br>contains `true` if this layer may be removed - or `false` otherwise
+* **`remove ():void`**<br>removes this layer - provided that this is possible
 
 ### WAT_Card ###
 
@@ -332,17 +344,8 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Card` offers:
 
-* **`mayBeDisplaced:boolean`**<br>
-* **`mayBeDeformed:boolean`**<br>
-* **`Index:number`**<br>
-* **`mayBeShiftedUp:boolean`**<br>
-* **`mayBeShiftedDown:boolean`**<br>
-* **`mayBeShiftedTo:boolean`**<br>
-* **`shiftUp ():void`**<br>
-* **`shiftDown ():void`**<br>
+* **`mayBeShiftedToInsertionPoint:WAT_Card|WAT_Name|number:boolean`**<br>
 * **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>
-* **`mayBeRemoved:boolean`**<br>
-* **`remove ():void`**<br>
 
 ### WAT_Overlay ###
 
@@ -352,17 +355,8 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Overlay` offers:
 
-* **`mayBeDisplaced:boolean`**<br>
-* **`mayBeDeformed:boolean`**<br>
-* **`Index:number`**<br>
-* **`mayBeShiftedUp:boolean`**<br>
-* **`mayBeShiftedDown:boolean`**<br>
-* **`mayBeShiftedTo:boolean`**<br>
-* **`shiftUp ():void`**<br>
-* **`shiftDown ():void`**<br>
+* **`mayBeShiftedToInsertionPoint:WAT_Overlay|WAT_Name|number:boolean`**<br>
 * **`shiftTo (InsertionPoint:WAT_Overlay|WAT_Name|number):void`**<br>
-* **`mayBeRemoved:boolean`**<br>
-* **`remove ():void`**<br>
 * **`showAround (x:number,y:number, Constraint:'withinApplet'|'withinViewport' = 'withinViewport'):void`**<br>
 * **`isFrontmostOfClass (ClassName:WAT_Name):boolean`**<br>
 * **`bringToFrontOfClass (ClassName:WAT_Name):void`**<br>
