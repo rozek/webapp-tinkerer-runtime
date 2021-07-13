@@ -344,8 +344,8 @@ In addition to the properties and methods already mentioned for [WAT_Visual](#wa
 
 In addition to the properties and methods already mentioned for [WAT_Visual](#wat_visual), [WAT_Container](#wat_container) and [WAT_Layer](#wat_layer), any `WAT_Card` offers:
 
-* **`mayBeShiftedToInsertionPoint:WAT_Card|WAT_Name|number:boolean`**<br>
-* **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>
+* **`mayBeShiftedTo(InsertionPoint:WAT_Card|WAT_Name|number):boolean`**<br>contains `true` if this card may be shifted to the the position given by `InsertionPoint` in this applet's list of cards. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that the given card should be appended
+* **`shiftTo (InsertionPoint:WAT_Card|WAT_Name|number):void`**<br>moves this card to the position given by `InsertionPoint` in the list of cards of this applet - provided that this is possible. `InsertionPoint` may be set to a concrete card, a card name or a card's index in the list of cards in this applet. If it is missing, it is assumed that the given card should be appended
 
 ### WAT_Overlay ###
 
