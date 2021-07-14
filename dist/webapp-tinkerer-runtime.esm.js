@@ -6329,6 +6329,7 @@ var WAT;
             }
         }
     }
+    WAT.unregisterMaster = unregisterMaster;
     /**** compileScriptIntoMaster ****/
     function compileScriptIntoMaster(Script, MasterInfo) {
         delete MasterInfo.compiledScript;
@@ -7017,6 +7018,34 @@ var WAT;
         return Result;
     }
     WAT.instantiableComponentMasters = instantiableComponentMasters;
+    /**** missingMasters ****/
+    function missingMasters() {
+        var missingMasterSet = Object.create(null);
+        $(document.body).find('.WAT[data-wat-master]').each(function () {
+            var Master = $(this).data('wat-master');
+            if (ValueIsName(Master) && !(Master in MasterRegistry)) {
+                missingMasterSet[Master] = Master;
+            }
+        });
+        var missingMasterList = [];
+        for (var Master in missingMasterSet) {
+            missingMasterList.push(Master);
+        }
+        return missingMasterList;
+    }
+    WAT.missingMasters = missingMasters;
+    /**** unusedMasters ****/
+    function unusedMasters() {
+        var unusedMasterList = [];
+        for (var Master in MasterRegistry) {
+            var MasterInfo = MasterRegistry[Master];
+            if (MasterInfo.UsageCount <= 0) {
+                unusedMasterList.push(Master);
+            }
+        }
+        return unusedMasterList;
+    }
+    WAT.unusedMasters = unusedMasters;
     /**** MastersUsedByVisuals ****/
     function MastersUsedByVisuals(VisualList, withoutIntrinsics) {
         var MasterSet = Object.create(null);
@@ -7048,6 +7077,7 @@ var WAT;
         }
         return MasterList;
     }
+    WAT.MastersUsedByVisuals = MastersUsedByVisuals;
     //----------------------------------------------------------------------------//
     //                               global Visuals                               //
     //----------------------------------------------------------------------------//
@@ -9612,14 +9642,14 @@ var WAT;
             return true;
         };
         /**** newCardInsertedAt - but only for an existing master ****/
-        WAT_Applet.prototype.newCardInsertedAt = function (Master, CardOrNameOrIndex) {
+        WAT_Applet.prototype.newCardInsertedAt = function (Master, InsertionPoint) {
             //    expectName('master name',Master)                  // will be checked below
             var MasterInfo = existingInfoForMaster(Master);
             if (MasterInfo.Category !== 'Card')
                 throwError('InvalidMaster: the given master cannot be used for a (new) card');
-            var Index = (CardOrNameOrIndex == null
+            var Index = (InsertionPoint == null
                 ? this.CardCount
-                : this.IndexOfCard(CardOrNameOrIndex));
+                : this.IndexOfCard(InsertionPoint));
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
@@ -9635,11 +9665,11 @@ var WAT;
             return CardDeserializedInto(CardSerialization, this, Index + 1);
         };
         /**** CardDeserializedFrom ****/
-        WAT_Applet.prototype.CardDeserializedFrom = function (Serialization, CardOrNameOrIndex) {
+        WAT_Applet.prototype.CardDeserializedFrom = function (Serialization, InsertionPoint) {
             expectText('card serialization', Serialization);
-            var Index = (CardOrNameOrIndex == null
+            var Index = (InsertionPoint == null
                 ? this.CardCount
-                : this.IndexOfCard(CardOrNameOrIndex));
+                : this.IndexOfCard(InsertionPoint));
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
@@ -9940,14 +9970,14 @@ var WAT;
             return true;
         };
         /**** newOverlayInsertedAt - but only for an existing master ****/
-        WAT_Applet.prototype.newOverlayInsertedAt = function (Master, OverlayOrNameOrIndex) {
+        WAT_Applet.prototype.newOverlayInsertedAt = function (Master, InsertionPoint) {
             //    expectName('master name',Master)                  // will be checked below
             var MasterInfo = existingInfoForMaster(Master);
             if (MasterInfo.Category !== 'Overlay')
                 throwError('InvalidMaster: the given master cannot be used for a (new) overlay');
-            var Index = (OverlayOrNameOrIndex == null
+            var Index = (InsertionPoint == null
                 ? this.OverlayCount
-                : this.IndexOfOverlay(OverlayOrNameOrIndex));
+                : this.IndexOfOverlay(InsertionPoint));
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
@@ -9963,11 +9993,11 @@ var WAT;
             return OverlayDeserializedInto(OverlaySerialization, this, Index + 1);
         };
         /**** OverlayDeserializedFrom ****/
-        WAT_Applet.prototype.OverlayDeserializedFrom = function (Serialization, OverlayOrNameOrIndex) {
+        WAT_Applet.prototype.OverlayDeserializedFrom = function (Serialization, InsertionPoint) {
             expectText('overlay serialization', Serialization);
-            var Index = (OverlayOrNameOrIndex == null
+            var Index = (InsertionPoint == null
                 ? this.OverlayCount
-                : this.IndexOfOverlay(OverlayOrNameOrIndex));
+                : this.IndexOfOverlay(InsertionPoint));
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
