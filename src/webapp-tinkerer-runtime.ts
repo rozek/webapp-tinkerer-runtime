@@ -523,6 +523,12 @@ namespace WAT {
     return Original.replace(/-([a-z])/gi,(Match) => Match[1].toUpperCase())
   }
 
+/**** pruned ****/
+
+  function pruned (Original:string):string {
+    return Original.replace(/^\s+/,'').replace(/\s+$/,'').replace(/\s+/g,' ')
+  }
+
 /**** forEach ****/
 
   type IteratorCallback = (Value:any, Index:number, List:any[]) => void
@@ -554,6 +560,23 @@ namespace WAT {
     if (outerElement == null) { return undefined }
 
     return outerElement.closest(Selector) as HTMLElement
+  }
+
+/**** closestFilteredParent ****/
+
+  function closestFilteredParent (
+    DOMElement:HTMLElement, Selector:string, Filter:Function
+  ):HTMLElement | undefined {
+    let outerElement = DOMElement.parentElement
+    if (outerElement == null) { return undefined }
+
+    outerElement = outerElement.closest(Selector) as HTMLElement
+    while (outerElement != null) {
+      if (Filter(outerElement) == true) { return outerElement }
+      outerElement = outerElement.closest(Selector) as HTMLElement
+    }
+
+    return undefined
   }
 
 /**** attr ****/
@@ -609,6 +632,132 @@ namespace WAT {
       return DOMElement.dataset[camelized(Name)]
     } else {
       DOMElement.dataset[camelized(Name)] = Value as string
+    }
+  }
+
+  const EventHandlerRegistry = new WeakMap()
+
+  function registerEventHandlerIn (
+    Element:Document|HTMLElement, EventName:string, Selector:string | undefined,
+    Handler:Function, onceOnly:boolean
+  ):void {
+    let EventNames:string[] =  pruned(EventName).split(' ')
+
+  /**** construct actual event handler ****/
+
+    let actualHandler = function EventHandler (DOMEvent:Event):void {
+      try {
+        if (
+          (Selector != null) &&
+          ! (DOMEvent.target as HTMLElement).matches(Selector)
+        ) { return }
+
+        let Result:any = Handler(DOMEvent)
+
+        if (Result === false) {
+          DOMEvent.stopPropagation()
+          DOMEvent.preventDefault()
+        }
+      } catch (Signal) {
+        console.error('event handler failed with',Signal)
+      }
+
+      if (onceOnly) {
+        off(DOMEvent.currentTarget as HTMLElement, DOMEvent.type, Selector, Handler)
+      }
+    }
+
+  /**** register and attach event handlers ****/
+
+    let HandlerList:any[] = EventHandlerRegistry.get(Element)
+    if (HandlerList == null) {
+      EventHandlerRegistry.set(Element,HandlerList = [])
+    }
+
+    EventNames.forEach((EventName:string) => {
+      HandlerList.push({ EventName, Selector, actualHandler, Handler })
+      Element.addEventListener(EventName,actualHandler,false)
+    })
+  }
+
+/**** on ****/
+
+  function on (
+    Element:Document|HTMLElement, EventName:string, Selector:string | undefined,
+    Handler:Function
+  ):void {
+    registerEventHandlerIn(Element,EventName,Selector,Handler,false)
+  }
+
+/**** one ****/
+
+  function one (
+    Element:Document|HTMLElement, EventName:string, Selector:string | undefined,
+    Handler:Function
+  ):void {
+    registerEventHandlerIn(Element,EventName,Selector,Handler,true)
+  }
+
+/**** off ****/
+
+  function off (
+    Element:Document|HTMLElement, EventName?:string, Selector?:string | undefined,
+    Handler?:Function
+  ):void {
+    let EventNames:string[] | undefined = undefined
+    if (EventName != null) { EventNames = pruned(EventName).split(' ') }
+
+  /**** unregister and detach event handlers ****/
+
+    let HandlerList:any[] = EventHandlerRegistry.get(Element)
+    if (HandlerList == null) { return }
+
+    for (let i = HandlerList.length; i >= 0; i--) {
+      let HandlerEntry = HandlerList[i]
+      if (
+        ((EventNames == null) || (EventNames.indexOf(HandlerEntry.EventName) >= 0)) &&
+        ((Selector   == null) || (HandlerEntry.Selector === Selector)) &&
+        ((Handler    == null) || (HandlerEntry.Handler  === Handler))
+      ) {
+        Element.removeEventListener(HandlerEntry.EventName,HandlerEntry.actualHandler)
+        HandlerList.splice(i,1)
+      }
+    }
+  }
+
+/**** trigger ****/
+
+  function trigger (
+    DOMElement:Document|HTMLElement, EventOrName:Event|string, extraParameters?:any
+  ):void {
+    if (ValueIsString(EventOrName)) {
+      let EventName = EventOrName as string, simulatedEvent:Event
+      switch (EventName) {
+        case 'mousedown': case 'mousemove': case 'mouseup':
+        case 'mouseover': case 'mouseenter': case 'mouseleave': case 'mouseout':
+        case 'click': case 'dblclick': case 'contextmenu':
+          simulatedEvent = new MouseEvent(EventName)
+          break
+        case 'keydown': case 'keypress': case 'keyup':
+          simulatedEvent = new KeyboardEvent(EventName)
+          break
+        default:
+          simulatedEvent = new CustomEvent(EventName)
+      }
+
+      if (extraParameters != null) {
+// @ts-ignore always allow "detail"
+        simulatedEvent['detail'] = extraParameters
+      }
+
+      DOMElement.dispatchEvent(simulatedEvent)
+    } else {                                         // ValueIsInstanceOf(Event)
+      if (extraParameters != null) {
+// @ts-ignore always allow "detail"
+        (EventOrName as Event)['detail'] = extraParameters
+      }
+
+      DOMElement.dispatchEvent(EventOrName as Event)
     }
   }
 
@@ -1827,7 +1976,7 @@ namespace WAT {
 
     triggerRecursively('before-serialization')
       if (withUniqueId) { preserveUniqueIdIn(Visual.Peer) }
-        let Serialization = Visual.Peer[0].outerHTML
+        let Serialization = Visual.Peer.outerHTML
       if (withUniqueId) { removeUniqueIdFrom(Visual.Peer) }
     triggerRecursively('after-serialization')
 
@@ -2081,7 +2230,7 @@ namespace WAT {
         compatibleUpgrade:    'perform',
         incompatibleUpgrade:  'perform'
       })
-    return VisualOfElement(Peer[0]) as WAT_Applet
+    return VisualOfElement(Peer) as WAT_Applet
   }
 
 //----------------------------------------------------------------------------//
@@ -3000,10 +3149,10 @@ namespace WAT {
     let MasterInfo = MasterRegistry[Master]
     if (MasterInfo == null) { return }
 
-    $(document.body).off('mousedown mousemove mouseup','.' + Master)
-    $(document.body).off('mouseenter mouseleave','.' + Master)
-    $(document.body).off('keydown keypress keyup','.' + Master)
-    $(document.body).off('input change click','.' + Master)
+    off(document.body, 'mousedown mousemove mouseup','.' + Master)
+    off(document.body, 'mouseenter mouseleave','.' + Master)
+    off(document.body, 'keydown keypress keyup','.' + Master)
+    off(document.body, 'input change click','.' + Master)
 
     let Resources = MasterInfo.Resources
     if (Resources != null) { unregisterResources(Resources) }
@@ -3013,10 +3162,10 @@ namespace WAT {
 
   function refreshInstancesOfMaster (Name:WAT_Name):void {
     if (WAT_isRunning) {
-      $(document.body).find('.WAT[data-wat-master="' + Name + '"]').each(function () {
-        let Visual = VisualOfElement(this)
-        refreshVisual(Visual)
-      })
+      forEach(
+        document.body.querySelectorAll('.WAT[data-wat-master="' + Name + '"]'),
+        (Peer) => refreshVisual(VisualOfElement(Peer as HTMLElement))
+      )
     }
   }
 
@@ -3137,7 +3286,7 @@ namespace WAT {
     if (oldName === newName) { return }
 
     let newMasterInfo = MasterRegistry[newName]
-    if (newName != null) throwError(
+    if (newMasterInfo != null) throwError(
       'MasterExists: a master with the name ' + quoted(newName) + ' exists already'
     )
 
@@ -3147,8 +3296,9 @@ namespace WAT {
     MasterRegistry[newName] = oldMasterInfo
 
     if (updateInstances) {
-      $(document.body).find('.WAT[data-wat-master="' + oldName + '"]').each(
-        function () { $(this).data('wat-master',newName) }
+      forEach(
+        document.body.querySelectorAll('.WAT[data-wat-master="' + oldName + '"]'),
+        (Peer) => { data(Peer as HTMLElement,'wat-master',newName) }
       )
 
       if (WAT_isRunning) {
@@ -3846,12 +3996,15 @@ namespace WAT {
 
   export function missingMasters ():WAT_Name[] {
     let missingMasterSet = Object.create(null)
-      $(document.body).find('.WAT[data-wat-master]').each(function () {
-        let Master = $(this).data('wat-master')
-        if (ValueIsName(Master) && ! (Master in MasterRegistry)) {
-          missingMasterSet[Master] = Master
+      forEach(
+        document.body.querySelectorAll('.WAT[data-wat-master]'),
+        (Peer) => {
+          let Master = data(Peer as HTMLElement,'wat-master')
+          if (ValueIsName(Master) && ! (Master in MasterRegistry)) {
+            missingMasterSet[Master] = Master
+          }
         }
-      })
+      )
     let missingMasterList = []
       for (let Master in missingMasterSet) {
         missingMasterList.push(Master)
@@ -4342,14 +4495,15 @@ namespace WAT {
 
 /**** make global visuals "reactive" ****/
 
-  $(document.body).on('value-changed', function (Event, ArgumentList) {
-    let Origin = VisualOfElement(Event.target as HTMLElement)
+  on(document.body, 'value-changed', undefined, function (DOMEvent:Event) {
+    let Origin = VisualOfElement(DOMEvent.target as HTMLElement)
     if (Origin == null) { return }
 
     let Name = Origin.Name
     if ((Name || '')[0] === '#') {
       InternalsOfVisual(Origin.Applet).ReactivityContext?.setReactiveVariable(
-        Name, ArgumentList && ArgumentList[0], false, 'wasControlValueChange'
+// @ts-ignore always use "detail"
+        Name, DOMEvent.detail, false, 'wasControlValueChange'
       )
     }
   })
@@ -4363,10 +4517,10 @@ namespace WAT {
   function swallowEventWhileLayouting (Event:any):void {
     if (Designer == null) { return }
 
-    let AppletPeer = $(Event.target).closest('.WAT.Applet')
-    if (AppletPeer.length === 0) { return }
+    let AppletPeer = Event.target.closest('.WAT.Applet')
+    if (AppletPeer == null) { return }
 
-    let Applet = VisualOfElement(AppletPeer[0]) as WAT_Applet
+    let Applet = VisualOfElement(AppletPeer) as WAT_Applet
     if (Applet == null) { return }
 
     if (Designer.layoutsApplet(Applet)) {
@@ -4375,20 +4529,20 @@ namespace WAT {
     }
   }
 
-  $(document.body).on('mousedown',swallowEventWhileLayouting)
-  $(document.body).on('mousemove',swallowEventWhileLayouting)
-  $(document.body).on('mouseup',  swallowEventWhileLayouting)
+  document.body.addEventListener('mousedown',swallowEventWhileLayouting)
+  document.body.addEventListener('mousemove',swallowEventWhileLayouting)
+  document.body.addEventListener('mouseup',  swallowEventWhileLayouting)
 
-  $(document.body).on('mouseenter',swallowEventWhileLayouting)
-  $(document.body).on('mouseleave',swallowEventWhileLayouting)
+  document.body.addEventListener('mouseenter',swallowEventWhileLayouting)
+  document.body.addEventListener('mouseleave',swallowEventWhileLayouting)
 
-  $(document.body).on('keydown', swallowEventWhileLayouting)
-  $(document.body).on('keypress',swallowEventWhileLayouting)
-  $(document.body).on('keyup',   swallowEventWhileLayouting)
+  document.body.addEventListener('keydown', swallowEventWhileLayouting)
+  document.body.addEventListener('keypress',swallowEventWhileLayouting)
+  document.body.addEventListener('keyup',   swallowEventWhileLayouting)
 
-  $(document.body).on('input', swallowEventWhileLayouting)
-  $(document.body).on('change',swallowEventWhileLayouting)
-  $(document.body).on('click', swallowEventWhileLayouting)
+  document.body.addEventListener('input', swallowEventWhileLayouting)
+  document.body.addEventListener('change',swallowEventWhileLayouting)
+  document.body.addEventListener('click', swallowEventWhileLayouting)
 
 /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
 
@@ -4401,17 +4555,16 @@ namespace WAT {
       let TapPointSelector = (ArgumentList.shift() as string).slice(1), TapElement
       if (TapPointSelector[0] === '.') {
         expectName('tap point master name',TapPointSelector.slice(1))
-        TapElement = Visual.Peer.parent().closest('.WAT' + TapPointSelector)
+        TapElement = closestParent(Visual.Peer,'.WAT' + TapPointSelector)
       } else {
         expectUniversalName('tap point name',TapPointSelector)
-        TapElement = Visual.Peer.parent('.WAT').filter(
-          function (this:HTMLElement) {
-            return (VisualOfElement(this).Name === TapPointSelector)
-          }
+        TapElement = closestFilteredParent(
+          Visual.Peer,'.WAT',
+          (Peer:HTMLElement) => (VisualOfElement(Peer).Name === TapPointSelector)
         )
       }
-      if (TapElement.length > 0) {
-        TapPoint = VisualOfElement(TapElement[0])
+      if (TapElement != null) {
+        TapPoint = VisualOfElement(TapElement)
       }
     } else {
       TapPoint = Visual
@@ -4439,7 +4592,7 @@ namespace WAT {
       }                          // no event handling for "applets under design"
 
       if ((TapPoint === Visual) && (EventSelector == null)) {
-        if (Event.target !== Visual.Peer[0]) { return }
+        if (Event.target !== Visual.Peer) { return }
       }                         // ignore "inner events" if no selector is given
 
       EventHandler.apply(Visual,ArgumentList)
@@ -4482,17 +4635,16 @@ namespace WAT {
       let TapPointSelector = (ArgumentList.shift() as string).slice(1), TapElement
       if (TapPointSelector[0] === '.') {
         expectName('tap point master name',TapPointSelector.slice(1))
-        TapElement = Visual.Peer.parent().closest('.WAT' + TapPointSelector)
+        TapElement = closestParent(Visual.Peer,'.WAT' + TapPointSelector)
       } else {
         expectUniversalName('tap point name',TapPointSelector)
-        TapElement = Visual.Peer.parent('.WAT').filter(
-          function (this:HTMLElement) {
-            return (VisualOfElement(this).Name === TapPointSelector)
-          }
+        TapElement = closestFilteredParent(
+          Visual.Peer, '.WAT',
+          (Peer:HTMLElement) => (VisualOfElement(Peer).Name === TapPointSelector)
         )
       }
-      if (TapElement.length > 0) {
-        TapPoint = VisualOfElement(TapElement[0])
+      if (TapElement != null) {
+        TapPoint = VisualOfElement(TapElement)
       }
     } else {
       TapPoint = Visual
@@ -4570,12 +4722,10 @@ namespace WAT {
       } else {
         expectUniversalName('injection point name',InjectionPointSelector)
 
-        InjectionElement = closestParent(Visual.Peer,'.WAT')
-        if (InjectionElement != null) {
-          if (VisualOfElement(InjectionElement).Name !== InjectionPointSelector) {
-            InjectionElement = undefined
-          }
-        }
+        InjectionElement = closestFilteredParent(
+          Visual.Peer, '.WAT',
+          (Peer:HTMLElement) => (VisualOfElement(Peer).Name === InjectionPointSelector)
+        )
       }
       if (InjectionElement != null) {
         InjectionPoint = VisualOfElement(InjectionElement)
@@ -4632,10 +4782,10 @@ namespace WAT {
 /**** install event handler for Error Indicators ****/
 
   function installEventHandlerForErrorIndicators () {
-    $(document).off('click','.WAT-ErrorIndicator')
-    $(document).on ('click','.WAT-ErrorIndicator', function (Event) {
-      let ErrorIndicator = $(Event.target)
-      let affectedVisual = VisualOfElement(ErrorIndicator.closest('.WAT')[0])
+    off(document, 'click','.WAT-ErrorIndicator')
+    on (document, 'click','.WAT-ErrorIndicator', function (DOMEvent:Event) {
+      let ErrorIndicator = DOMEvent.target as HTMLElement
+      let affectedVisual = VisualOfElement(ErrorIndicator?.closest('.WAT'))
       if (affectedVisual == null) {
         alert('WAT Error\n\nCould not find Visual for this Error Indicator')
         return
@@ -4683,8 +4833,8 @@ namespace WAT {
 
   const VisualForDOMElement = new WeakMap()             // DOM element -> visual
 
-  function VisualOfElement (Element:HTMLElement):WAT_Visual {
-    return VisualForDOMElement.get(Element)
+  function VisualOfElement (Element:HTMLElement | null):WAT_Visual {
+    return (Element == null ? undefined : VisualForDOMElement.get(Element))
   }
 
 /**** VisualForElement (public version w/ validation) ****/
@@ -5195,8 +5345,8 @@ namespace WAT {
       ?.unregisterReactiveFunctionsOfVisual(Visual)
 
     if (recursively) {
-      Visual.Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Compound,.WAT.Control').each(
-        function (this:HTMLElement) { releaseVisual(VisualOfElement(this),recursively) }
+      filtered(Visual.Peer.children,'.WAT.Card,.WAT.Overlay,.WAT.Compound,.WAT.Control').forEach(
+        (Peer) => { releaseVisual(VisualOfElement(Peer as HTMLElement),recursively) }
       )
     }
   }
@@ -5436,7 +5586,7 @@ namespace WAT {
   /**** isVisible ****/
 
     get isVisible () {
-      return (this.Peer.css('visibility') !== 'hidden')
+      return (css(this.Peer,'visibility') !== 'hidden')
     }
 
     set isVisible (newVisibility:boolean) {
@@ -5450,15 +5600,15 @@ namespace WAT {
 
     get isShown () {
       let Peer = this.Peer
-      if (! document.body.contains(Peer[0])) { return false }
+      if (! document.body.contains(Peer)) { return false }
 
-      while (Peer[0] !== document.body) {
+      while (Peer !== document.body) {
         if (
-          (Peer.css('display')    === 'none') ||
-          (Peer.css('visibility') === 'hidden')
+          (css(Peer,'display')    === 'none') ||
+          (css(Peer,'visibility') === 'hidden')
         ) { return false }
 
-        Peer = Peer.parent()
+        Peer = Peer.parentElement
       }
       return true
     }
@@ -5473,23 +5623,23 @@ namespace WAT {
   /**** isEnabled ****/
 
     get isEnabled () {
-      return ! this.Peer[0].disabled
+      return ! this.Peer.disabled
     }
 
     set isEnabled (newEnabling:boolean) {
       expectBoolean('enabling',newEnabling)
-      this.Peer[0].disabled = ! newEnabling
+      this.Peer.disabled = ! newEnabling
     }
 
   /**** isDisabled ****/
 
     get isDisabled () {
-      return this.Peer[0].disabled
+      return this.Peer.disabled
     }
 
     set isDisabled (newDisabling:boolean) {
       expectBoolean('disabling',newDisabling)
-      this.Peer[0].disabled = newDisabling
+      this.Peer.disabled = newDisabling
     }
 
   /**** enable/disable ****/
@@ -5637,7 +5787,7 @@ namespace WAT {
   /**** Classes ****/
 
     get Classes () {
-      let ClassNameList = this.Peer[0].classList.slice()
+      let ClassNameList = this.Peer.classList.slice()
       return ClassNameList.sort().join(' ')
     }
 
@@ -5663,25 +5813,25 @@ namespace WAT {
         for (let ClassName in ClassNameSet) {
           ClassNameList.push(ClassName)
         }
-      this.Peer[0].className = ClassNameList.join(' ')
+      this.Peer.className = ClassNameList.join(' ')
     }
 
   /**** TabIndex ****/
 
     get TabIndex () {
-      let rawValue = this.Peer.attr('tabindex')
+      let rawValue = attr(this.Peer,'tabindex')
       return (rawValue == null ? undefined : parseInt(rawValue,10))
     }
 
     set TabIndex (newTabIndex:number | undefined) {
       allowIntegerInRange('tab index',newTabIndex, -1,32767)
-      this.Peer.attr('tabindex', newTabIndex)
+      attr(this.Peer, 'tabindex', newTabIndex + '')
     }
 
   /**** PointerSensitivity ****/
 
     get PointerSensitivity () {
-      return (this.Peer.css('pointer-events') !== 'none')
+      return (css(this.Peer,'pointer-events') !== 'none')
     }
 
     set PointerSensitivity (newPointerSensitivity:boolean) {
@@ -5708,7 +5858,7 @@ namespace WAT {
         }
       }
 
-      let Overflows = this.Peer.css('overflow').split(' ')
+      let Overflows = css(this.Peer,'overflow').split(' ')
         let horizontalOverflow = normalizedOverflow(Overflows[0])
         let verticalOverflow   = normalizedOverflow(Overflows[1] || horizontalOverflow)
       return [horizontalOverflow,verticalOverflow]
@@ -5731,7 +5881,7 @@ namespace WAT {
   /**** TextOverflow ****/
 
     get TextOverflow () {
-      return (this.Peer.css('text-overflow') === 'clip' ? 'clip' : 'ellipsis')
+      return (css(this.Peer,'text-overflow') === 'clip' ? 'clip' : 'ellipsis')
     }
 
     set TextOverflow (newTextOverflow:WAT_TextOverflow) {
@@ -5742,7 +5892,7 @@ namespace WAT {
   /**** Opacity ****/
 
     get Opacity () {
-      return Math.round(100 * parseFloat(this.Peer.css('opacity')))
+      return Math.round(100 * parseFloat(css(this.Peer,'opacity')))
     }
 
     set Opacity (newOpacity:number) {
@@ -5888,7 +6038,7 @@ namespace WAT {
   /**** min/maxWidth ****/
 
     get minWidth () {
-      return parseFloat(this.Peer.css('min-width'))
+      return parseFloat(css(this.Peer,'min-width'))
     }
 
     set minWidth (newMinimum:WAT_Dimension) {
@@ -5897,7 +6047,7 @@ namespace WAT {
     }
 
     get maxWidth () {
-      let maxWidth = this.Peer.css('max-width')
+      let maxWidth = css(this.Peer,'max-width')
       return (maxWidth === 'none' ? Infinity : parseFloat(maxWidth))
     }
 
@@ -5913,7 +6063,7 @@ namespace WAT {
   /**** min/maxHeight ****/
 
     get minHeight () {
-      return parseFloat(this.Peer.css('min-height'))
+      return parseFloat(css(this.Peer,'min-height'))
     }
 
     set minHeight (newMinimum:WAT_Dimension) {
@@ -5922,7 +6072,7 @@ namespace WAT {
     }
 
     get maxHeight () {
-      let maxHeight = this.Peer.css('max-height')
+      let maxHeight = css(this.Peer,'max-height')
       return (maxHeight === 'none' ? Infinity : parseFloat(maxHeight))
     }
 
@@ -5955,7 +6105,7 @@ namespace WAT {
   /**** FontFamily ****/
 
     get FontFamily () {
-      return this.Peer.css('font-family')
+      return css(this.Peer,'font-family')
     }
 
     set FontFamily (newFontFamily:WAT_Textline) {
@@ -5966,7 +6116,7 @@ namespace WAT {
   /**** FontSize ****/
 
     get FontSize () {
-      return parseFloat(this.Peer.css('font-size'))
+      return parseFloat(css(this.Peer,'font-size'))
     }
 
     set FontSize (newFontSize:WAT_Dimension) {
@@ -5980,7 +6130,7 @@ namespace WAT {
   /**** FontWeight ****/
 
     get FontWeight () {
-      let FontWeight = this.Peer.css('font-weight')
+      let FontWeight = css(this.Peer,'font-weight')
       switch (FontWeight) {
         case 'lighter':  case 'normal':
         case 'bolder':   case 'bold':
@@ -6014,7 +6164,7 @@ namespace WAT {
   /**** FontStyle ****/
 
     get FontStyle () {
-      let FontStyle = this.Peer.css('font-style')
+      let FontStyle = css(this.Peer,'font-style')
       switch (FontStyle) {
         case 'normal':
         case 'italic':
@@ -6032,7 +6182,7 @@ namespace WAT {
   /**** LineHeight ****/
 
     get LineHeight () {
-      let LineHeight = this.Peer.css('line-height')
+      let LineHeight = css(this.Peer,'line-height')
       switch (true) {
         case (LineHeight === 'normal'):
           return Math.round(this.FontSize * 1.5)
@@ -6058,7 +6208,7 @@ namespace WAT {
         textDecorationColor, textDecorationLine, textDecorationStyle,
 // @ts-ignore
         textDecorationThickness
-      } = window.getComputedStyle(this.Peer[0])
+      } = window.getComputedStyle(this.Peer)
 
       if (
         (textDecorationLine === 'none') ||
@@ -6118,7 +6268,7 @@ namespace WAT {
   /**** TextShadow ****/
 
     get TextShadow () {
-      let TextShadow = this.Peer.css('text-shadow')
+      let TextShadow = css(this.Peer,'text-shadow')
       if (TextShadow === 'none') {
         return { xOffset:0, yOffset:0, BlurRadius:0, Color:'#00000000' }
       } else {
@@ -6161,7 +6311,7 @@ namespace WAT {
   /**** TextAlignment ****/
 
     get TextAlignment () {
-      return this.Peer.css('text-align')
+      return css(this.Peer,'text-align')
     }
 
     set TextAlignment (newTextAlignment:WAT_TextAlignment) {
@@ -6172,7 +6322,7 @@ namespace WAT {
   /**** ForegroundColor ****/
 
     get ForegroundColor () {
-      return HexColor(this.Peer.css('color'))
+      return HexColor(css(this.Peer,'color'))
     }
 
     set ForegroundColor (newColor:WAT_Color) {
@@ -6191,7 +6341,7 @@ namespace WAT {
   /**** BackgroundColor ****/
 
     get BackgroundColor () {
-      return HexColor(this.Peer.css('background-color'))
+      return HexColor(css(this.Peer,'background-color'))
     }
 
     set BackgroundColor (newColor:WAT_Color) {
@@ -6207,7 +6357,7 @@ namespace WAT {
     get BackgroundTexture () {
       let {
         backgroundImage, backgroundPosition, backgroundSize, backgroundRepeat
-      } = window.getComputedStyle(this.Peer[0])
+      } = window.getComputedStyle(this.Peer)
 
       let Result = { ImageURL:'', Mode:'normal', xOffset:0, yOffset:0 }
         if (backgroundImage !== 'none') {
@@ -6266,10 +6416,10 @@ namespace WAT {
     get BorderWidths () {
       let Peer = this.Peer
       return [
-        parseFloat(Peer.css('border-top-width')),
-        parseFloat(Peer.css('border-right-width')),
-        parseFloat(Peer.css('border-bottom-width')),
-        parseFloat(Peer.css('border-left-width'))
+        parseFloat(css(Peer,'border-top-width')),
+        parseFloat(css(Peer,'border-right-width')),
+        parseFloat(css(Peer,'border-bottom-width')),
+        parseFloat(css(Peer,'border-left-width'))
       ]
     }
 
@@ -6304,10 +6454,10 @@ namespace WAT {
     get BorderColors () {
       let Peer = this.Peer
       return [
-        HexColor(Peer.css('border-top-color')),
-        HexColor(Peer.css('border-right-color')),
-        HexColor(Peer.css('border-bottom-color')),
-        HexColor(Peer.css('border-left-color'))
+        HexColor(css(Peer,'border-top-color')),
+        HexColor(css(Peer,'border-right-color')),
+        HexColor(css(Peer,'border-bottom-color')),
+        HexColor(css(Peer,'border-left-color'))
       ]
     }
 
@@ -6346,10 +6496,10 @@ namespace WAT {
 
       let Peer = this.Peer
       return [
-        normalizedBorderStyle(Peer.css('border-top-style')),
-        normalizedBorderStyle(Peer.css('border-right-style')),
-        normalizedBorderStyle(Peer.css('border-bottom-style')),
-        normalizedBorderStyle(Peer.css('border-left-style'))
+        normalizedBorderStyle(css(Peer,'border-top-style')),
+        normalizedBorderStyle(css(Peer,'border-right-style')),
+        normalizedBorderStyle(css(Peer,'border-bottom-style')),
+        normalizedBorderStyle(css(Peer,'border-left-style'))
       ]
     }
 
@@ -6384,10 +6534,10 @@ namespace WAT {
     get BorderRadii () {
       let Peer = this.Peer
       return [
-        parseFloat(Peer.css('border-top-left-radius')),
-        parseFloat(Peer.css('border-top-right-radius')),
-        parseFloat(Peer.css('border-bottom-right-radius')),
-        parseFloat(Peer.css('border-bottom-left-radius'))
+        parseFloat(css(Peer,'border-top-left-radius')),
+        parseFloat(css(Peer,'border-top-right-radius')),
+        parseFloat(css(Peer,'border-bottom-right-radius')),
+        parseFloat(css(Peer,'border-bottom-left-radius'))
       ]
     }
 
@@ -6415,7 +6565,7 @@ namespace WAT {
   /**** BoxShadow ****/
 
     get BoxShadow () {
-      let BoxShadow = this.Peer.css('box-shadow')
+      let BoxShadow = css(this.Peer,'box-shadow')
       if (BoxShadow === 'none') {
         return { isInset:false, xOffset:0, yOffset:0, BlurRadius:0, SpreadRadius:0, Color:'#00000000' }
       } else {
@@ -6467,7 +6617,7 @@ namespace WAT {
   /**** Cursor ****/
 
     get Cursor () {
-      let CursorSpec = this.Peer.css('cursor')
+      let CursorSpec = css(this.Peer,'cursor')
       return (
         CursorSpec.indexOf(',') > 0
         ? CursorSpec.replace(/^.*,\s*/,'')
@@ -6481,7 +6631,7 @@ namespace WAT {
       if (newCursor == null) {
         applyStyleToVisual(this, 'cursor',null)// also clears any "customCursor"
       } else {
-        let CursorSpec = this.Peer.css('cursor')
+        let CursorSpec = css(this.Peer,'cursor')
         let Prefix = (
           CursorSpec.indexOf(',') > 0
           ? CursorSpec.replace(/,[^,]+$/,', ')
@@ -6495,7 +6645,7 @@ namespace WAT {
   /**** customCursor ****/
 
     get customCursor () {
-      let Match = /^url\(([^\)])\)(\s+\d+)?(\s+\d+)?,/.exec(this.Peer.css('cursor'))
+      let Match = /^url\(([^\)])\)(\s+\d+)?(\s+\d+)?,/.exec(css(this.Peer,'cursor'))
       if (Match == null) {
         return undefined
       } else {
@@ -6519,7 +6669,7 @@ namespace WAT {
         expectNumberInRange('custom cursor y offset',newCustomCursor.yOffset, 0,31)
       }
 
-      let CursorSpec     = this.Peer.css('cursor')
+      let CursorSpec     = css(this.Peer,'cursor')
       let standardCursor = (
         CursorSpec.indexOf(',') > 0
         ? CursorSpec.replace(/^.*,\s*/,'')
@@ -6655,8 +6805,8 @@ namespace WAT {
 
       let Result:WAT_Card | undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Card').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Card
+        filtered(Peer.children,'.WAT.Card').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Card
           if (Candidate.Name === Name) { Result = Candidate }
         })
       return Result
@@ -6669,8 +6819,8 @@ namespace WAT {
 
       let Result:WAT_Card | undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Card').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Card
+        filtered(Peer.children,'.WAT.Card').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Card
           if (Candidate.Label === Label) { Result = Candidate }
         })
       return Result
@@ -6900,10 +7050,10 @@ namespace WAT {
       if (Card == null) { return }                  // this method is idempotent
 
       releaseVisual(Card,'recursively')
-      Card.Peer.remove()
+      remove(Card.Peer)
 
       if (this.CardCount === 0) {  // an applet should always contain >= 1 cards
-        this.newCardInsertedAt('plainCard',0).Peer.css('visibility','visible')
+        css(this.newCardInsertedAt('plainCard',0).Peer,'visibility','visible')
       }
     }
 
@@ -6962,11 +7112,11 @@ namespace WAT {
       } else {
         let CardElement = PeerOfVisual(this.CardAtIndex(CardIndex) as WAT_Card)
 
-        this.Peer.children('.WAT.Card').each(function (this:HTMLElement) {
-          if (this === CardElement) {
-            $(this).css('visibility','visible')
+        filtered(this.Peer.children,'.WAT.Card').forEach((Peer) => {
+          if (Peer === CardElement) {
+            css(Peer as HTMLElement, 'visibility','visible')
           } else {
-            $(this).css('visibility','hidden')
+            css(Peer as HTMLElement, 'visibility','hidden')
           }
         })
       }
@@ -7059,8 +7209,8 @@ namespace WAT {
 
       let Result:WAT_Overlay | undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Overlay').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Overlay
+        filtered(Peer.children,'.WAT.Overlay').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Overlay
           if (Candidate.Name === Name) { Result = Candidate }
         })
       return Result
@@ -7073,8 +7223,8 @@ namespace WAT {
 
       let Result:WAT_Overlay | undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Overlay').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Overlay
+        filtered(Peer.children,'.WAT.Overlay').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Overlay
           if (Candidate.Label === Label) { Result = Candidate }
         })
       return Result
@@ -7308,7 +7458,7 @@ namespace WAT {
       if (Overlay == null) { return }               // this method is idempotent
 
       releaseVisual(Overlay,'recursively')
-      Overlay.Peer.remove()
+      remove(Overlay.Peer)
     }
 
   /**** frontmostOverlayOfClass ****/
@@ -7316,11 +7466,12 @@ namespace WAT {
     public frontmostOverlayOfClass (ClassName:WAT_Name):WAT_Overlay | undefined {
       expectName('HTML class name',ClassName)
 
-      let Candidate = this.Peer.children('.WAT.Overlay.' + ClassName).last()
+      let PeerList = filtered(this.Peer.children,'.WAT.Overlay.' + ClassName)
+      let Candidate = PeerList[PeerList.length-1]
       return (
-        Candidate.length > 0
-        ? VisualOfElement(Candidate[0]) as WAT_Overlay
-        : undefined
+        Candidate == null
+        ? undefined
+        : VisualOfElement(Candidate) as WAT_Overlay
       )
     }
 
@@ -7337,17 +7488,17 @@ namespace WAT {
         'this applet'
       )
 
-      let OverlayPeer = Overlay.Peer, OverlayElement = OverlayPeer[0]
-      if (! OverlayPeer.hasClass(ClassName)) throwError(
+      let OverlayPeer = Overlay.Peer
+      if (! OverlayPeer.classList.contains(ClassName)) throwError(
         'InvalidArgument: the given overlay does not have class ' +
         quoted(ClassName) + ' itself'
       )
 
       let OverlayFound = false
-      this.Peer.children('.WAT.Overlay.' + ClassName).each(function (this:HTMLElement) {
+      filtered(this.Peer.children,'.WAT.Overlay.' + ClassName).forEach((Peer) => {
         switch (true) {
-          case (OverlayElement === this): OverlayFound = true; break
-          case OverlayFound:              $(this).insertBefore(OverlayPeer)
+          case (OverlayPeer === Peer): OverlayFound = true; break
+          case OverlayFound:           this.Peer.insertBefore(Peer,OverlayPeer)
         }             // does not touch Overlay itself (keeps menus etc. intact)
       })
     }
@@ -7430,8 +7581,8 @@ namespace WAT {
 
       let Result:WAT_Control|WAT_Compound|undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Control,.WAT.Compound').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Control|WAT_Compound
+        filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Control|WAT_Compound
           if (Candidate.Name === Name) { Result = Candidate }
         })
       return Result
@@ -7444,8 +7595,8 @@ namespace WAT {
 
       let Result:WAT_Control|WAT_Compound|undefined = undefined
         let Peer = this.Peer
-        Peer.children('.WAT.Control,.WAT.Compound').each(function (this:HTMLElement) {
-          let Candidate = VisualForElement(this) as WAT_Control|WAT_Compound
+        filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach((Peer) => {
+          let Candidate = VisualForElement(Peer as HTMLElement) as WAT_Control|WAT_Compound
           if (Candidate.Label === Label) { Result = Candidate }
         })
       return Result
@@ -7741,7 +7892,7 @@ namespace WAT {
       if (Component == null) { return }             // this method is idempotent
 
       releaseVisual(Component,'recursively')
-      Component.Peer.remove()
+      remove(Component.Peer)
     }
   }
 
@@ -7761,7 +7912,7 @@ namespace WAT {
   /**** isVisible ****/
 
     get isVisible () {
-      return (this.Peer.css('visibility') !== 'hidden')
+      return (css(this.Peer,'visibility') !== 'hidden')
     }
 
     set isVisible (newVisibility:boolean) {
@@ -7901,16 +8052,16 @@ namespace WAT {
       let Applet = this.Applet
 
       if (Constraint === 'withinApplet') { // x/y are coord.s relative to applet
-        x = Math.max(0, Math.min(x, Applet.Width-this.Peer[0].offsetWidth))
-        y = Math.max(0, Math.min(y,Applet.Height-this.Peer[0].offsetHeight))
+        x = Math.max(0, Math.min(x, Applet.Width-this.Peer.offsetWidth))
+        y = Math.max(0, Math.min(y,Applet.Height-this.Peer.offsetHeight))
 
         changeGeometryOfVisualTo(this, x,y, undefined,undefined)
       } else {
         let ViewportWidth  = document.body.clientWidth
         let ViewportHeight = Math.max(window.innerHeight,document.body.clientHeight)
 
-        x = Math.max(0, Math.min(x, ViewportWidth-this.Peer[0].offsetWidth))
-        y = Math.max(0, Math.min(y,ViewportHeight-this.Peer[0].offsetHeight))
+        x = Math.max(0, Math.min(x, ViewportWidth-this.Peer.offsetWidth))
+        y = Math.max(0, Math.min(y,ViewportHeight-this.Peer.offsetHeight))
 
         let AppletGeometryOnDisplay = Applet.GeometryOnDisplay
         let AppletX = AppletGeometryOnDisplay.x
