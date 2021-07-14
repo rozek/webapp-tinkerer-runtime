@@ -1,5 +1,3 @@
-import $ from 'jquery';
-
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -4232,12 +4230,6 @@ var JIL = /*#__PURE__*/Object.freeze({
 var WAT;
 (function (WAT) {
     WAT.Version = '0.1.0';
-    /**** check any requirements ****/
-    if ((typeof jQuery !== 'function') || (jQuery.fn == null)) {
-        window.alert('"jQuery" not found\n\n' +
-            'The WebApp Tinkerer needs "jQuery" to be loaded first');
-        throw new Error('MissingDependency: "jQuery" not found');
-    }
     WAT.WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
     WAT.WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
     WAT.WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
@@ -4284,14 +4276,6 @@ var WAT;
     /**** allow/expect[ed]Element ****/
     WAT.allowElement = ValidatorForClassifier(ValueIsElement, acceptNil, 'DOM element'), WAT.allowedElement = WAT.allowElement;
     WAT.expectElement = ValidatorForClassifier(ValueIsElement, rejectNil, 'DOM element'), WAT.expectedElement = WAT.expectElement;
-    /**** ValueIs$Instance ****/
-    function ValueIs$Instance(Value) {
-        return (Value instanceof $);
-    }
-    WAT.ValueIs$Instance = ValueIs$Instance;
-    /**** allow/expect[ed]$Instance ****/
-    WAT.allow$Instance = ValidatorForClassifier(ValueIs$Instance, acceptNil, '"jQuery" instance'), WAT.allowed$Instance = WAT.allow$Instance;
-    WAT.expect$Instance = ValidatorForClassifier(ValueIs$Instance, rejectNil, '"jQuery" instance'), WAT.expected$Instance = WAT.expect$Instance;
     /**** ValueIsVisual ****/
     function ValueIsVisual(Value) {
         return (Value instanceof WAT_Visual);
@@ -4460,6 +4444,168 @@ var WAT;
         var Result = Object.create(null);
         KeyList.forEach(function (Key) { return Result[Key] = Key; });
         return Result;
+    }
+    /**** camelized ****/
+    function camelized(Original) {
+        return Original.replace(/-([a-z])/gi, function (Match) { return Match[1].toUpperCase(); });
+    }
+    /**** pruned ****/
+    function pruned(Original) {
+        return Original.replace(/^\s+/, '').replace(/\s+$/, '').replace(/\s+/g, ' ');
+    }
+    function forEach(ElementList, Handler) {
+        Array.prototype.forEach.call(ElementList, Handler);
+    }
+    function filtered(ElementList, Filter) {
+        return (ValueIsString(Filter)
+            ? Array.prototype.filter.call(ElementList, function (Candidate) { return Candidate.matches(Filter); })
+            : Array.prototype.filter.call(ElementList, Filter));
+    }
+    /**** closestParent ****/
+    function closestParent(DOMElement, Selector) {
+        var outerElement = DOMElement.parentElement;
+        if (outerElement == null) {
+            return undefined;
+        }
+        return outerElement.closest(Selector);
+    }
+    /**** closestFilteredParent ****/
+    function closestFilteredParent(DOMElement, Selector, Filter) {
+        var outerElement = DOMElement.parentElement;
+        if (outerElement == null) {
+            return undefined;
+        }
+        outerElement = outerElement.closest(Selector);
+        while (outerElement != null) {
+            if (Filter(outerElement) == true) {
+                return outerElement;
+            }
+            outerElement = outerElement.closest(Selector);
+        }
+        return undefined;
+    }
+    /**** attr ****/
+    function attr(DOMElement, Name, Value) {
+        if (arguments.length === 2) {
+            return DOMElement.getAttribute(Name);
+        }
+        else {
+            if (Value == null) {
+                DOMElement.removeAttribute(Name);
+            }
+            else {
+                DOMElement.setAttribute(Name, Value);
+            }
+        }
+    }
+    /**** css ****/
+    function css(DOMElement, Name, Value) {
+        if (arguments.length === 2) {
+            // @ts-ignore we want to index literally!
+            return window.getComputedStyle(DOMElement)[camelized(Name)];
+        }
+        else {
+            // @ts-ignore we want to index literally!
+            DOMElement.style[camelized(Name)] = Value;
+        }
+    }
+    /**** html ****/
+    function html(DOMElement, Value) {
+        if (arguments.length === 1) {
+            return DOMElement.innerHTML;
+        }
+        else {
+            DOMElement.innerHTML = Value;
+        }
+    }
+    /**** data ****/
+    function data(DOMElement, Name, Value) {
+        if (arguments.length === 2) {
+            return DOMElement.dataset[camelized(Name)];
+        }
+        else {
+            DOMElement.dataset[camelized(Name)] = Value;
+        }
+    }
+    var EventHandlerRegistry = new WeakMap();
+    function registerEventHandlerIn(Element, EventName, Selector, Handler, onceOnly) {
+        var EventNames = pruned(EventName).split(' ');
+        /**** construct actual event handler ****/
+        var actualHandler = function EventHandler(DOMEvent) {
+            try {
+                if ((Selector != null) &&
+                    !DOMEvent.target.matches(Selector)) {
+                    return;
+                }
+                var Result = Handler(DOMEvent);
+                if (Result === false) {
+                    DOMEvent.stopPropagation();
+                    DOMEvent.preventDefault();
+                }
+            }
+            catch (Signal) {
+                console.error('event handler failed with', Signal);
+            }
+            if (onceOnly) {
+                off(DOMEvent.currentTarget, DOMEvent.type, Selector, Handler);
+            }
+        };
+        /**** register and attach event handlers ****/
+        var HandlerList = EventHandlerRegistry.get(Element);
+        if (HandlerList == null) {
+            EventHandlerRegistry.set(Element, HandlerList = []);
+        }
+        EventNames.forEach(function (EventName) {
+            HandlerList.push({ EventName: EventName, Selector: Selector, actualHandler: actualHandler, Handler: Handler });
+            Element.addEventListener(EventName, actualHandler, false);
+        });
+    }
+    /**** on ****/
+    function on(Element, EventName, Selector, Handler) {
+        registerEventHandlerIn(Element, EventName, Selector, Handler, false);
+    }
+    /**** off ****/
+    function off(Element, EventName, Selector, Handler) {
+        var EventNames = undefined;
+        if (EventName != null) {
+            EventNames = pruned(EventName).split(' ');
+        }
+        /**** unregister and detach event handlers ****/
+        var HandlerList = EventHandlerRegistry.get(Element);
+        if (HandlerList == null) {
+            return;
+        }
+        for (var i = HandlerList.length; i >= 0; i--) {
+            var HandlerEntry = HandlerList[i];
+            if (((EventNames == null) || (EventNames.indexOf(HandlerEntry.EventName) >= 0)) &&
+                ((Selector == null) || (HandlerEntry.Selector === Selector)) &&
+                ((Handler == null) || (HandlerEntry.Handler === Handler))) {
+                Element.removeEventListener(HandlerEntry.EventName, HandlerEntry.actualHandler);
+                HandlerList.splice(i, 1);
+            }
+        }
+    }
+    /**** remove ****/
+    function remove(ElementOrList) {
+        switch (true) {
+            case ValueIsElement(ElementOrList):
+                var outerElement = ElementOrList.parentElement;
+                if (outerElement != null) {
+                    outerElement.removeChild(ElementOrList);
+                }
+                break;
+            case ValueIsArray(ElementOrList):
+                ElementOrList.forEach(function (Element) { return remove(Element); });
+                break;
+            default:
+                forEach(ElementOrList, function (Element) { return remove(Element); });
+        }
+    }
+    /**** ElementFromHTML ****/
+    function ElementFromHTML(HTML) {
+        var auxElement = document.createElement('div');
+        auxElement.innerHTML = HTML;
+        return auxElement.firstChild;
     }
     function parseHTML(HTML, Callbacks) {
         var StartTagPattern = /^<([-a-z0-9_]+)((?:[\s\xA0]+[-a-z0-9_]+(?:[\s\xA0]*=[\s\xA0]*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s\xA0]+))?)*)[\s\xA0]*(\/?)>/i;
@@ -4770,35 +4916,35 @@ var WAT;
         var Resource;
         switch (ResourceInfo.Form) {
             case 'literalStyle':
-                Resource = $('<style></style>');
-                Resource.html(ResourceInfo.Value || '');
+                Resource = ElementFromHTML('<style></style>');
+                html(Resource, ResourceInfo.Value || '');
                 break;
             case 'externalStyle':
-                Resource = $('<link></link>');
+                Resource = ElementFromHTML('<link></link>');
                 break;
             case 'literalScript':
-                Resource = $('<' + 'script><' + '/script>');
-                Resource.html(ResourceInfo.Value || '');
+                Resource = ElementFromHTML('<' + 'script><' + '/script>');
+                html(Resource, ResourceInfo.Value || '');
                 break;
             case 'externalScript':
-                Resource = $('<' + 'script><' + '/script>');
+                Resource = ElementFromHTML('<' + 'script><' + '/script>');
                 break;
             default: throwError('InternalError: unforeseen resource form');
         }
         var AttributeSet = ResourceInfo.AttributeSet || {};
         for (var AttributeName in AttributeSet) {
             if (AttributeSet.hasOwnProperty(AttributeName)) {
-                Resource.attr(AttributeName, AttributeSet[AttributeName].Value);
+                attr(Resource, AttributeName, AttributeSet[AttributeName].Value);
             }
         }
         switch (ResourceInfo.Form) {
             case 'literalStyle':
             case 'externalStyle':
-                $(document.head).append(Resource);
+                document.head.appendChild(Resource);
                 break;
             case 'literalScript':
                 try {
-                    $(document.head).append(Resource);
+                    document.head.appendChild(Resource);
                 }
                 catch (Signal) {
                     console.warn('could not attach literal script', Signal);
@@ -4806,12 +4952,11 @@ var WAT;
                 }
                 break;
             case 'externalScript':
-                //      $(document.head).append(Resource)     // does not work, pure JS required
-                document.head.appendChild(Resource[0]);
+                document.head.appendChild(Resource);
                 break;
             default: throwError('InternalError: unforeseen resource form');
         }
-        UsageCountOfResource.set(Resource[0], 1);
+        UsageCountOfResource.set(Resource, 1);
     }
     /**** parsedResources - parses resources string into ResourceInfo list ****/
     function parsedResources(Resources) {
@@ -4911,13 +5056,11 @@ var WAT;
     }
     /**** reuseResource ****/
     function reuseResource(Resource) {
-        var Element = Resource[0];
-        UsageCountOfResource.set(Element, (UsageCountOfResource.get(Element) || 0) + 1);
+        UsageCountOfResource.set(Resource, (UsageCountOfResource.get(Resource) || 0) + 1);
     }
     /**** unuseResource ****/
     function unuseResource(Resource) {
-        var Element = Resource[0];
-        UsageCountOfResource.set(Element, Math.max(0, (UsageCountOfResource.get(Element) || 0) - 1));
+        UsageCountOfResource.set(Resource, Math.max(0, (UsageCountOfResource.get(Resource) || 0) - 1));
     }
     var ResourceCollection;
     /**** clearResourceCollection - to be called prior to a resource collection ****/
@@ -4926,13 +5069,12 @@ var WAT;
     }
     /**** collectResource ****/
     function collectResource(Resource) {
-        var ResourceElement = Resource[0];
         for (var i = 0, l = ResourceCollection.length; i < l; i++) {
-            if (ResourceCollection[i] === ResourceElement) {
+            if (ResourceCollection[i] === Resource) {
                 return;
             }
         }
-        ResourceCollection.push(ResourceElement);
+        ResourceCollection.push(Resource);
     }
     /**** collectedResources ****/
     function collectedResources() {
@@ -4961,29 +5103,29 @@ var WAT;
         }
     }
     /**** ResourceInfoMatchesElement ****/
-    function ResourceInfoMatchesElement(ResourceInfo, Element) {
+    function ResourceInfoMatchesElement(ResourceInfo, DOMElement) {
         switch (ResourceInfo.Form) {
-            case 'literalStyle': return ((Element[0].tagName === 'STYLE') &&
-                ((Element.attr('type') || 'text/css') === 'text/css') &&
-                ((Element.attr('media') || 'all') === ResourceInfo.Media) &&
-                ((Element.attr('title') || undefined) === ResourceInfo.Title) &&
-                (Element.text().trim() === ResourceInfo.Value));
-            case 'externalStyle': return ((Element[0].tagName === 'LINK') && (Element.attr('rel') === 'stylesheet') &&
-                ((Element.attr('type') || 'text/css') === 'text/css') &&
-                ((Element.attr('media') || 'all') === ResourceInfo.Media) &&
-                ((Element.attr('title') || undefined) === ResourceInfo.Title) &&
-                (Element.attr('href') === ResourceInfo.Value) // TODO: normalize URL
+            case 'literalStyle': return ((DOMElement.tagName === 'STYLE') &&
+                ((attr(DOMElement, 'type') || 'text/css') === 'text/css') &&
+                ((attr(DOMElement, 'media') || 'all') === ResourceInfo.Media) &&
+                ((attr(DOMElement, 'title') || undefined) === ResourceInfo.Title) &&
+                ((DOMElement.textContent || '').trim() === ResourceInfo.Value));
+            case 'externalStyle': return ((DOMElement.tagName === 'LINK') && (attr(DOMElement, 'rel') === 'stylesheet') &&
+                ((attr(DOMElement, 'type') || 'text/css') === 'text/css') &&
+                ((attr(DOMElement, 'media') || 'all') === ResourceInfo.Media) &&
+                ((attr(DOMElement, 'title') || undefined) === ResourceInfo.Title) &&
+                (attr(DOMElement, 'href') === ResourceInfo.Value) // TODO: normalize URL
             );
-            case 'literalScript': return ((Element[0].tagName === 'SCRIPT') && ((Element.attr('type') == null) ||
-                (Element.attr('type') === 'application/javascript') ||
-                (Element.attr('type') === 'text/javascript')) &&
-                ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-                (Element.text().trim() === ResourceInfo.Value));
-            case 'externalScript': return ((Element[0].tagName === 'SCRIPT') && ((Element.attr('type') == null) ||
-                (Element.attr('type') === 'application/javascript') ||
-                (Element.attr('type') === 'text/javascript')) &&
-                ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-                (Element.attr('src') === ResourceInfo.Value) // TODO: normalize URL
+            case 'literalScript': return ((DOMElement.tagName === 'SCRIPT') && ((attr(DOMElement, 'type') == null) ||
+                (attr(DOMElement, 'type') === 'application/javascript') ||
+                (attr(DOMElement, 'type') === 'text/javascript')) &&
+                ((attr(DOMElement, 'nomodule') || false) === ResourceInfo.noModule) &&
+                ((DOMElement.textContent || '').trim() === ResourceInfo.Value));
+            case 'externalScript': return ((DOMElement.tagName === 'SCRIPT') && ((attr(DOMElement, 'type') == null) ||
+                (attr(DOMElement, 'type') === 'application/javascript') ||
+                (attr(DOMElement, 'type') === 'text/javascript')) &&
+                ((attr(DOMElement, 'nomodule') || false) === ResourceInfo.noModule) &&
+                (attr(DOMElement, 'src') === ResourceInfo.Value) // TODO: normalize URL
             );
             default: throwError('InternalError: unforeseen resource form');
         }
@@ -4991,13 +5133,12 @@ var WAT;
     /**** ElementMatchingResourceInfo ****/
     function ElementMatchingResourceInfo(ResourceInfo) {
         var matchingElement = undefined;
-        $(document.head).children('link,style,script').each(function () {
-            var Element = $(this);
-            if (ResourceInfoMatchesElement(ResourceInfo, Element)) {
-                matchingElement = Element;
+        filtered(document.head.children, 'link,style,script').forEach(function (DOMElement) {
+            if (ResourceInfoMatchesElement(ResourceInfo, DOMElement)) {
+                matchingElement = DOMElement;
             }
         });
-        return matchingElement || $();
+        return matchingElement;
     }
     //----------------------------------------------------------------------------//
     //                              Backup Handling                               //
@@ -5039,8 +5180,8 @@ var WAT;
                                     return [2 /*return*/, false];
                                 }
                                 break;
-                            case ValueIs$Instance(AppletOrPeer):
-                                Candidate = AppletOrPeer.data('wat-name');
+                            case ValueIsElement(AppletOrPeer):
+                                Candidate = data(AppletOrPeer, 'wat-name');
                                 if (ValueIsName(Candidate)) {
                                     AppletName = Candidate;
                                 }
@@ -5077,8 +5218,8 @@ var WAT;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        WAT.expect$Instance('applet peer', Peer);
-                        AppletName = Peer.data('wat-name');
+                        WAT.expectElement('applet peer', Peer);
+                        AppletName = data(Peer, 'wat-name');
                         if (!ValueIsName(AppletName))
                             throwError('InvalidArgument: the given applet peer does not have a valid name');
                         _a.label = 1;
@@ -5096,7 +5237,7 @@ var WAT;
                         return [3 /*break*/, 4];
                     case 4:
                         deserializeAppletIntoPeer(Serialization, Peer);
-                        return [2 /*return*/, VisualOfElement(Peer[0])];
+                        return [2 /*return*/, VisualOfElement(Peer)];
                 }
             });
         });
@@ -5312,26 +5453,26 @@ var WAT;
         }
         /**** preserveUniqueIdIn ****/
         function preserveUniqueIdIn(Peer) {
-            var Visual = VisualForDOMElement.get(Peer[0]);
-            Peer.attr('data-wat-unique-id', InternalsForVisual.get(Visual).uniqueId);
-            Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound').toArray()
-                .forEach(function () {
-                preserveUniqueIdIn($(this));
+            var Visual = VisualForDOMElement.get(Peer);
+            attr(Peer, 'data-wat-unique-id', InternalsForVisual.get(Visual).uniqueId);
+            filtered(Peer.children, '.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
+                .forEach(function (Peer) {
+                preserveUniqueIdIn(Peer);
             });
         }
         /**** removeUniqueIdFrom ****/
         function removeUniqueIdFrom(Peer) {
-            Peer.attr('data-wat-unique-id', null);
-            Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound').toArray()
-                .forEach(function () {
-                removeUniqueIdFrom($(this));
+            attr(Peer, 'data-wat-unique-id', undefined);
+            filtered(Peer.children, '.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
+                .forEach(function (Peer) {
+                removeUniqueIdFrom(Peer);
             });
         }
         triggerRecursively('before-serialization');
         if (withUniqueId) {
             preserveUniqueIdIn(Visual.Peer);
         }
-        var Serialization = Visual.Peer[0].outerHTML;
+        var Serialization = Visual.Peer.outerHTML;
         if (withUniqueId) {
             removeUniqueIdFrom(Visual.Peer);
         }
@@ -5495,13 +5636,13 @@ var WAT;
         /**** clear old applet ****/
         var duringStartUp = (WAT_isReady && !WAT_isRunning);
         if (duringStartUp) {
-            Peer.html('');
+            html(Peer, '');
         }
         else {
-            var oldApplet = VisualOfElement(Peer[0]);
+            var oldApplet = VisualOfElement(Peer);
             oldApplet.CardList.forEach(function (Card) { return Card.remove(); });
             oldApplet.OverlayList.forEach(function (Overlay) { return Overlay.remove(); });
-            Peer.html(''); // also removes mandatory card (w/o event handlers)
+            html(Peer, ''); // also removes mandatory card (w/o event handlers)
             InternalsForVisual.delete(oldApplet);
         }
         /**** if need be: install given masters ****/
@@ -5514,22 +5655,21 @@ var WAT;
                 }
             });
         }
-        var auxiliaryPeer = $(serializedApplets[0]);
-        var auxiliaryElement = auxiliaryPeer[0], Element = Peer[0];
-        while (auxiliaryElement.hasChildNodes()) {
-            Element.appendChild(auxiliaryElement.firstChild);
+        var auxiliaryPeer = ElementFromHTML(serializedApplets[0]);
+        while (auxiliaryPeer.hasChildNodes()) {
+            Peer.appendChild(auxiliaryPeer.firstChild);
         }
-        var AttributeList = auxiliaryElement.attributes;
+        var AttributeList = auxiliaryPeer.attributes;
         for (var i = 0, l = AttributeList.length; i < l; i++) {
             var AttributeName = AttributeList[i].name;
             switch (AttributeName) {
                 case 'id':
                 case 'class':
                 case 'style': break;
-                default: Peer.attr(AttributeName, AttributeList[i].value);
+                default: attr(Peer, AttributeName, AttributeList[i].value);
             }
         }
-        var StyleSet = auxiliaryElement.style;
+        var StyleSet = auxiliaryPeer.style;
         for (var Property in StyleSet) {
             switch (Property) {
                 case 'display':
@@ -5541,7 +5681,7 @@ var WAT;
                 case 'height':
                 case 'bottom': break;
                 default: if (StyleSet.hasOwnProperty(Property)) {
-                    Peer.css(Property, StyleSet[Property]);
+                    css(Peer, Property, StyleSet[Property]);
                 }
             }
         }
@@ -5553,69 +5693,9 @@ var WAT;
         expectText('serialization', Serialization);
         var Peer = oldApplet.Peer;
         deserializeAppletIntoPeer(Serialization, Peer);
-        return VisualOfElement(Peer[0]);
+        return VisualOfElement(Peer);
     }
     WAT.AppletDeserializedFrom = AppletDeserializedFrom;
-    /**** CardDeserializedInto ****/
-    function CardDeserializedInto(Serialization, Applet, Index) {
-        var CardPeer = $(Serialization);
-        var NeighbourCard = Applet.CardAtIndex(Index);
-        if (NeighbourCard == null) {
-            Applet.Peer.append(CardPeer);
-        }
-        else {
-            CardPeer.insertBefore(NeighbourCard.Peer);
-        }
-        return VisualBuiltFromPeer(CardPeer, 'Card');
-    }
-    /**** OverlayDeserializedInto ****/
-    function OverlayDeserializedInto(Serialization, Applet, Index) {
-        var OverlayPeer = $(Serialization);
-        var NeighbourOverlay = Applet.OverlayAtIndex(Index);
-        if (NeighbourOverlay == null) {
-            Applet.Peer.append(OverlayPeer);
-        }
-        else {
-            OverlayPeer.insertBefore(NeighbourOverlay.Peer);
-        }
-        return VisualBuiltFromPeer(OverlayPeer, 'Overlay');
-    }
-    /**** ComponentDeserializedInto ****/
-    function ComponentDeserializedInto(Serialization, Container, Index) {
-        var ComponentPeer = $(Serialization);
-        var NeighbourComponent = Container.ComponentAtIndex(Index);
-        if (NeighbourComponent == null) {
-            Container.Peer.append(ComponentPeer);
-        }
-        else {
-            ComponentPeer.insertBefore(NeighbourComponent.Peer);
-        }
-        return VisualBuiltFromPeer(ComponentPeer, 'Component');
-    }
-    /**** deserializeCardInto ****/
-    function deserializeCardInto(Serialization, Applet, Index) {
-        expectText('card serialization', Serialization);
-        WAT.expectApplet('applet', Applet);
-        expectOrdinal('card index', Index);
-        CardDeserializedInto(Serialization, Applet, Index);
-    }
-    WAT.deserializeCardInto = deserializeCardInto;
-    /**** deserializeOverlayInto ****/
-    function deserializeOverlayInto(Serialization, Applet, Index) {
-        expectText('overlay serialization', Serialization);
-        WAT.expectApplet('applet', Applet);
-        expectOrdinal('overlay index', Index);
-        OverlayDeserializedInto(Serialization, Applet, Index);
-    }
-    WAT.deserializeOverlayInto = deserializeOverlayInto;
-    /**** deserializeComponentInto ****/
-    function deserializeComponentInto(Serialization, Container, Index) {
-        expectText('component serialization', Serialization);
-        WAT.expectContainer('container', Container);
-        expectOrdinal('component index', Index);
-        ComponentDeserializedInto(Serialization, Container, Index);
-    }
-    WAT.deserializeComponentInto = deserializeComponentInto;
     //----------------------------------------------------------------------------//
     //                               Import/Export                                //
     //----------------------------------------------------------------------------//
@@ -5830,17 +5910,24 @@ var WAT;
     //----------------------------------------------------------------------------//
     //                             Geometry Handling                              //
     //----------------------------------------------------------------------------//
+    /**** outerPeerOf ****/
+    function outerPeerOf(Peer) {
+        var Candidate = Peer.parentElement;
+        if (Candidate == null)
+            throwError('ImpossibleOperation: a detached visual can not be right or bottom aligned');
+        return Candidate;
+    }
     /**** GeometryOfVisual ****/
     function GeometryOfVisual(Visual) {
         var Peer = PeerOfVisual(Visual);
         return {
-            x: Peer[0].offsetLeft, Width: Peer[0].offsetWidth,
-            y: Peer[0].offsetTop, Height: Peer[0].offsetHeight
+            x: Peer.offsetLeft, Width: Peer.offsetWidth,
+            y: Peer.offsetTop, Height: Peer.offsetHeight
         };
     }
     /**** GeometryOfVisualOnDisplay ****/
     function GeometryOfVisualOnDisplay(Visual) {
-        var boundingRect = PeerOfVisual(Visual)[0].getBoundingClientRect();
+        var boundingRect = PeerOfVisual(Visual).getBoundingClientRect();
         return {
             x: boundingRect.left, Width: boundingRect.width,
             y: boundingRect.top, Height: boundingRect.height
@@ -5857,11 +5944,11 @@ var WAT;
         var horizontalAnchoring, oldLeft, oldWidth, oldRight;
         if ((x != null) || (Width != null)) {
             horizontalAnchoring = horizontalAnchoringOfVisual(Visual);
-            oldLeft = Math.round(Peer[0].offsetLeft);
-            oldWidth = Math.round(Peer[0].offsetWidth);
+            oldLeft = Math.round(Peer.offsetLeft);
+            oldWidth = Math.round(Peer.offsetWidth);
         }
         if (x != null) {
-            oldRight = (horizontalAnchoring === 'left-width' ? NaN : Peer.parent()[0].offsetWidth - oldLeft - oldWidth);
+            oldRight = (horizontalAnchoring === 'left-width' ? NaN : outerPeerOf(Peer).offsetWidth - oldLeft - oldWidth);
             x = Math.round(x);
             var dx = x - oldLeft;
             switch (horizontalAnchoring) {
@@ -5879,7 +5966,7 @@ var WAT;
         if (Width != null) {
             Width = Math.round(Width);
             if (horizontalAnchoring === 'left-right') {
-                oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : Peer.parent()[0].offsetWidth - oldLeft - oldWidth);
+                oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : outerPeerOf(Peer).offsetWidth - oldLeft - oldWidth);
                 changeStyles({ right: (oldRight - (Width - oldWidth)) + 'px' });
             }
             else {
@@ -5890,11 +5977,11 @@ var WAT;
         var verticalAnchoring, oldTop, oldHeight, oldBottom;
         if ((y != null) || (Height != null)) {
             verticalAnchoring = verticalAnchoringOfVisual(Visual);
-            oldTop = Math.round(Peer[0].offsetTop);
-            oldHeight = Math.round(Peer[0].offsetHeight);
+            oldTop = Math.round(Peer.offsetTop);
+            oldHeight = Math.round(Peer.offsetHeight);
         }
         if (y != null) {
-            oldBottom = (verticalAnchoring === 'top-height' ? NaN : Peer.parent()[0].offsetHeight - oldTop - oldHeight);
+            oldBottom = (verticalAnchoring === 'top-height' ? NaN : outerPeerOf(Peer).offsetHeight - oldTop - oldHeight);
             y = Math.round(y);
             var dy = y - oldTop;
             switch (verticalAnchoring) {
@@ -5912,7 +5999,7 @@ var WAT;
         if (Height != null) {
             Height = Math.round(Height);
             if (verticalAnchoring === 'top-bottom') {
-                oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : Peer.parent()[0].offsetHeight - oldTop - oldHeight);
+                oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : outerPeerOf(Peer).offsetHeight - oldTop - oldHeight);
                 changeStyles({ bottom: (oldBottom - (Height - oldHeight)) + 'px' });
             }
             else {
@@ -5927,9 +6014,9 @@ var WAT;
     /**** horizontalAnchoringOfVisual ****/
     function horizontalAnchoringOfVisual(Visual) {
         var Peer = PeerOfVisual(Visual);
-        var left = Peer[0].style.left || 'auto';
-        var right = Peer[0].style.right || 'auto';
-        var Width = Peer[0].style.width || 'auto';
+        var left = Peer.style.left || 'auto';
+        var right = Peer.style.right || 'auto';
+        var Width = Peer.style.width || 'auto';
         if (right === 'auto') {
             return 'left-width';
         }
@@ -5946,13 +6033,13 @@ var WAT;
     /**** horizontalOffsetsOfVisual ****/
     function horizontalOffsetsOfVisual(Visual) {
         var Peer = PeerOfVisual(Visual);
-        var left = Math.round(Peer[0].offsetLeft);
-        var width = Math.round(Peer[0].offsetWidth);
-        var right = Math.round(Peer.parent()[0].offsetWidth - left - width);
+        var left = Math.round(Peer.offsetLeft);
+        var width = Math.round(Peer.offsetWidth);
+        //  let right = Math.round(outerPeerOf(Peer).offsetWidth-left-width)
         switch (horizontalAnchoringOfVisual(Visual)) {
             case 'left-width': return [left, width];
-            case 'width-right': return [width, right];
-            case 'left-right': return [left, right];
+            case 'width-right': return [width, Math.round(outerPeerOf(Peer).offsetWidth - left - width)];
+            case 'left-right': return [left, Math.round(outerPeerOf(Peer).offsetWidth - left - width)];
             default: return [left, width];
         }
     }
@@ -5963,9 +6050,9 @@ var WAT;
             return;
         }
         var Peer = PeerOfVisual(Visual);
-        var left = Math.round(Peer[0].offsetLeft);
-        var Width = Math.round(Peer[0].offsetWidth);
-        var right = Math.round(Peer.parent()[0].offsetWidth - left - Width);
+        var left = Math.round(Peer.offsetLeft);
+        var Width = Math.round(Peer.offsetWidth);
+        var right = Math.round(outerPeerOf(Peer).offsetWidth - left - Width);
         var StyleSet;
         switch (newAnchoring) {
             case 'left-width':
@@ -6013,9 +6100,9 @@ var WAT;
     /**** verticalAnchoringOfVisual ****/
     function verticalAnchoringOfVisual(Visual) {
         var Peer = PeerOfVisual(Visual);
-        var top = Peer[0].style.top || 'auto';
-        var bottom = Peer[0].style.bottom || 'auto';
-        var Height = Peer[0].style.height || 'auto';
+        var top = Peer.style.top || 'auto';
+        var bottom = Peer.style.bottom || 'auto';
+        var Height = Peer.style.height || 'auto';
         if (bottom === 'auto') {
             return 'top-height';
         }
@@ -6032,13 +6119,13 @@ var WAT;
     /**** verticalOffsetsOfVisual ****/
     function verticalOffsetsOfVisual(Visual) {
         var Peer = PeerOfVisual(Visual);
-        var top = Math.round(Peer[0].offsetTop);
-        var height = Math.round(Peer[0].offsetHeight);
-        var bottom = Math.round(Peer.parent()[0].offsetHeight - top - height);
+        var top = Math.round(Peer.offsetTop);
+        var height = Math.round(Peer.offsetHeight);
+        //  let bottom = Math.round(outerPeer().offsetHeight-top-height)
         switch (verticalAnchoringOfVisual(Visual)) {
             case 'top-height': return [top, height];
-            case 'height-bottom': return [height, bottom];
-            case 'top-bottom': return [top, bottom];
+            case 'height-bottom': return [height, Math.round(outerPeerOf(Peer).offsetHeight - top - height)];
+            case 'top-bottom': return [top, Math.round(outerPeerOf(Peer).offsetHeight - top - height)];
             default: return [top, height];
         }
     }
@@ -6049,9 +6136,9 @@ var WAT;
             return;
         }
         var Peer = PeerOfVisual(Visual);
-        var top = Math.round(Peer[0].offsetTop);
-        var Height = Math.round(Peer[0].offsetHeight);
-        var bottom = Math.round(Peer.parent()[0].offsetHeight - top - Height);
+        var top = Math.round(Peer.offsetTop);
+        var Height = Math.round(Peer.offsetHeight);
+        var bottom = Math.round(outerPeerOf(Peer).offsetHeight - top - Height);
         var StyleSet;
         switch (newAnchoring) {
             case 'top-height':
@@ -6098,7 +6185,7 @@ var WAT;
     var MasterRegistry = Object.create(null);
     /**** MasterInfoFromElement (script[type="application/wat-master"]) ****/
     function MasterInfoFromElement(Element) {
-        var MasterObject = JSON.parse(Element.html());
+        var MasterObject = JSON.parse(html(Element));
         return parsedMaster(MasterObject);
     }
     /**** parsedMaster - fundamental errors prevent a master from being imported ****/
@@ -6265,9 +6352,9 @@ var WAT;
     /**** registerMastersInDocument ****/
     function registerMastersInDocument() {
         var ErrorOccurred = false;
-        $('script[type="application/wat-master"]').each(function () {
+        forEach(document.head.querySelectorAll('script[type="application/wat-master"]'), function (ScriptElement) {
             try {
-                var MasterInfo = MasterInfoFromElement($(this));
+                var MasterInfo = MasterInfoFromElement(ScriptElement);
                 if (MasterMayBeRegistered(MasterInfo, {
                     compatibleDowngrade: 'ignore',
                     incompatibleDowngrade: 'abort',
@@ -6356,10 +6443,10 @@ var WAT;
         if (MasterInfo == null) {
             return;
         }
-        $(document.body).off('mousedown mousemove mouseup', '.' + Master);
-        $(document.body).off('mouseenter mouseleave', '.' + Master);
-        $(document.body).off('keydown keypress keyup', '.' + Master);
-        $(document.body).off('input change click', '.' + Master);
+        off(document.body, 'mousedown mousemove mouseup', '.' + Master);
+        off(document.body, 'mouseenter mouseleave', '.' + Master);
+        off(document.body, 'keydown keypress keyup', '.' + Master);
+        off(document.body, 'input change click', '.' + Master);
         var Resources = MasterInfo.Resources;
         if (Resources != null) {
             unregisterResources(Resources);
@@ -6368,10 +6455,7 @@ var WAT;
     /**** refreshInstancesOfMaster ****/
     function refreshInstancesOfMaster(Name) {
         if (WAT_isRunning) {
-            $(document.body).find('.WAT[data-wat-master="' + Name + '"]').each(function () {
-                var Visual = VisualOfElement(this);
-                refreshVisual(Visual);
-            });
+            forEach(document.body.querySelectorAll('.WAT[data-wat-master="' + Name + '"]'), function (Peer) { return refreshVisual(VisualOfElement(Peer)); });
         }
     }
     /**** hasMaster ****/
@@ -6441,15 +6525,15 @@ var WAT;
         if (oldName === newName) {
             return;
         }
-        MasterRegistry[newName];
-        if (newName != null)
+        var newMasterInfo = MasterRegistry[newName];
+        if (newMasterInfo != null)
             throwError('MasterExists: a master with the name ' + quoted(newName) + ' exists already');
         delete MasterRegistry[oldName];
         oldMasterInfo.Name = newName;
         oldMasterInfo.Version.Build = currentTimestamp();
         MasterRegistry[newName] = oldMasterInfo;
         if (updateInstances) {
-            $(document.body).find('.WAT[data-wat-master="' + oldName + '"]').each(function () { $(this).data('wat-master', newName); });
+            forEach(document.body.querySelectorAll('.WAT[data-wat-master="' + oldName + '"]'), function (Peer) { data(Peer, 'wat-master', newName); });
             if (WAT_isRunning) {
                 refreshInstancesOfMaster(newName);
             }
@@ -6955,9 +7039,9 @@ var WAT;
     /**** allMastersInDocument ****/
     function allMastersInDocument() {
         var MasterSet = Object.create(null);
-        $('script[type="application/wat-master"]').each(function () {
+        forEach(document.head.querySelectorAll('script[type="application/wat-master"]'), function (ScriptElement) {
             try {
-                var MasterInfo = MasterInfoFromElement($(this));
+                var MasterInfo = MasterInfoFromElement(ScriptElement);
                 var MasterName = MasterInfo.Name;
                 if (ValueIsName(MasterName) && (MasterName in MasterRegistry)) {
                     MasterSet[MasterName] = MasterName;
@@ -7021,8 +7105,8 @@ var WAT;
     /**** missingMasters ****/
     function missingMasters() {
         var missingMasterSet = Object.create(null);
-        $(document.body).find('.WAT[data-wat-master]').each(function () {
-            var Master = $(this).data('wat-master');
+        forEach(document.body.querySelectorAll('.WAT[data-wat-master]'), function (Peer) {
+            var Master = data(Peer, 'wat-master');
             if (ValueIsName(Master) && !(Master in MasterRegistry)) {
                 missingMasterSet[Master] = Master;
             }
@@ -7394,15 +7478,17 @@ var WAT;
         return 'BRE-' + KeyCounter;
     }
     /**** make global visuals "reactive" ****/
-    $(document.body).on('value-changed', function (Event, ArgumentList) {
+    on(document.body, 'value-changed', undefined, function (DOMEvent) {
         var _a;
-        var Origin = VisualOfElement(Event.target);
+        var Origin = VisualOfElement(DOMEvent.target);
         if (Origin == null) {
             return;
         }
         var Name = Origin.Name;
         if ((Name || '')[0] === '#') {
-            (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(Name, ArgumentList && ArgumentList[0], false, 'wasControlValueChange');
+            (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
+            // @ts-ignore always use "detail"
+            Name, DOMEvent.detail, false, 'wasControlValueChange');
         }
     });
     //----------------------------------------------------------------------------//
@@ -7413,11 +7499,11 @@ var WAT;
         if (Designer == null) {
             return;
         }
-        var AppletPeer = $(Event.target).closest('.WAT.Applet');
-        if (AppletPeer.length === 0) {
+        var AppletPeer = Event.target.closest('.WAT.Applet');
+        if (AppletPeer == null) {
             return;
         }
-        var Applet = VisualOfElement(AppletPeer[0]);
+        var Applet = VisualOfElement(AppletPeer);
         if (Applet == null) {
             return;
         }
@@ -7426,17 +7512,17 @@ var WAT;
             Event.preventDefault();
         }
     }
-    $(document.body).on('mousedown', swallowEventWhileLayouting);
-    $(document.body).on('mousemove', swallowEventWhileLayouting);
-    $(document.body).on('mouseup', swallowEventWhileLayouting);
-    $(document.body).on('mouseenter', swallowEventWhileLayouting);
-    $(document.body).on('mouseleave', swallowEventWhileLayouting);
-    $(document.body).on('keydown', swallowEventWhileLayouting);
-    $(document.body).on('keypress', swallowEventWhileLayouting);
-    $(document.body).on('keyup', swallowEventWhileLayouting);
-    $(document.body).on('input', swallowEventWhileLayouting);
-    $(document.body).on('change', swallowEventWhileLayouting);
-    $(document.body).on('click', swallowEventWhileLayouting);
+    document.body.addEventListener('mousedown', swallowEventWhileLayouting);
+    document.body.addEventListener('mousemove', swallowEventWhileLayouting);
+    document.body.addEventListener('mouseup', swallowEventWhileLayouting);
+    document.body.addEventListener('mouseenter', swallowEventWhileLayouting);
+    document.body.addEventListener('mouseleave', swallowEventWhileLayouting);
+    document.body.addEventListener('keydown', swallowEventWhileLayouting);
+    document.body.addEventListener('keypress', swallowEventWhileLayouting);
+    document.body.addEventListener('keyup', swallowEventWhileLayouting);
+    document.body.addEventListener('input', swallowEventWhileLayouting);
+    document.body.addEventListener('change', swallowEventWhileLayouting);
+    document.body.addEventListener('click', swallowEventWhileLayouting);
     /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
     function registerEventHandlerForVisual(Visual) {
         var ArgumentList = [];
@@ -7449,16 +7535,14 @@ var WAT;
             var TapPointSelector_1 = ArgumentList.shift().slice(1), TapElement = void 0;
             if (TapPointSelector_1[0] === '.') {
                 WAT.expectName('tap point master name', TapPointSelector_1.slice(1));
-                TapElement = Visual.Peer.parent().closest('.WAT' + TapPointSelector_1);
+                TapElement = closestParent(Visual.Peer, '.WAT' + TapPointSelector_1);
             }
             else {
                 WAT.expectUniversalName('tap point name', TapPointSelector_1);
-                TapElement = Visual.Peer.parent('.WAT').filter(function () {
-                    return (VisualOfElement(this).Name === TapPointSelector_1);
-                });
+                TapElement = closestFilteredParent(Visual.Peer, '.WAT', function (Peer) { return (VisualOfElement(Peer).Name === TapPointSelector_1); });
             }
-            if (TapElement.length > 0) {
-                TapPoint = VisualOfElement(TapElement[0]);
+            if (TapElement != null) {
+                TapPoint = VisualOfElement(TapElement);
             }
         }
         else {
@@ -7484,7 +7568,7 @@ var WAT;
                 return;
             } // no event handling for "applets under design"
             if ((TapPoint === Visual) && (EventSelector == null)) {
-                if (Event.target !== Visual.Peer[0]) {
+                if (Event.target !== Visual.Peer) {
                     return;
                 }
             } // ignore "inner events" if no selector is given
@@ -7524,16 +7608,14 @@ var WAT;
             var TapPointSelector_2 = ArgumentList.shift().slice(1), TapElement = void 0;
             if (TapPointSelector_2[0] === '.') {
                 WAT.expectName('tap point master name', TapPointSelector_2.slice(1));
-                TapElement = Visual.Peer.parent().closest('.WAT' + TapPointSelector_2);
+                TapElement = closestParent(Visual.Peer, '.WAT' + TapPointSelector_2);
             }
             else {
                 WAT.expectUniversalName('tap point name', TapPointSelector_2);
-                TapElement = Visual.Peer.parent('.WAT').filter(function () {
-                    return (VisualOfElement(this).Name === TapPointSelector_2);
-                });
+                TapElement = closestFilteredParent(Visual.Peer, '.WAT', function (Peer) { return (VisualOfElement(Peer).Name === TapPointSelector_2); });
             }
-            if (TapElement.length > 0) {
-                TapPoint = VisualOfElement(TapElement[0]);
+            if (TapElement != null) {
+                TapPoint = VisualOfElement(TapElement);
             }
         }
         else {
@@ -7600,16 +7682,14 @@ var WAT;
             var InjectionPointSelector_1 = ArgumentList.shift().slice(1), InjectionElement = void 0;
             if (InjectionPointSelector_1[0] === '.') {
                 WAT.expectName('injection point master name', InjectionPointSelector_1.slice(1));
-                InjectionElement = Visual.Peer.parent().closest('.WAT' + InjectionPointSelector_1);
+                InjectionElement = closestParent(Visual.Peer, '.WAT' + InjectionPointSelector_1);
             }
             else {
                 WAT.expectUniversalName('injection point name', InjectionPointSelector_1);
-                InjectionElement = Visual.Peer.parent('.WAT').filter(function () {
-                    return (VisualOfElement(this).Name === InjectionPointSelector_1);
-                });
+                InjectionElement = closestFilteredParent(Visual.Peer, '.WAT', function (Peer) { return (VisualOfElement(Peer).Name === InjectionPointSelector_1); });
             }
-            if (InjectionElement.length > 0) {
-                InjectionPoint = VisualOfElement(InjectionElement[0]);
+            if (InjectionElement != null) {
+                InjectionPoint = VisualOfElement(InjectionElement);
             }
         }
         else {
@@ -7618,7 +7698,7 @@ var WAT;
         if (InjectionPoint != null) {
             var EventName = ArgumentList.shift();
             InjectionPoint.Peer.trigger(EventName, ArgumentList);
-        } // jQuery wants it so...
+        }
     }
     /**** [set]ErrorInfoOfVisual ****/
     function ErrorInfoOfVisual(Visual) {
@@ -7628,22 +7708,22 @@ var WAT;
         var Internals = InternalsOfVisual(Visual);
         if (newErrorInfo == null) {
             delete Internals.ErrorInfo;
-            Internals.Peer.children('.WAT-ErrorIndicator').remove();
+            remove(filtered(Internals.Peer.children, '.WAT-ErrorIndicator'));
         }
         else {
             if (Internals.ErrorInfo == null) { // don't overwrite an existing error
                 Internals.ErrorInfo = newErrorInfo;
-                Internals.Peer.children('.WAT-ErrorIndicator').remove();
-                Internals.Peer.append('<button class="WAT-ErrorIndicator"></button>');
+                remove(filtered(Internals.Peer.children, '.WAT-ErrorIndicator'));
+                Internals.Peer.appendChild(ElementFromHTML('<button class="WAT-ErrorIndicator"></button>'));
             }
         }
     }
     /**** install event handler for Error Indicators ****/
     function installEventHandlerForErrorIndicators() {
-        $(document).off('click', '.WAT-ErrorIndicator');
-        $(document).on('click', '.WAT-ErrorIndicator', function (Event) {
-            var ErrorIndicator = $(Event.target);
-            var affectedVisual = VisualOfElement(ErrorIndicator.closest('.WAT')[0]);
+        off(document, 'click', '.WAT-ErrorIndicator');
+        on(document, 'click', '.WAT-ErrorIndicator', function (DOMEvent) {
+            var ErrorIndicator = DOMEvent.target;
+            var affectedVisual = VisualOfElement(ErrorIndicator === null || ErrorIndicator === void 0 ? void 0 : ErrorIndicator.closest('.WAT'));
             if (affectedVisual == null) {
                 alert('WAT Error\n\nCould not find Visual for this Error Indicator');
                 return;
@@ -7666,15 +7746,15 @@ var WAT;
     }
     /**** firstAppletInDocument (used for errors in masters) ****/
     function firstAppletInDocument() {
-        var firstAppletPeer = AppletPeersInDocument().first();
-        return VisualOfElement(firstAppletPeer[0]);
+        var firstAppletPeer = AppletPeersInDocument()[0];
+        return VisualOfElement(firstAppletPeer);
     }
     /**** VisualWithUniqueId ****/
     var VisualRegistry = Object.create(null);
     /**** VisualOfElement (internal function w/o validation) ****/
     var VisualForDOMElement = new WeakMap(); // DOM element -> visual
     function VisualOfElement(Element) {
-        return VisualForDOMElement.get(Element);
+        return (Element == null ? undefined : VisualForDOMElement.get(Element));
     }
     /**** VisualForElement (public version w/ validation) ****/
     function VisualForElement(Element) {
@@ -7683,8 +7763,8 @@ var WAT;
         if (Candidate != null) {
             return Candidate;
         }
-        Element = $(Element).closest('.WAT')[0];
-        return (Element == null ? undefined : VisualForDOMElement.get(Element));
+        Candidate = Element.closest('.WAT');
+        return (Candidate == null ? undefined : VisualForDOMElement.get(Candidate));
     }
     WAT.VisualForElement = VisualForElement;
     var InternalsForVisual = new WeakMap(); // visual -> internals
@@ -7697,22 +7777,23 @@ var WAT;
     }
     /**** AppletOfPeer ****/
     function AppletOfPeer(Peer) {
-        return VisualOfElement(Peer.closest('.WAT.Applet')[0]);
-    } // TODO not fool-proof!
+        var Candidate = Peer.closest('.WAT.Applet');
+        return (Candidate == null ? undefined : VisualOfElement(Candidate));
+    }
     /**** CategoryOfPeer ****/
     function CategoryOfPeer(Peer, DefaultCategory) {
         switch (true) {
-            case Peer.hasClass('Applet'): return 'Applet';
-            case Peer.hasClass('Card'): return 'Card';
-            case Peer.hasClass('Overlay'): return 'Overlay';
-            case Peer.hasClass('Control'): return 'Control';
-            case Peer.hasClass('Compound'): return 'Compound';
+            case Peer.classList.contains('Applet'): return 'Applet';
+            case Peer.classList.contains('Card'): return 'Card';
+            case Peer.classList.contains('Overlay'): return 'Overlay';
+            case Peer.classList.contains('Control'): return 'Control';
+            case Peer.classList.contains('Compound'): return 'Compound';
             default: switch (DefaultCategory) {
                 case 'Applet': return 'Applet';
                 case 'Layer': return 'Card';
                 case 'Card': return 'Card';
                 case 'Overlay': return 'Overlay';
-                case 'Component': return (Peer.children('.WAT.Control,.WAT.Compound').length > 0
+                case 'Component': return (filtered(Peer.children, '.WAT.Control,.WAT.Compound').length > 0
                     ? 'Compound'
                     : 'Control');
                 case 'Control': return 'Control';
@@ -7723,12 +7804,12 @@ var WAT;
     }
     /**** VersionOfPeer ****/
     function VersionOfPeer(Peer) {
-        var Candidate = Peer.data('wat-master-version');
+        var Candidate = data(Peer, 'wat-master-version');
         return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
     }
     /**** MasterOfPeer ****/
     function MasterOfPeer(Peer, Category) {
-        var Candidate = Peer.data('wat-master');
+        var Candidate = data(Peer, 'wat-master');
         if (ValueIsName(Candidate)) {
             return Candidate;
         }
@@ -7738,17 +7819,17 @@ var WAT;
     }
     /**** NameOfPeer ****/
     function NameOfPeer(Peer) {
-        var Candidate = Peer.data('wat-name');
+        var Candidate = data(Peer, 'wat-name');
         return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
     }
     /**** ScriptOfPeer ****/
     function ScriptOfPeer(Peer) {
-        var Candidate = Peer.data('wat-script');
+        var Candidate = data(Peer, 'wat-script');
         return (ValueIsText(Candidate) ? Candidate : undefined);
     }
     /**** StateOfPeer ****/
     function StateOfPeer(Peer) {
-        var Candidate = Peer.data('wat-state');
+        var Candidate = data(Peer, 'wat-state');
         if (Candidate == null) {
             return null;
         }
@@ -7768,195 +7849,200 @@ var WAT;
                 case 'Layer':
                     Category = 'Card';
                     break;
-                case 'Component': Category = (Peer.children('.WAT.Control,.WAT.Compound').length > 0
+                case 'Component': Category = (filtered(Peer.children, '.WAT.Control,.WAT.Compound').length > 0
                     ? 'Compound'
                     : 'Control');
                 default: Category = allowedCategory;
             }
             var Visual_1 = VisualOfCategory(Category, Peer);
-            setErrorInfoOfVisual(Visual_1, {
-                Title: 'Inappropriate Category',
-                longMessage: 'This visual belongs to category ' +
-                    quoted(originalCategory) + ', which is not allowed here',
-                shortMessage: 'inappropriate category ' + quoted(originalCategory),
-                Applet: AppletOfPeer(Peer),
-                Sufferer: Visual_1,
-                Property: 'Category'
-            });
-            buildInnerVisuals();
+            var Applet_1 = AppletOfPeer(Peer);
+            if (Applet_1 != null) {
+                setErrorInfoOfVisual(Visual_1, {
+                    Title: 'Inappropriate Category',
+                    longMessage: 'This visual belongs to category ' +
+                        quoted(originalCategory) + ', which is not allowed here',
+                    shortMessage: 'inappropriate category ' + quoted(originalCategory),
+                    Applet: Applet_1,
+                    Sufferer: Visual_1,
+                    Property: 'Category'
+                });
+                buildInnerVisuals();
+            }
             return Visual_1;
         }
         function buildInnerVisuals() {
             switch (Category) {
                 case 'Applet':
-                    Peer.children('.WAT.Card,.WAT.Overlay').each(function () {
-                        buildVisualFromPeer($(this), 'Layer');
+                    filtered(Peer.children, '.WAT.Card,.WAT.Overlay').forEach(function (Peer) {
+                        buildVisualFromPeer(Peer, 'Layer');
                     });
                     break;
                 case 'Card':
                 case 'Overlay':
                 case 'Compound':
-                    Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                        buildVisualFromPeer($(this), 'Component');
+                    filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+                        buildVisualFromPeer(Peer, 'Component');
                     });
             }
         }
         var Visual = VisualOfCategory(Category, Peer);
         var Applet = AppletOfPeer(Peer);
-        var Master = MasterOfPeer(Peer, Category);
-        var MasterInfo = MasterRegistry[Master];
-        if (MasterInfo == null) {
-            setErrorInfoOfVisual(Visual, {
-                Title: 'No such Master',
-                longMessage: 'A visual master called ' + quoted(Master) + ' is not ' +
-                    'available',
-                shortMessage: 'unknown master ' + quoted(Master),
-                Applet: Applet,
-                Sufferer: Visual,
-                Property: 'Master'
-            });
-            buildInnerVisuals();
-            return Visual;
-        }
-        var Classes = MasterInfo.Classes;
-        if (Classes != null) {
-            Classes.forEach(function (Class) { Peer.addClass(Class); });
-        }
-        if (MasterInfo.Category !== Category) {
-            setErrorInfoOfVisual(Visual, {
-                Title: 'Inappropriate Master',
-                longMessage: 'Master ' + quoted(Master) + ' is not foreseen for ' +
-                    'category ' + quoted(Category),
-                shortMessage: 'inappropriate master ' + quoted(Master),
-                Applet: Applet,
-                Sufferer: Visual,
-                Property: 'Master'
-            });
-            buildInnerVisuals();
-            return Visual;
-        }
-        var Version = VersionOfPeer(Peer);
-        if ((Version != null) && !VersionAmatchesB(Version, MasterInfo.Version)) {
-            setErrorInfoOfVisual(Visual, {
-                Title: 'Inappropriate Version',
-                longMessage: 'This visual requires a different version of master ' +
-                    quoted(Master) + ' than available',
-                shortMessage: 'inappropriate master ' + quoted(Master),
-                Applet: Applet,
-                Sufferer: Visual,
-                Property: 'Version'
-            });
-            buildInnerVisuals();
-            return Visual;
-        }
-        if (MasterInfo.ErrorInfo != null) {
-            setErrorInfoOfVisual(Visual, MasterInfo.ErrorInfo);
-            buildInnerVisuals();
-            return Visual;
-        }
-        if (Category === 'Applet') { // every applet must always contain >= 1 cards
-            if (Peer.children('.WAT.Card').length === 0) {
-                Peer.prepend('<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>');
-            }
-        }
-        var Name = NameOfPeer(Peer);
-        if ((Name != null) && (Name[0] === '#')) {
-            try {
-                registerGlobalVisualOfApplet(Applet, Visual);
-            }
-            catch (Signal) {
+        if (Applet != null) {
+            var Master = MasterOfPeer(Peer, Category);
+            var MasterInfo = MasterRegistry[Master];
+            if (MasterInfo == null) {
                 setErrorInfoOfVisual(Visual, {
-                    Title: 'Global name Collision',
-                    longMessage: 'The global name of this visual ' + quoted(Name) + ' ' +
-                        'has already been used',
-                    shortMessage: 'global name collision ' + quoted(Name),
+                    Title: 'No such Master',
+                    longMessage: 'A visual master called ' + quoted(Master) + ' is not ' +
+                        'available',
+                    shortMessage: 'unknown master ' + quoted(Master),
                     Applet: Applet,
                     Sufferer: Visual,
-                    Property: 'Name'
+                    Property: 'Master'
                 });
                 buildInnerVisuals();
                 return Visual;
             }
-        }
-        var State = StateOfPeer(Peer);
-        if (State != null) {
-            InternalsOfVisual(Visual).State = State;
-        }
-        var VisualScript = ScriptOfPeer(Peer);
-        if ((MasterInfo.compiledScript != null) || (VisualScript != null)) {
-            var toGet = definePropertyGetterForVisual.bind(null, Visual);
-            var toSet = definePropertySetterForVisual.bind(null, Visual);
-            var on = registerEventHandlerForVisual.bind(null, Visual);
-            var off = unregisterEventHandlerForVisual.bind(null, Visual);
-            var trigger = triggerEventFromVisual.bind(null, Visual);
-            var Reactivity = function () {
-                var _a;
-                var ArgumentList = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    ArgumentList[_i] = arguments[_i];
+            var Classes = MasterInfo.Classes;
+            if (Classes != null) {
+                Classes.forEach(function (Class) { Peer.classList.add(Class); });
+            }
+            if (MasterInfo.Category !== Category) {
+                setErrorInfoOfVisual(Visual, {
+                    Title: 'Inappropriate Master',
+                    longMessage: 'Master ' + quoted(Master) + ' is not foreseen for ' +
+                        'category ' + quoted(Category),
+                    shortMessage: 'inappropriate master ' + quoted(Master),
+                    Applet: Applet,
+                    Sufferer: Visual,
+                    Property: 'Master'
+                });
+                buildInnerVisuals();
+                return Visual;
+            }
+            var Version_1 = VersionOfPeer(Peer);
+            if ((Version_1 != null) && !VersionAmatchesB(Version_1, MasterInfo.Version)) {
+                setErrorInfoOfVisual(Visual, {
+                    Title: 'Inappropriate Version',
+                    longMessage: 'This visual requires a different version of master ' +
+                        quoted(Master) + ' than available',
+                    shortMessage: 'inappropriate master ' + quoted(Master),
+                    Applet: Applet,
+                    Sufferer: Visual,
+                    Property: 'Version'
+                });
+                buildInnerVisuals();
+                return Visual;
+            }
+            if (MasterInfo.ErrorInfo != null) {
+                setErrorInfoOfVisual(Visual, MasterInfo.ErrorInfo);
+                buildInnerVisuals();
+                return Visual;
+            }
+            if (Category === 'Applet') { // every applet must always contain >= 1 cards
+                if (filtered(Peer.children, '.WAT.Card').length === 0) {
+                    Peer.insertBefore(ElementFromHTML('<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>'), Peer.firstChild);
                 }
-                ArgumentList.unshift(Visual);
-                return (_a = InternalsOfVisual(Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.$.apply(
-                // @ts-ignore don't worry about number of arguments
-                null, ArgumentList // since number of arguments is important
-                );
-            };
-            if (MasterInfo.compiledScript != null) {
+            }
+            var Name = NameOfPeer(Peer);
+            if ((Name != null) && (Name[0] === '#')) {
                 try {
-                    MasterInfo.compiledScript.call(Visual, toGet, toSet, on, off, trigger, Reactivity);
+                    registerGlobalVisualOfApplet(Applet, Visual);
                 }
                 catch (Signal) {
                     setErrorInfoOfVisual(Visual, {
-                        Title: 'Execution Error in Master Script',
-                        longMessage: 'The script of master ' + quoted(Master) + ' could ' +
-                            'not be applied to this visual',
-                        shortMessage: Signal.message,
-                        Reason: Signal,
+                        Title: 'Global name Collision',
+                        longMessage: 'The global name of this visual ' + quoted(Name) + ' ' +
+                            'has already been used',
+                        shortMessage: 'global name collision ' + quoted(Name),
                         Applet: Applet,
                         Sufferer: Visual,
-                        Property: 'Master'
+                        Property: 'Name'
                     });
                     buildInnerVisuals();
                     return Visual;
                 }
             }
-            var compiledScript = void 0;
-            if (VisualScript != null) {
-                try {
-                    compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$', VisualScript);
+            var State = StateOfPeer(Peer);
+            if (State != null) {
+                InternalsOfVisual(Visual).State = State;
+            }
+            var VisualScript = ScriptOfPeer(Peer);
+            if ((MasterInfo.compiledScript != null) || (VisualScript != null)) {
+                var toGet = definePropertyGetterForVisual.bind(null, Visual);
+                var toSet = definePropertySetterForVisual.bind(null, Visual);
+                var on_1 = registerEventHandlerForVisual.bind(null, Visual);
+                var off_1 = unregisterEventHandlerForVisual.bind(null, Visual);
+                var trigger_1 = triggerEventFromVisual.bind(null, Visual);
+                var Reactivity = function () {
+                    var _a;
+                    var ArgumentList = [];
+                    for (var _i = 0; _i < arguments.length; _i++) {
+                        ArgumentList[_i] = arguments[_i];
+                    }
+                    ArgumentList.unshift(Visual);
+                    return (_a = InternalsOfVisual(Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.$.apply(
+                    // @ts-ignore don't worry about number of arguments
+                    null, ArgumentList // since number of arguments is important
+                    );
+                };
+                if (MasterInfo.compiledScript != null) {
+                    try {
+                        MasterInfo.compiledScript.call(Visual, toGet, toSet, on_1, off_1, trigger_1, Reactivity);
+                    }
+                    catch (Signal) {
+                        setErrorInfoOfVisual(Visual, {
+                            Title: 'Execution Error in Master Script',
+                            longMessage: 'The script of master ' + quoted(Master) + ' could ' +
+                                'not be applied to this visual',
+                            shortMessage: Signal.message,
+                            Reason: Signal,
+                            Applet: Applet,
+                            Sufferer: Visual,
+                            Property: 'Master'
+                        });
+                        buildInnerVisuals();
+                        return Visual;
+                    }
                 }
-                catch (Signal) {
-                    setErrorInfoOfVisual(Visual, {
-                        Title: 'Compilation Error',
-                        longMessage: 'The script of this visual could not be compiled',
-                        shortMessage: Signal.message,
-                        Reason: Signal,
-                        Applet: Applet,
-                        Sufferer: Visual,
-                        Property: 'Script'
-                    });
-                    buildInnerVisuals();
-                    return Visual;
-                }
-                try {
-                    compiledScript.call(Visual, toGet, toSet, on, off, trigger, Reactivity);
-                }
-                catch (Signal) {
-                    setErrorInfoOfVisual(Visual, {
-                        Title: 'Execution Error in Visual Script',
-                        longMessage: 'The script of this visual failed',
-                        shortMessage: Signal.message,
-                        Reason: Signal,
-                        Applet: Applet,
-                        Sufferer: Visual,
-                        Property: 'Script'
-                    });
-                    buildInnerVisuals();
-                    return Visual;
+                var compiledScript = void 0;
+                if (VisualScript != null) {
+                    try {
+                        compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$', VisualScript);
+                    }
+                    catch (Signal) {
+                        setErrorInfoOfVisual(Visual, {
+                            Title: 'Compilation Error',
+                            longMessage: 'The script of this visual could not be compiled',
+                            shortMessage: Signal.message,
+                            Reason: Signal,
+                            Applet: Applet,
+                            Sufferer: Visual,
+                            Property: 'Script'
+                        });
+                        buildInnerVisuals();
+                        return Visual;
+                    }
+                    try {
+                        compiledScript.call(Visual, toGet, toSet, on_1, off_1, trigger_1, Reactivity);
+                    }
+                    catch (Signal) {
+                        setErrorInfoOfVisual(Visual, {
+                            Title: 'Execution Error in Visual Script',
+                            longMessage: 'The script of this visual failed',
+                            shortMessage: Signal.message,
+                            Reason: Signal,
+                            Applet: Applet,
+                            Sufferer: Visual,
+                            Property: 'Script'
+                        });
+                        buildInnerVisuals();
+                        return Visual;
+                    }
                 }
             }
+            buildInnerVisuals();
         }
-        buildInnerVisuals();
         return Visual;
     }
     /**** buildVisualFromPeer ****/
@@ -7967,9 +8053,9 @@ var WAT;
     var uniqueIdCounter = 0;
     function VisualOfCategory(Category, Peer) {
         var uniqueId;
-        var oldVisual = VisualForDOMElement.get(Peer[0]);
+        var oldVisual = VisualForDOMElement.get(Peer);
         if (oldVisual == null) { // deserialization
-            var serializedId = Peer.attr('data-wat-unique-id');
+            var serializedId = attr(Peer, 'data-wat-unique-id');
             if (serializedId != null) {
                 var newId = parseInt(serializedId, 10);
                 if (ValueIsOrdinal(newId) &&
@@ -7977,7 +8063,7 @@ var WAT;
                     (VisualRegistry[newId] == null)) {
                     uniqueId = newId;
                 }
-                Peer.attr('data-wat-unique-id', null);
+                attr(Peer, 'data-wat-unique-id', undefined);
             }
         }
         else { // refresh
@@ -8005,9 +8091,9 @@ var WAT;
                 break;
             default: throwError('InternalError: unforeseen visual category');
         }
-        VisualForDOMElement.set(Peer[0], newVisual);
+        VisualForDOMElement.set(Peer, newVisual);
         VisualRegistry[uniqueId] = newVisual;
-        Peer.addClass('WAT').addClass(Category);
+        Peer.classList.add('WAT', Category);
         InternalsForVisual.set(newVisual, { uniqueId: uniqueId, Peer: Peer });
         if (Category === 'Applet') {
             var Internals = InternalsForVisual.get(newVisual);
@@ -8046,7 +8132,7 @@ var WAT;
                 StyleValue = MasterStyle;
             }
         }
-        PeerOfVisual(Visual).css(StyleName, StyleValue);
+        css(PeerOfVisual(Visual), StyleName, StyleValue);
     }
     /**** applyStylesToVisual ****/
     function applyStylesToVisual(Visual, StyleSet) {
@@ -8075,7 +8161,11 @@ var WAT;
             }
         }
         if (newStyleSet != null) {
-            PeerOfVisual(Visual).css(newStyleSet);
+            for (var StyleName in newStyleSet) {
+                if (newStyleSet.hasOwnProperty(StyleName)) {
+                    css(PeerOfVisual(Visual), StyleName, newStyleSet[StyleName]);
+                }
+            }
         }
     }
     /**** refreshVisual ****/
@@ -8103,7 +8193,7 @@ var WAT;
         }
         (_a = InternalsOfVisual(Visual.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.unregisterReactiveFunctionsOfVisual(Visual);
         if (recursively) {
-            Visual.Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Compound,.WAT.Control').each(function () { releaseVisual(VisualOfElement(this), recursively); });
+            filtered(Visual.Peer.children, '.WAT.Card,.WAT.Overlay,.WAT.Compound,.WAT.Control').forEach(function (Peer) { releaseVisual(VisualOfElement(Peer), recursively); });
         }
     }
     //----------------------------------------------------------------------------//
@@ -8141,7 +8231,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "isAttached", {
             /**** isAttached ****/
             get: function () {
-                return document.body.contains(InternalsOfVisual(this).Peer[0]);
+                return document.body.contains(InternalsOfVisual(this).Peer);
             },
             set: function (newAttachment) { throwReadOnlyError('isAttached'); },
             enumerable: false,
@@ -8150,22 +8240,22 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Id", {
             /**** Id ****/
             get: function () {
-                var Candidate = PeerOfVisual(this).attr('id');
+                var Candidate = attr(PeerOfVisual(this), 'id');
                 return (ValueIsId(Candidate) ? Candidate : undefined);
             },
             set: function (newId) {
                 WAT.allowId('id', newId);
                 var Peer = PeerOfVisual(this);
-                var oldId = Peer.attr('id');
+                var oldId = attr(Peer, 'id');
                 if (newId == oldId) {
                     return;
                 }
                 if (newId == null) {
-                    Peer.attr('id', null);
+                    attr(Peer, 'id', undefined);
                 }
                 else {
                     if (document.getElementById(newId) == null) {
-                        Peer.attr('id', newId);
+                        attr(Peer, 'id', newId);
                     }
                     else {
                         throwError('InvalidArgument: the given HTML id is not unique');
@@ -8178,14 +8268,14 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Name", {
             /**** Name ****/
             get: function () {
-                var Candidate = PeerOfVisual(this).data('wat-name');
+                var Candidate = data(PeerOfVisual(this), 'wat-name');
                 return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
             },
             set: function (newName) {
                 var _a, _b, _c, _d;
                 WAT.allowUniversalName('name', newName);
                 var Peer = PeerOfVisual(this);
-                var oldName = Peer.data('wat-name');
+                var oldName = data(Peer, 'wat-name');
                 if (newName == oldName) {
                     return;
                 }
@@ -8194,7 +8284,7 @@ var WAT;
                     unregisterGlobalVisualOfApplet(Applet, oldName);
                     (_b = (_a = InternalsOfVisual(this.Applet)) === null || _a === void 0 ? void 0 : _a.ReactivityContext) === null || _b === void 0 ? void 0 : _b.clearReactiveVariable(oldName);
                 }
-                Peer.data('wat-name', newName || null);
+                data(Peer, 'wat-name', newName || undefined);
                 if (newName.startsWith('#')) {
                     registerGlobalVisualOfApplet(Applet, this);
                     (_d = (_c = InternalsOfVisual(this.Applet)) === null || _c === void 0 ? void 0 : _c.ReactivityContext) === null || _d === void 0 ? void 0 : _d.setReactiveVariable(newName, this.Value);
@@ -8206,12 +8296,12 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Label", {
             /**** Label ****/
             get: function () {
-                var Candidate = PeerOfVisual(this).data('wat-label');
+                var Candidate = data(PeerOfVisual(this), 'wat-label');
                 return (ValueIsLabel(Candidate) ? Candidate : undefined);
             },
             set: function (newLabel) {
                 WAT.allowLabel('label', newLabel);
-                PeerOfVisual(this).data('wat-label', newLabel || null);
+                data(PeerOfVisual(this), 'wat-label', newLabel || undefined);
             },
             enumerable: false,
             configurable: true
@@ -8221,11 +8311,11 @@ var WAT;
             get: function () {
                 var Peer = PeerOfVisual(this);
                 switch (true) {
-                    case Peer.hasClass('Applet'): return 'Applet';
-                    case Peer.hasClass('Card'): return 'Card';
-                    case Peer.hasClass('Overlay'): return 'Overlay';
-                    case Peer.hasClass('Control'): return 'Control';
-                    case Peer.hasClass('Compound'): return 'Compound';
+                    case Peer.classList.contains('Applet'): return 'Applet';
+                    case Peer.classList.contains('Card'): return 'Card';
+                    case Peer.classList.contains('Overlay'): return 'Overlay';
+                    case Peer.classList.contains('Control'): return 'Control';
+                    case Peer.classList.contains('Compound'): return 'Compound';
                     default: throwError('BrokenVisual: cannot determine category of given visual');
                 }
             },
@@ -8237,7 +8327,7 @@ var WAT;
             /**** Master ****/
             get: function () {
                 var Peer = PeerOfVisual(this);
-                var Master = Peer.data('wat-master');
+                var Master = data(Peer, 'wat-master');
                 if (ValueIsName(Master)) {
                     return Master; // independent of whether master exists or not
                 }
@@ -8257,11 +8347,11 @@ var WAT;
                             quoted(this.Category));
                 }
                 var Peer = PeerOfVisual(this);
-                var oldMaster = Peer.data('wat-master');
+                var oldMaster = data(Peer, 'wat-master');
                 if (newMaster == oldMaster) {
                     return;
                 }
-                Peer.data('wat-master', newMaster);
+                data(Peer, 'wat-master', newMaster);
                 refreshVisual(this);
             },
             enumerable: false,
@@ -8277,10 +8367,10 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Container", {
             /**** Container ****/
             get: function () {
-                var ContainerPeer = PeerOfVisual(this).parent('.WAT.Card,.WAT.Overlay,.WAT.Compound');
-                return (ContainerPeer.length === 0
+                var ContainerPeer = closestParent(PeerOfVisual(this), '.WAT.Card,.WAT.Overlay,.WAT.Compound');
+                return (ContainerPeer == null
                     ? undefined
-                    : VisualOfElement(ContainerPeer[0]));
+                    : VisualOfElement(ContainerPeer));
             },
             set: function (newContainer) { throwReadOnlyError('Container'); },
             enumerable: false,
@@ -8289,10 +8379,10 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Layer", {
             /**** Layer ****/
             get: function () {
-                var LayerPeer = PeerOfVisual(this).parent('.WAT.Card,.WAT.Overlay');
-                return (LayerPeer.length === 0
+                var LayerPeer = PeerOfVisual(this).closest('.WAT.Card,.WAT.Overlay'); // no typo!
+                return (LayerPeer == null
                     ? undefined
-                    : VisualOfElement(LayerPeer[0]));
+                    : VisualOfElement(LayerPeer));
             },
             set: function (newLayer) { throwReadOnlyError('Layer'); },
             enumerable: false,
@@ -8302,9 +8392,9 @@ var WAT;
             /**** Applet ****/
             get: function () {
                 var AppletPeer = PeerOfVisual(this).closest('.WAT.Applet'); // no typo!
-                return (AppletPeer.length === 0
+                return (AppletPeer == null
                     ? undefined
-                    : VisualOfElement(AppletPeer[0]));
+                    : VisualOfElement(AppletPeer));
             },
             set: function (newApplet) { throwReadOnlyError('Applet'); },
             enumerable: false,
@@ -8337,7 +8427,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "isVisible", {
             /**** isVisible ****/
             get: function () {
-                return (this.Peer.css('visibility') !== 'hidden');
+                return (css(this.Peer, 'visibility') !== 'hidden');
             },
             set: function (newVisibility) {
                 expectBoolean('visibility', newVisibility);
@@ -8350,15 +8440,15 @@ var WAT;
             /**** isShown ****/
             get: function () {
                 var Peer = this.Peer;
-                if (!document.body.contains(Peer[0])) {
+                if (!document.body.contains(Peer)) {
                     return false;
                 }
-                while (Peer[0] !== document.body) {
-                    if ((Peer.css('display') === 'none') ||
-                        (Peer.css('visibility') === 'hidden')) {
+                while (Peer !== document.body) {
+                    if ((css(Peer, 'display') === 'none') ||
+                        (css(Peer, 'visibility') === 'hidden')) {
                         return false;
                     }
-                    Peer = Peer.parent();
+                    Peer = Peer.parentElement;
                 }
                 return true;
             },
@@ -8372,11 +8462,11 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "isEnabled", {
             /**** isEnabled ****/
             get: function () {
-                return !this.Peer[0].disabled;
+                return !this.Peer.disabled;
             },
             set: function (newEnabling) {
                 expectBoolean('enabling', newEnabling);
-                this.Peer[0].disabled = !newEnabling;
+                this.Peer.disabled = !newEnabling;
             },
             enumerable: false,
             configurable: true
@@ -8384,11 +8474,11 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "isDisabled", {
             /**** isDisabled ****/
             get: function () {
-                return this.Peer[0].disabled;
+                return this.Peer.disabled;
             },
             set: function (newDisabling) {
                 expectBoolean('disabling', newDisabling);
-                this.Peer[0].disabled = newDisabling;
+                this.Peer.disabled = newDisabling;
             },
             enumerable: false,
             configurable: true
@@ -8532,7 +8622,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Classes", {
             /**** Classes ****/
             get: function () {
-                var ClassNameList = this.Peer[0].classList.slice();
+                var ClassNameList = this.Peer.classList.slice();
                 return ClassNameList.sort().join(' ');
             },
             set: function (newClasses) {
@@ -8555,7 +8645,7 @@ var WAT;
                 for (var ClassName in ClassNameSet) {
                     ClassNameList.push(ClassName);
                 }
-                this.Peer[0].className = ClassNameList.join(' ');
+                this.Peer.className = ClassNameList.join(' ');
             },
             enumerable: false,
             configurable: true
@@ -8563,12 +8653,12 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "TabIndex", {
             /**** TabIndex ****/
             get: function () {
-                var rawValue = this.Peer.attr('tabindex');
+                var rawValue = attr(this.Peer, 'tabindex');
                 return (rawValue == null ? undefined : parseInt(rawValue, 10));
             },
             set: function (newTabIndex) {
                 allowIntegerInRange('tab index', newTabIndex, -1, 32767);
-                this.Peer.attr('tabindex', newTabIndex);
+                attr(this.Peer, 'tabindex', newTabIndex + '');
             },
             enumerable: false,
             configurable: true
@@ -8576,7 +8666,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "PointerSensitivity", {
             /**** PointerSensitivity ****/
             get: function () {
-                return (this.Peer.css('pointer-events') !== 'none');
+                return (css(this.Peer, 'pointer-events') !== 'none');
             },
             set: function (newPointerSensitivity) {
                 expectBoolean('pointer sensitivity', newPointerSensitivity);
@@ -8602,7 +8692,7 @@ var WAT;
                             return 'auto';
                     }
                 }
-                var Overflows = this.Peer.css('overflow').split(' ');
+                var Overflows = css(this.Peer, 'overflow').split(' ');
                 var horizontalOverflow = normalizedOverflow(Overflows[0]);
                 var verticalOverflow = normalizedOverflow(Overflows[1] || horizontalOverflow);
                 return [horizontalOverflow, verticalOverflow];
@@ -8626,7 +8716,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "TextOverflow", {
             /**** TextOverflow ****/
             get: function () {
-                return (this.Peer.css('text-overflow') === 'clip' ? 'clip' : 'ellipsis');
+                return (css(this.Peer, 'text-overflow') === 'clip' ? 'clip' : 'ellipsis');
             },
             set: function (newTextOverflow) {
                 allowOneOf('text overflow', newTextOverflow, WAT.WAT_TextOverflows);
@@ -8638,7 +8728,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Opacity", {
             /**** Opacity ****/
             get: function () {
-                return Math.round(100 * parseFloat(this.Peer.css('opacity')));
+                return Math.round(100 * parseFloat(css(this.Peer, 'opacity')));
             },
             set: function (newOpacity) {
                 allowNumberInRange('opacity', newOpacity, 0, 1);
@@ -8805,7 +8895,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "minWidth", {
             /**** min/maxWidth ****/
             get: function () {
-                return parseFloat(this.Peer.css('min-width'));
+                return parseFloat(css(this.Peer, 'min-width'));
             },
             set: function (newMinimum) {
                 WAT.allowDimension('minimal width', newMinimum);
@@ -8816,7 +8906,7 @@ var WAT;
         });
         Object.defineProperty(WAT_Visual.prototype, "maxWidth", {
             get: function () {
-                var maxWidth = this.Peer.css('max-width');
+                var maxWidth = css(this.Peer, 'max-width');
                 return (maxWidth === 'none' ? Infinity : parseFloat(maxWidth));
             },
             set: function (newMaximum) {
@@ -8834,7 +8924,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "minHeight", {
             /**** min/maxHeight ****/
             get: function () {
-                return parseFloat(this.Peer.css('min-height'));
+                return parseFloat(css(this.Peer, 'min-height'));
             },
             set: function (newMinimum) {
                 WAT.allowDimension('minimal height', newMinimum);
@@ -8845,7 +8935,7 @@ var WAT;
         });
         Object.defineProperty(WAT_Visual.prototype, "maxHeight", {
             get: function () {
-                var maxHeight = this.Peer.css('max-height');
+                var maxHeight = css(this.Peer, 'max-height');
                 return (maxHeight === 'none' ? Infinity : parseFloat(maxHeight));
             },
             set: function (newMaximum) {
@@ -8873,7 +8963,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "FontFamily", {
             /**** FontFamily ****/
             get: function () {
-                return this.Peer.css('font-family');
+                return css(this.Peer, 'font-family');
             },
             set: function (newFontFamily) {
                 allowTextline('font family', newFontFamily);
@@ -8885,7 +8975,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "FontSize", {
             /**** FontSize ****/
             get: function () {
-                return parseFloat(this.Peer.css('font-size'));
+                return parseFloat(css(this.Peer, 'font-size'));
             },
             set: function (newFontSize) {
                 WAT.allowDimension('font size', newFontSize);
@@ -8897,7 +8987,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "FontWeight", {
             /**** FontWeight ****/
             get: function () {
-                var FontWeight = this.Peer.css('font-weight');
+                var FontWeight = css(this.Peer, 'font-weight');
                 switch (FontWeight) {
                     case 'lighter':
                     case 'normal':
@@ -8932,7 +9022,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "FontStyle", {
             /**** FontStyle ****/
             get: function () {
-                var FontStyle = this.Peer.css('font-style');
+                var FontStyle = css(this.Peer, 'font-style');
                 switch (FontStyle) {
                     case 'normal':
                     case 'italic':
@@ -8951,7 +9041,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "LineHeight", {
             /**** LineHeight ****/
             get: function () {
-                var LineHeight = this.Peer.css('line-height');
+                var LineHeight = css(this.Peer, 'line-height');
                 switch (true) {
                     case (LineHeight === 'normal'):
                         return Math.round(this.FontSize * 1.5);
@@ -8971,7 +9061,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "TextDecoration", {
             /**** TextDecoration ****/
             get: function () {
-                var _a = window.getComputedStyle(this.Peer[0]), textDecorationColor = _a.textDecorationColor, textDecorationLine = _a.textDecorationLine, textDecorationStyle = _a.textDecorationStyle, 
+                var _a = window.getComputedStyle(this.Peer), textDecorationColor = _a.textDecorationColor, textDecorationLine = _a.textDecorationLine, textDecorationStyle = _a.textDecorationStyle, 
                 // @ts-ignore
                 textDecorationThickness = _a.textDecorationThickness;
                 if ((textDecorationLine === 'none') ||
@@ -9028,7 +9118,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "TextShadow", {
             /**** TextShadow ****/
             get: function () {
-                var TextShadow = this.Peer.css('text-shadow');
+                var TextShadow = css(this.Peer, 'text-shadow');
                 if (TextShadow === 'none') {
                     return { xOffset: 0, yOffset: 0, BlurRadius: 0, Color: '#00000000' };
                 }
@@ -9072,7 +9162,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "TextAlignment", {
             /**** TextAlignment ****/
             get: function () {
-                return this.Peer.css('text-align');
+                return css(this.Peer, 'text-align');
             },
             set: function (newTextAlignment) {
                 allowOneOf('text alignment', newTextAlignment, WAT.WAT_TextAlignments);
@@ -9084,7 +9174,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "ForegroundColor", {
             /**** ForegroundColor ****/
             get: function () {
-                return HexColor(this.Peer.css('color'));
+                return HexColor(css(this.Peer, 'color'));
             },
             set: function (newColor) {
                 allowColor('foreground color', newColor);
@@ -9103,7 +9193,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "BackgroundColor", {
             /**** BackgroundColor ****/
             get: function () {
-                return HexColor(this.Peer.css('background-color'));
+                return HexColor(css(this.Peer, 'background-color'));
             },
             set: function (newColor) {
                 allowColor('background color', newColor);
@@ -9115,7 +9205,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "BackgroundTexture", {
             /**** BackgroundTexture ****/
             get: function () {
-                var _a = window.getComputedStyle(this.Peer[0]), backgroundImage = _a.backgroundImage, backgroundPosition = _a.backgroundPosition, backgroundSize = _a.backgroundSize, backgroundRepeat = _a.backgroundRepeat;
+                var _a = window.getComputedStyle(this.Peer), backgroundImage = _a.backgroundImage, backgroundPosition = _a.backgroundPosition, backgroundSize = _a.backgroundSize, backgroundRepeat = _a.backgroundRepeat;
                 var Result = { ImageURL: '', Mode: 'normal', xOffset: 0, yOffset: 0 };
                 if (backgroundImage !== 'none') {
                     Result.ImageURL = backgroundImage.slice(5, backgroundImage.length - 2);
@@ -9187,10 +9277,10 @@ var WAT;
             get: function () {
                 var Peer = this.Peer;
                 return [
-                    parseFloat(Peer.css('border-top-width')),
-                    parseFloat(Peer.css('border-right-width')),
-                    parseFloat(Peer.css('border-bottom-width')),
-                    parseFloat(Peer.css('border-left-width'))
+                    parseFloat(css(Peer, 'border-top-width')),
+                    parseFloat(css(Peer, 'border-right-width')),
+                    parseFloat(css(Peer, 'border-bottom-width')),
+                    parseFloat(css(Peer, 'border-left-width'))
                 ];
             },
             set: function (newBorderWidths) {
@@ -9226,10 +9316,10 @@ var WAT;
             get: function () {
                 var Peer = this.Peer;
                 return [
-                    HexColor(Peer.css('border-top-color')),
-                    HexColor(Peer.css('border-right-color')),
-                    HexColor(Peer.css('border-bottom-color')),
-                    HexColor(Peer.css('border-left-color'))
+                    HexColor(css(Peer, 'border-top-color')),
+                    HexColor(css(Peer, 'border-right-color')),
+                    HexColor(css(Peer, 'border-bottom-color')),
+                    HexColor(css(Peer, 'border-left-color'))
                 ];
             },
             set: function (newBorderColors) {
@@ -9268,10 +9358,10 @@ var WAT;
                 }
                 var Peer = this.Peer;
                 return [
-                    normalizedBorderStyle(Peer.css('border-top-style')),
-                    normalizedBorderStyle(Peer.css('border-right-style')),
-                    normalizedBorderStyle(Peer.css('border-bottom-style')),
-                    normalizedBorderStyle(Peer.css('border-left-style'))
+                    normalizedBorderStyle(css(Peer, 'border-top-style')),
+                    normalizedBorderStyle(css(Peer, 'border-right-style')),
+                    normalizedBorderStyle(css(Peer, 'border-bottom-style')),
+                    normalizedBorderStyle(css(Peer, 'border-left-style'))
                 ];
             },
             set: function (newBorderStyles) {
@@ -9307,10 +9397,10 @@ var WAT;
             get: function () {
                 var Peer = this.Peer;
                 return [
-                    parseFloat(Peer.css('border-top-left-radius')),
-                    parseFloat(Peer.css('border-top-right-radius')),
-                    parseFloat(Peer.css('border-bottom-right-radius')),
-                    parseFloat(Peer.css('border-bottom-left-radius'))
+                    parseFloat(css(Peer, 'border-top-left-radius')),
+                    parseFloat(css(Peer, 'border-top-right-radius')),
+                    parseFloat(css(Peer, 'border-bottom-right-radius')),
+                    parseFloat(css(Peer, 'border-bottom-left-radius'))
                 ];
             },
             set: function (newBorderRadii) {
@@ -9339,7 +9429,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "BoxShadow", {
             /**** BoxShadow ****/
             get: function () {
-                var BoxShadow = this.Peer.css('box-shadow');
+                var BoxShadow = css(this.Peer, 'box-shadow');
                 if (BoxShadow === 'none') {
                     return { isInset: false, xOffset: 0, yOffset: 0, BlurRadius: 0, SpreadRadius: 0, Color: '#00000000' };
                 }
@@ -9392,7 +9482,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "Cursor", {
             /**** Cursor ****/
             get: function () {
-                var CursorSpec = this.Peer.css('cursor');
+                var CursorSpec = css(this.Peer, 'cursor');
                 return (CursorSpec.indexOf(',') > 0
                     ? CursorSpec.replace(/^.*,\s*/, '')
                     : CursorSpec);
@@ -9403,7 +9493,7 @@ var WAT;
                     applyStyleToVisual(this, 'cursor', null); // also clears any "customCursor"
                 }
                 else {
-                    var CursorSpec = this.Peer.css('cursor');
+                    var CursorSpec = css(this.Peer, 'cursor');
                     var Prefix = (CursorSpec.indexOf(',') > 0
                         ? CursorSpec.replace(/,[^,]+$/, ', ')
                         : '');
@@ -9416,7 +9506,7 @@ var WAT;
         Object.defineProperty(WAT_Visual.prototype, "customCursor", {
             /**** customCursor ****/
             get: function () {
-                var Match = /^url\(([^\)])\)(\s+\d+)?(\s+\d+)?,/.exec(this.Peer.css('cursor'));
+                var Match = /^url\(([^\)])\)(\s+\d+)?(\s+\d+)?,/.exec(css(this.Peer, 'cursor'));
                 if (Match == null) {
                     return undefined;
                 }
@@ -9443,7 +9533,7 @@ var WAT;
                     expectNumberInRange('custom cursor x offset', newCustomCursor.xOffset, 0, 31);
                     expectNumberInRange('custom cursor y offset', newCustomCursor.yOffset, 0, 31);
                 }
-                var CursorSpec = this.Peer.css('cursor');
+                var CursorSpec = css(this.Peer, 'cursor');
                 var standardCursor = (CursorSpec.indexOf(',') > 0
                     ? CursorSpec.replace(/^.*,\s*/, '')
                     : CursorSpec);
@@ -9481,7 +9571,7 @@ var WAT;
         Object.defineProperty(WAT_Applet.prototype, "Name", {
             /**** Name ****/
             get: function () {
-                var Candidate = PeerOfVisual(this).data('wat-name');
+                var Candidate = data(PeerOfVisual(this), 'wat-name');
                 return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
             },
             set: function (newName) { throwReadOnlyError('Name'); },
@@ -9530,8 +9620,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Card').each(function () {
-                    Result.push(VisualOfElement(this));
+                filtered(Peer.children, '.WAT.Card').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer));
                 });
                 return Result;
             },
@@ -9544,8 +9634,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Card').each(function () {
-                    Result.push(VisualOfElement(this).Label);
+                filtered(Peer.children, '.WAT.Card').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer).Label);
                 });
                 return Result;
             },
@@ -9557,7 +9647,7 @@ var WAT;
             /**** CardCount ****/
             get: function () {
                 var Peer = PeerOfVisual(this);
-                return Peer.children('.WAT.Card').length;
+                return filtered(Peer.children, '.WAT.Card').length;
             },
             set: function (newCardCount) { throwReadOnlyError('CardCount'); },
             enumerable: false,
@@ -9586,8 +9676,8 @@ var WAT;
             WAT.expectName('card name', Name);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Card').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Card').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Name === Name) {
                     Result = Candidate;
                 }
@@ -9599,8 +9689,8 @@ var WAT;
             WAT.expectLabel('card label', Label);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Card').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Card').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Label === Label) {
                     Result = Candidate;
                 }
@@ -9653,7 +9743,7 @@ var WAT;
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
-            return CardDeserializedInto(MasterInfo.Template, this, Index);
+            return this.CardDeserializedFrom(MasterInfo.Template, Index);
         };
         /**** DuplicateOfCard ****/
         WAT_Applet.prototype.DuplicateOfCard = function (CardOrNameOrIndex) {
@@ -9662,7 +9752,7 @@ var WAT;
                 throwError('InvalidArgument: the given card does not exist or is not part of ' +
                     'this applet');
             var CardSerialization = serializedVisual(this.CardList[Index]);
-            return CardDeserializedInto(CardSerialization, this, Index + 1);
+            return this.CardDeserializedFrom(CardSerialization, Index + 1);
         };
         /**** CardDeserializedFrom ****/
         WAT_Applet.prototype.CardDeserializedFrom = function (Serialization, InsertionPoint) {
@@ -9673,24 +9763,24 @@ var WAT;
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
-            var CardPeer = $(Serialization);
+            var CardPeer = ElementFromHTML(Serialization);
             var NeighbourCard = this.CardAtIndex(Index);
             if (NeighbourCard == null) {
                 this.Peer.append(CardPeer);
             }
             else {
-                CardPeer.insertBefore(NeighbourCard.Peer);
+                this.Peer.insertBefore(CardPeer, NeighbourCard.Peer);
             }
             var newCard;
             try {
                 newCard = VisualBuiltFromPeer(CardPeer, 'Card');
             }
             catch (Signal) {
-                CardPeer.remove();
+                remove(CardPeer);
                 throw Signal;
             }
             if (!this.acceptsCardAt(newCard, Index)) {
-                CardPeer.remove();
+                remove(CardPeer);
                 throwError('InvalidOperation: the given serialized card must not be ' +
                     'inserted into this applet');
             }
@@ -9770,9 +9860,9 @@ var WAT;
                 return;
             } // this method is idempotent
             releaseVisual(Card, 'recursively');
-            Card.Peer.remove();
+            remove(Card.Peer);
             if (this.CardCount === 0) { // an applet should always contain >= 1 cards
-                this.newCardInsertedAt('plainCard', 0).Peer.css('visibility', 'visible');
+                css(this.newCardInsertedAt('plainCard', 0).Peer, 'visibility', 'visible');
             }
         };
         Object.defineProperty(WAT_Applet.prototype, "shownCard", {
@@ -9826,13 +9916,13 @@ var WAT;
                     'this applet');
             }
             else {
-                var CardElement_1 = PeerOfVisual(this.CardAtIndex(CardIndex))[0];
-                this.Peer.children('.WAT.Card').each(function () {
-                    if (this === CardElement_1) {
-                        $(this).css('visibility', 'visible');
+                var CardElement_1 = PeerOfVisual(this.CardAtIndex(CardIndex));
+                filtered(this.Peer.children, '.WAT.Card').forEach(function (Peer) {
+                    if (Peer === CardElement_1) {
+                        css(Peer, 'visibility', 'visible');
                     }
                     else {
-                        $(this).css('visibility', 'hidden');
+                        css(Peer, 'visibility', 'hidden');
                     }
                 });
             }
@@ -9858,8 +9948,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Overlay').each(function () {
-                    Result.push(VisualOfElement(this));
+                filtered(Peer.children, '.WAT.Overlay').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer));
                 });
                 return Result;
             },
@@ -9872,8 +9962,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Overlay').each(function () {
-                    Result.push(VisualOfElement(this).Label);
+                filtered(Peer.children, '.WAT.Overlay').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer).Label);
                 });
                 return Result;
             },
@@ -9885,7 +9975,7 @@ var WAT;
             /**** OverlayCount ****/
             get: function () {
                 var Peer = PeerOfVisual(this);
-                return Peer.children('.WAT.Overlay').length;
+                return filtered(Peer.children, '.WAT.Overlay').length;
             },
             set: function (newOverlayCount) { throwReadOnlyError('OverlayCount'); },
             enumerable: false,
@@ -9914,8 +10004,8 @@ var WAT;
             WAT.expectName('overlay name', Name);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Overlay').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Overlay').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Name === Name) {
                     Result = Candidate;
                 }
@@ -9927,8 +10017,8 @@ var WAT;
             WAT.expectLabel('overlay label', Label);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Overlay').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Overlay').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Label === Label) {
                     Result = Candidate;
                 }
@@ -9981,7 +10071,7 @@ var WAT;
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
-            return OverlayDeserializedInto(MasterInfo.Template, this, Index);
+            return this.OverlayDeserializedFrom(MasterInfo.Template, Index);
         };
         /**** DuplicateOfOverlay ****/
         WAT_Applet.prototype.DuplicateOfOverlay = function (OverlayOrNameOrIndex) {
@@ -9990,7 +10080,7 @@ var WAT;
                 throwError('InvalidArgument: the given overlay does not exist or is not part of ' +
                     'this applet');
             var OverlaySerialization = serializedVisual(this.OverlayList[Index]);
-            return OverlayDeserializedInto(OverlaySerialization, this, Index + 1);
+            return this.OverlayDeserializedFrom(OverlaySerialization, Index + 1);
         };
         /**** OverlayDeserializedFrom ****/
         WAT_Applet.prototype.OverlayDeserializedFrom = function (Serialization, InsertionPoint) {
@@ -10001,24 +10091,24 @@ var WAT;
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
-            var OverlayPeer = $(Serialization);
+            var OverlayPeer = ElementFromHTML(Serialization);
             var NeighbourOverlay = this.OverlayAtIndex(Index);
             if (NeighbourOverlay == null) {
                 this.Peer.append(OverlayPeer);
             }
             else {
-                OverlayPeer.insertBefore(NeighbourOverlay.Peer);
+                this.Peer.insertBefore(OverlayPeer, NeighbourOverlay.Peer);
             }
             var newOverlay;
             try {
                 newOverlay = VisualBuiltFromPeer(OverlayPeer, 'Overlay');
             }
             catch (Signal) {
-                OverlayPeer.remove();
+                remove(OverlayPeer);
                 throw Signal;
             }
             if (!this.acceptsOverlayAt(newOverlay, Index)) {
-                OverlayPeer.remove();
+                remove(OverlayPeer);
                 throwError('InvalidOperation: the given serialized overlay must not be ' +
                     'inserted into this applet');
             }
@@ -10098,34 +10188,36 @@ var WAT;
                 return;
             } // this method is idempotent
             releaseVisual(Overlay, 'recursively');
-            Overlay.Peer.remove();
+            remove(Overlay.Peer);
         };
         /**** frontmostOverlayOfClass ****/
         WAT_Applet.prototype.frontmostOverlayOfClass = function (ClassName) {
             WAT.expectName('HTML class name', ClassName);
-            var Candidate = this.Peer.children('.WAT.Overlay.' + ClassName).last();
-            return (Candidate.length > 0
-                ? VisualOfElement(Candidate[0])
-                : undefined);
+            var PeerList = filtered(this.Peer.children, '.WAT.Overlay.' + ClassName);
+            var Candidate = PeerList[PeerList.length - 1];
+            return (Candidate == null
+                ? undefined
+                : VisualOfElement(Candidate));
         };
         /**** bringOverlayToFrontOfClass ****/
         WAT_Applet.prototype.bringOverlayToFrontOfClass = function (OverlayOrNameOrIndex, ClassName) {
+            var _this = this;
             WAT.expectName('HTML class name', ClassName);
             var Overlay = this.Overlay(OverlayOrNameOrIndex);
             if (Overlay == null)
                 throwError('InvalidArgument: the given overlay does not exist or is not part of ' +
                     'this applet');
-            var OverlayPeer = Overlay.Peer, OverlayElement = OverlayPeer[0];
-            if (!OverlayPeer.hasClass(ClassName))
+            var OverlayPeer = Overlay.Peer;
+            if (!OverlayPeer.classList.contains(ClassName))
                 throwError('InvalidArgument: the given overlay does not have class ' +
                     quoted(ClassName) + ' itself');
             var OverlayFound = false;
-            this.Peer.children('.WAT.Overlay.' + ClassName).each(function () {
+            filtered(this.Peer.children, '.WAT.Overlay.' + ClassName).forEach(function (Peer) {
                 switch (true) {
-                    case (OverlayElement === this):
+                    case (OverlayPeer === Peer):
                         OverlayFound = true;
                         break;
-                    case OverlayFound: $(this).insertBefore(OverlayPeer);
+                    case OverlayFound: _this.Peer.insertBefore(Peer, OverlayPeer);
                 } // does not touch Overlay itself (keeps menus etc. intact)
             });
         };
@@ -10145,8 +10237,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                    Result.push(VisualOfElement(this));
+                filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer));
                 });
                 return Result;
             },
@@ -10159,8 +10251,8 @@ var WAT;
             get: function () {
                 var Result = [];
                 var Peer = PeerOfVisual(this);
-                Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                    Result.push(VisualOfElement(this).Label);
+                filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+                    Result.push(VisualOfElement(Peer).Label);
                 });
                 return Result;
             },
@@ -10172,7 +10264,7 @@ var WAT;
             /**** ComponentCount ****/
             get: function () {
                 var Peer = PeerOfVisual(this);
-                return Peer.children('.WAT.Control,.WAT.Compound').length;
+                return filtered(Peer.children, '.WAT.Control,.WAT.Compound').length;
             },
             set: function (newComponentCount) { throwReadOnlyError('ComponentCount'); },
             enumerable: false,
@@ -10204,8 +10296,8 @@ var WAT;
             WAT.expectName('component name', Name);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Name === Name) {
                     Result = Candidate;
                 }
@@ -10217,8 +10309,8 @@ var WAT;
             WAT.expectLabel('component label', Label);
             var Result = undefined;
             var Peer = this.Peer;
-            Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                var Candidate = VisualForElement(this);
+            filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+                var Candidate = VisualForElement(Peer);
                 if (Candidate.Label === Label) {
                     Result = Candidate;
                 }
@@ -10273,7 +10365,7 @@ var WAT;
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this applet');
-            return ComponentDeserializedInto(MasterInfo.Template, this, Index);
+            return this.ComponentDeserializedFrom(MasterInfo.Template, Index);
         };
         /**** DuplicateOfComponent ****/
         WAT_Container.prototype.DuplicateOfComponent = function (ComponentOrNameOrIndex) {
@@ -10282,35 +10374,35 @@ var WAT;
                 throwError('InvalidArgument: the given component does not exist or is not part ' +
                     'of this applet');
             var ComponentSerialization = serializedVisual(this.ComponentList[Index]);
-            return ComponentDeserializedInto(ComponentSerialization, this, Index + 1);
+            return this.ComponentDeserializedFrom(ComponentSerialization, Index + 1);
         };
         /**** ComponentDeserializedFrom ****/
-        WAT_Container.prototype.ComponentDeserializedFrom = function (Serialization, ComponentOrNameOrIndex) {
+        WAT_Container.prototype.ComponentDeserializedFrom = function (Serialization, InsertionPoint) {
             expectText('component serialization', Serialization);
-            var Index = (ComponentOrNameOrIndex == null
+            var Index = (InsertionPoint == null
                 ? this.ComponentCount
-                : this.IndexOfComponent(ComponentOrNameOrIndex));
+                : this.IndexOfComponent(InsertionPoint));
             if (Index < 0)
                 throwError('InvalidArgument: the given insertion point does not exist or is not ' +
                     'part of this container');
-            var ComponentPeer = $(Serialization);
+            var ComponentPeer = ElementFromHTML(Serialization);
             var NeighbourComponent = this.ComponentAtIndex(Index);
             if (NeighbourComponent == null) {
                 this.Peer.append(ComponentPeer);
             }
             else {
-                ComponentPeer.insertBefore(NeighbourComponent.Peer);
+                this.Peer.insertBefore(ComponentPeer, NeighbourComponent.Peer);
             }
             var newComponent;
             try {
                 newComponent = VisualBuiltFromPeer(ComponentPeer, 'Component');
             }
             catch (Signal) {
-                ComponentPeer.remove();
+                remove(ComponentPeer);
                 throw Signal;
             }
             if (!this.acceptsComponentAt(newComponent, Index)) {
-                ComponentPeer.remove();
+                remove(ComponentPeer);
                 throwError('InvalidOperation: the given serialized component must not be ' +
                     'inserted into this container');
             }
@@ -10402,7 +10494,7 @@ var WAT;
                     this.Peer.append(Component.Peer);
                 }
                 else {
-                    Component.Peer.insertAfter(prevComponent.Peer);
+                    this.Peer.insertAfter(Component.Peer, prevComponent.Peer);
                 }
             }
         };
@@ -10417,7 +10509,7 @@ var WAT;
                 return;
             } // this method is idempotent
             releaseVisual(Component, 'recursively');
-            Component.Peer.remove();
+            remove(Component.Peer);
         };
         return WAT_Container;
     }(WAT_Visual));
@@ -10444,7 +10536,7 @@ var WAT;
         Object.defineProperty(WAT_Card.prototype, "isVisible", {
             /**** isVisible ****/
             get: function () {
-                return (this.Peer.css('visibility') !== 'hidden');
+                return (css(this.Peer, 'visibility') !== 'hidden');
             },
             set: function (newVisibility) {
                 expectBoolean('visibility', newVisibility);
@@ -10592,15 +10684,15 @@ var WAT;
             expectOneOf('positioning constraint', Constraint, ['withinApplet', 'withinViewport']);
             var Applet = this.Applet;
             if (Constraint === 'withinApplet') { // x/y are coord.s relative to applet
-                x = Math.max(0, Math.min(x, Applet.Width - this.Peer[0].offsetWidth));
-                y = Math.max(0, Math.min(y, Applet.Height - this.Peer[0].offsetHeight));
+                x = Math.max(0, Math.min(x, Applet.Width - this.Peer.offsetWidth));
+                y = Math.max(0, Math.min(y, Applet.Height - this.Peer.offsetHeight));
                 changeGeometryOfVisualTo(this, x, y, undefined, undefined);
             }
             else {
                 var ViewportWidth = document.body.clientWidth;
                 var ViewportHeight = Math.max(window.innerHeight, document.body.clientHeight);
-                x = Math.max(0, Math.min(x, ViewportWidth - this.Peer[0].offsetWidth));
-                y = Math.max(0, Math.min(y, ViewportHeight - this.Peer[0].offsetHeight));
+                x = Math.max(0, Math.min(x, ViewportWidth - this.Peer.offsetWidth));
+                y = Math.max(0, Math.min(y, ViewportHeight - this.Peer.offsetHeight));
                 var AppletGeometryOnDisplay = Applet.GeometryOnDisplay;
                 var AppletX = AppletGeometryOnDisplay.x;
                 var AppletY = AppletGeometryOnDisplay.y;
@@ -10846,8 +10938,9 @@ var WAT;
     };
     /**** AppletPeersInDocument ****/
     function AppletPeersInDocument() {
-        return $('.WAT.Applet').filter(// applets must not be nested
-        function () { return ($(this).parent().closest('.WAT.Applet').length === 0); });
+        return filtered(document.body.querySelectorAll('.WAT.Applet'), function (Peer) {
+            return (closestParent(Peer, '.WAT.Applet') == null);
+        });
     }
     WAT.AppletPeersInDocument = AppletPeersInDocument;
     var Designer;
@@ -10928,7 +11021,6 @@ var WAT;
     //                                WAT Start-Up                                //
     //----------------------------------------------------------------------------//
     global$1['WAT'] = Object.assign(WAT.ready, WAT);
-    $(document.head);
     /**** startWAT ****/
     function startWAT() {
         return __awaiter(this, void 0, void 0, function () {
@@ -10954,12 +11046,12 @@ var WAT;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        AppletPeerList = AppletPeersInDocument().toArray();
+                        AppletPeerList = AppletPeersInDocument();
                         return [4 /*yield*/, AppletPeerList.forEach(function (AppletPeer) {
                                 return __awaiter(this, void 0, void 0, function () {
                                     return __generator(this, function (_a) {
                                         switch (_a.label) {
-                                            case 0: return [4 /*yield*/, startAppletFromPeer($(AppletPeer))];
+                                            case 0: return [4 /*yield*/, startAppletFromPeer(AppletPeer)];
                                             case 1:
                                                 _a.sent();
                                                 return [2 /*return*/];
@@ -11005,7 +11097,6 @@ var WAT;
     }
     /**** start WAT and applets ****/
     function startup() {
-        $(document.body);
         defineForbiddenPropertyNames();
         registerMastersInDocument(); // nota bene: WAT is not yet "ready"!
         installEventHandlerForErrorIndicators();
