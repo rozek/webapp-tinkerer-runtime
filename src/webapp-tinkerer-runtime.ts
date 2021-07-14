@@ -2967,7 +2967,7 @@ namespace WAT {
     if (Script != null) {
       try {
         MasterInfo.compiledScript = new Function(
-          'toGet','toSet','on','off','trigger','$', Script
+          'toGet','toSet','on','off','trigger','$$', Script
         )
       } catch (Signal) {
         MasterInfo.ErrorInfo = {
@@ -4968,7 +4968,7 @@ namespace WAT {
       if (VisualScript != null) {
         try {
           compiledScript = new Function(
-            'toGet','toSet','on','off','trigger','$', VisualScript
+            'toGet','toSet','on','off','trigger','$$', VisualScript
           )
         } catch (Signal) {
           setErrorInfoOfVisual(Visual,{
@@ -5573,7 +5573,7 @@ namespace WAT {
         let pendingScriptError
         try {                       // just compile in order to check for errors
           let compiledScript = new Function(
-            'toGet','toSet','on','off','trigger','$', pendingScript
+            'toGet','toSet','on','off','trigger','$$', pendingScript
           )
         } catch (Signal) {
           pendingScriptError = {
