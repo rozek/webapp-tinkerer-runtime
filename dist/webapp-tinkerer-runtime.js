@@ -4289,14 +4289,6 @@
         /**** allow/expect[ed]Element ****/
         WAT.allowElement = ValidatorForClassifier(ValueIsElement, acceptNil, 'DOM element'), WAT.allowedElement = WAT.allowElement;
         WAT.expectElement = ValidatorForClassifier(ValueIsElement, rejectNil, 'DOM element'), WAT.expectedElement = WAT.expectElement;
-        /**** ValueIs$Instance ****/
-        function ValueIs$Instance(Value) {
-            return (Value instanceof $__default['default']);
-        }
-        WAT.ValueIs$Instance = ValueIs$Instance;
-        /**** allow/expect[ed]$Instance ****/
-        WAT.allow$Instance = ValidatorForClassifier(ValueIs$Instance, acceptNil, '"jQuery" instance'), WAT.allowed$Instance = WAT.allow$Instance;
-        WAT.expect$Instance = ValidatorForClassifier(ValueIs$Instance, rejectNil, '"jQuery" instance'), WAT.expected$Instance = WAT.expect$Instance;
         /**** ValueIsVisual ****/
         function ValueIsVisual(Value) {
             return (Value instanceof WAT_Visual);
@@ -4465,6 +4457,59 @@
             var Result = Object.create(null);
             KeyList.forEach(function (Key) { return Result[Key] = Key; });
             return Result;
+        }
+        /**** camelized ****/
+        function camelized(Original) {
+            return Original.replace(/-([a-z])/gi, function (Match) { return Match[1].toUpperCase(); });
+        }
+        function filtered(ElementList, Filter) {
+            return (ValueIsString(Filter)
+                ? Array.prototype.filter.call(ElementList, function (Candidate) { return Candidate.matches(Filter); })
+                : Array.prototype.filter.call(ElementList, Filter));
+        }
+        /**** attr ****/
+        function attr(DOMElement, Name, Value) {
+            if (arguments.length === 2) {
+                return DOMElement.getAttribute(Name);
+            }
+            else {
+                DOMElement.setAttribute(Name, Value);
+            }
+        }
+        /**** css ****/
+        function css(DOMElement, Name, Value) {
+            if (arguments.length === 2) {
+                // @ts-ignore we want to index literally!
+                return window.getComputedStyle(DOMElement)[camelized(Name)];
+            }
+            else {
+                // @ts-ignore we want to index literally!
+                DOMElement.style[camelized(Name)] = Value;
+            }
+        }
+        /**** html ****/
+        function html(DOMElement, Value) {
+            if (arguments.length === 1) {
+                return DOMElement.innerHTML;
+            }
+            else {
+                DOMElement.innerHTML = Value;
+            }
+        }
+        /**** data ****/
+        function data(DOMElement, Name, Value) {
+            if (arguments.length === 2) {
+                return DOMElement.dataset[camelized(Name)];
+            }
+            else {
+                DOMElement.dataset[camelized(Name)] = Value;
+            }
+        }
+        /**** ElementFromHTML ****/
+        function ElementFromHTML(HTML) {
+            var auxElement = document.createElement('div');
+            auxElement.innerHTML = HTML;
+            return auxElement.firstChild;
         }
         function parseHTML(HTML, Callbacks) {
             var StartTagPattern = /^<([-a-z0-9_]+)((?:[\s\xA0]+[-a-z0-9_]+(?:[\s\xA0]*=[\s\xA0]*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s\xA0]+))?)*)[\s\xA0]*(\/?)>/i;
@@ -4775,35 +4820,35 @@
             var Resource;
             switch (ResourceInfo.Form) {
                 case 'literalStyle':
-                    Resource = $__default['default']('<style></style>');
-                    Resource.html(ResourceInfo.Value || '');
+                    Resource = ElementFromHTML('<style></style>');
+                    html(Resource, ResourceInfo.Value || '');
                     break;
                 case 'externalStyle':
-                    Resource = $__default['default']('<link></link>');
+                    Resource = ElementFromHTML('<link></link>');
                     break;
                 case 'literalScript':
-                    Resource = $__default['default']('<' + 'script><' + '/script>');
-                    Resource.html(ResourceInfo.Value || '');
+                    Resource = ElementFromHTML('<' + 'script><' + '/script>');
+                    html(Resource, ResourceInfo.Value || '');
                     break;
                 case 'externalScript':
-                    Resource = $__default['default']('<' + 'script><' + '/script>');
+                    Resource = ElementFromHTML('<' + 'script><' + '/script>');
                     break;
                 default: throwError('InternalError: unforeseen resource form');
             }
             var AttributeSet = ResourceInfo.AttributeSet || {};
             for (var AttributeName in AttributeSet) {
                 if (AttributeSet.hasOwnProperty(AttributeName)) {
-                    Resource.attr(AttributeName, AttributeSet[AttributeName].Value);
+                    attr(Resource, AttributeName, AttributeSet[AttributeName].Value);
                 }
             }
             switch (ResourceInfo.Form) {
                 case 'literalStyle':
                 case 'externalStyle':
-                    $__default['default'](document.head).append(Resource);
+                    document.head.appendChild(Resource);
                     break;
                 case 'literalScript':
                     try {
-                        $__default['default'](document.head).append(Resource);
+                        document.head.appendChild(Resource);
                     }
                     catch (Signal) {
                         console.warn('could not attach literal script', Signal);
@@ -4811,12 +4856,11 @@
                     }
                     break;
                 case 'externalScript':
-                    //      $(document.head).append(Resource)     // does not work, pure JS required
-                    document.head.appendChild(Resource[0]);
+                    document.head.appendChild(Resource);
                     break;
                 default: throwError('InternalError: unforeseen resource form');
             }
-            UsageCountOfResource.set(Resource[0], 1);
+            UsageCountOfResource.set(Resource, 1);
         }
         /**** parsedResources - parses resources string into ResourceInfo list ****/
         function parsedResources(Resources) {
@@ -4916,13 +4960,11 @@
         }
         /**** reuseResource ****/
         function reuseResource(Resource) {
-            var Element = Resource[0];
-            UsageCountOfResource.set(Element, (UsageCountOfResource.get(Element) || 0) + 1);
+            UsageCountOfResource.set(Resource, (UsageCountOfResource.get(Resource) || 0) + 1);
         }
         /**** unuseResource ****/
         function unuseResource(Resource) {
-            var Element = Resource[0];
-            UsageCountOfResource.set(Element, Math.max(0, (UsageCountOfResource.get(Element) || 0) - 1));
+            UsageCountOfResource.set(Resource, Math.max(0, (UsageCountOfResource.get(Resource) || 0) - 1));
         }
         var ResourceCollection;
         /**** clearResourceCollection - to be called prior to a resource collection ****/
@@ -4931,13 +4973,12 @@
         }
         /**** collectResource ****/
         function collectResource(Resource) {
-            var ResourceElement = Resource[0];
             for (var i = 0, l = ResourceCollection.length; i < l; i++) {
-                if (ResourceCollection[i] === ResourceElement) {
+                if (ResourceCollection[i] === Resource) {
                     return;
                 }
             }
-            ResourceCollection.push(ResourceElement);
+            ResourceCollection.push(Resource);
         }
         /**** collectedResources ****/
         function collectedResources() {
@@ -4966,29 +5007,29 @@
             }
         }
         /**** ResourceInfoMatchesElement ****/
-        function ResourceInfoMatchesElement(ResourceInfo, Element) {
+        function ResourceInfoMatchesElement(ResourceInfo, DOMElement) {
             switch (ResourceInfo.Form) {
-                case 'literalStyle': return ((Element[0].tagName === 'STYLE') &&
-                    ((Element.attr('type') || 'text/css') === 'text/css') &&
-                    ((Element.attr('media') || 'all') === ResourceInfo.Media) &&
-                    ((Element.attr('title') || undefined) === ResourceInfo.Title) &&
-                    (Element.text().trim() === ResourceInfo.Value));
-                case 'externalStyle': return ((Element[0].tagName === 'LINK') && (Element.attr('rel') === 'stylesheet') &&
-                    ((Element.attr('type') || 'text/css') === 'text/css') &&
-                    ((Element.attr('media') || 'all') === ResourceInfo.Media) &&
-                    ((Element.attr('title') || undefined) === ResourceInfo.Title) &&
-                    (Element.attr('href') === ResourceInfo.Value) // TODO: normalize URL
+                case 'literalStyle': return ((DOMElement.tagName === 'STYLE') &&
+                    ((attr(DOMElement, 'type') || 'text/css') === 'text/css') &&
+                    ((attr(DOMElement, 'media') || 'all') === ResourceInfo.Media) &&
+                    ((attr(DOMElement, 'title') || undefined) === ResourceInfo.Title) &&
+                    ((DOMElement.textContent || '').trim() === ResourceInfo.Value));
+                case 'externalStyle': return ((DOMElement.tagName === 'LINK') && (attr(DOMElement, 'rel') === 'stylesheet') &&
+                    ((attr(DOMElement, 'type') || 'text/css') === 'text/css') &&
+                    ((attr(DOMElement, 'media') || 'all') === ResourceInfo.Media) &&
+                    ((attr(DOMElement, 'title') || undefined) === ResourceInfo.Title) &&
+                    (attr(DOMElement, 'href') === ResourceInfo.Value) // TODO: normalize URL
                 );
-                case 'literalScript': return ((Element[0].tagName === 'SCRIPT') && ((Element.attr('type') == null) ||
-                    (Element.attr('type') === 'application/javascript') ||
-                    (Element.attr('type') === 'text/javascript')) &&
-                    ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-                    (Element.text().trim() === ResourceInfo.Value));
-                case 'externalScript': return ((Element[0].tagName === 'SCRIPT') && ((Element.attr('type') == null) ||
-                    (Element.attr('type') === 'application/javascript') ||
-                    (Element.attr('type') === 'text/javascript')) &&
-                    ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-                    (Element.attr('src') === ResourceInfo.Value) // TODO: normalize URL
+                case 'literalScript': return ((DOMElement.tagName === 'SCRIPT') && ((attr(DOMElement, 'type') == null) ||
+                    (attr(DOMElement, 'type') === 'application/javascript') ||
+                    (attr(DOMElement, 'type') === 'text/javascript')) &&
+                    ((attr(DOMElement, 'nomodule') || false) === ResourceInfo.noModule) &&
+                    ((DOMElement.textContent || '').trim() === ResourceInfo.Value));
+                case 'externalScript': return ((DOMElement.tagName === 'SCRIPT') && ((attr(DOMElement, 'type') == null) ||
+                    (attr(DOMElement, 'type') === 'application/javascript') ||
+                    (attr(DOMElement, 'type') === 'text/javascript')) &&
+                    ((attr(DOMElement, 'nomodule') || false) === ResourceInfo.noModule) &&
+                    (attr(DOMElement, 'src') === ResourceInfo.Value) // TODO: normalize URL
                 );
                 default: throwError('InternalError: unforeseen resource form');
             }
@@ -4996,13 +5037,12 @@
         /**** ElementMatchingResourceInfo ****/
         function ElementMatchingResourceInfo(ResourceInfo) {
             var matchingElement = undefined;
-            $__default['default'](document.head).children('link,style,script').each(function () {
-                var Element = $__default['default'](this);
-                if (ResourceInfoMatchesElement(ResourceInfo, Element)) {
-                    matchingElement = Element;
+            filtered(document.head.children, 'link,style,script').forEach(function (DOMElement) {
+                if (ResourceInfoMatchesElement(ResourceInfo, DOMElement)) {
+                    matchingElement = DOMElement;
                 }
             });
-            return matchingElement || $__default['default']();
+            return matchingElement;
         }
         //----------------------------------------------------------------------------//
         //                              Backup Handling                               //
@@ -5044,8 +5084,8 @@
                                         return [2 /*return*/, false];
                                     }
                                     break;
-                                case ValueIs$Instance(AppletOrPeer):
-                                    Candidate = AppletOrPeer.data('wat-name');
+                                case ValueIsElement(AppletOrPeer):
+                                    Candidate = data(AppletOrPeer, 'wat-name');
                                     if (ValueIsName(Candidate)) {
                                         AppletName = Candidate;
                                     }
@@ -5082,8 +5122,8 @@
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            WAT.expect$Instance('applet peer', Peer);
-                            AppletName = Peer.data('wat-name');
+                            WAT.expectElement('applet peer', Peer);
+                            AppletName = data(Peer, 'wat-name');
                             if (!ValueIsName(AppletName))
                                 throwError('InvalidArgument: the given applet peer does not have a valid name');
                             _a.label = 1;
@@ -5101,7 +5141,7 @@
                             return [3 /*break*/, 4];
                         case 4:
                             deserializeAppletIntoPeer(Serialization, Peer);
-                            return [2 /*return*/, VisualOfElement(Peer[0])];
+                            return [2 /*return*/, VisualOfElement(Peer)];
                     }
                 });
             });
@@ -5500,13 +5540,13 @@
             /**** clear old applet ****/
             var duringStartUp = (WAT_isReady && !WAT_isRunning);
             if (duringStartUp) {
-                Peer.html('');
+                html(Peer, '');
             }
             else {
-                var oldApplet = VisualOfElement(Peer[0]);
+                var oldApplet = VisualOfElement(Peer);
                 oldApplet.CardList.forEach(function (Card) { return Card.remove(); });
                 oldApplet.OverlayList.forEach(function (Overlay) { return Overlay.remove(); });
-                Peer.html(''); // also removes mandatory card (w/o event handlers)
+                html(Peer, ''); // also removes mandatory card (w/o event handlers)
                 InternalsForVisual.delete(oldApplet);
             }
             /**** if need be: install given masters ****/
@@ -5519,22 +5559,21 @@
                     }
                 });
             }
-            var auxiliaryPeer = $__default['default'](serializedApplets[0]);
-            var auxiliaryElement = auxiliaryPeer[0], Element = Peer[0];
-            while (auxiliaryElement.hasChildNodes()) {
-                Element.appendChild(auxiliaryElement.firstChild);
+            var auxiliaryPeer = ElementFromHTML(serializedApplets[0]);
+            while (auxiliaryPeer.hasChildNodes()) {
+                Peer.appendChild(auxiliaryPeer.firstChild);
             }
-            var AttributeList = auxiliaryElement.attributes;
+            var AttributeList = auxiliaryPeer.attributes;
             for (var i = 0, l = AttributeList.length; i < l; i++) {
                 var AttributeName = AttributeList[i].name;
                 switch (AttributeName) {
                     case 'id':
                     case 'class':
                     case 'style': break;
-                    default: Peer.attr(AttributeName, AttributeList[i].value);
+                    default: attr(Peer, AttributeName, AttributeList[i].value);
                 }
             }
-            var StyleSet = auxiliaryElement.style;
+            var StyleSet = auxiliaryPeer.style;
             for (var Property in StyleSet) {
                 switch (Property) {
                     case 'display':
@@ -5546,7 +5585,7 @@
                     case 'height':
                     case 'bottom': break;
                     default: if (StyleSet.hasOwnProperty(Property)) {
-                        Peer.css(Property, StyleSet[Property]);
+                        css(Peer, Property, StyleSet[Property]);
                     }
                 }
             }
@@ -5563,37 +5602,37 @@
         WAT.AppletDeserializedFrom = AppletDeserializedFrom;
         /**** CardDeserializedInto ****/
         function CardDeserializedInto(Serialization, Applet, Index) {
-            var CardPeer = $__default['default'](Serialization);
+            var CardPeer = ElementFromHTML(Serialization);
             var NeighbourCard = Applet.CardAtIndex(Index);
             if (NeighbourCard == null) {
-                Applet.Peer.append(CardPeer);
+                Applet.Peer.appendChild(CardPeer);
             }
             else {
-                CardPeer.insertBefore(NeighbourCard.Peer);
+                CardPeer.insertBefore(NeighbourCard.Peer, CardPeer.firstChild);
             }
             return VisualBuiltFromPeer(CardPeer, 'Card');
         }
         /**** OverlayDeserializedInto ****/
         function OverlayDeserializedInto(Serialization, Applet, Index) {
-            var OverlayPeer = $__default['default'](Serialization);
+            var OverlayPeer = ElementFromHTML(Serialization);
             var NeighbourOverlay = Applet.OverlayAtIndex(Index);
             if (NeighbourOverlay == null) {
-                Applet.Peer.append(OverlayPeer);
+                Applet.Peer.appendChild(OverlayPeer);
             }
             else {
-                OverlayPeer.insertBefore(NeighbourOverlay.Peer);
+                OverlayPeer.insertBefore(NeighbourOverlay.Peer, OverlayPeer.firstChild);
             }
             return VisualBuiltFromPeer(OverlayPeer, 'Overlay');
         }
         /**** ComponentDeserializedInto ****/
         function ComponentDeserializedInto(Serialization, Container, Index) {
-            var ComponentPeer = $__default['default'](Serialization);
+            var ComponentPeer = ElementFromHTML(Serialization);
             var NeighbourComponent = Container.ComponentAtIndex(Index);
             if (NeighbourComponent == null) {
-                Container.Peer.append(ComponentPeer);
+                Container.Peer.appendChild(ComponentPeer);
             }
             else {
-                ComponentPeer.insertBefore(NeighbourComponent.Peer);
+                ComponentPeer.insertBefore(NeighbourComponent.Peer, ComponentPeer.firstChild);
             }
             return VisualBuiltFromPeer(ComponentPeer, 'Component');
         }
@@ -5839,13 +5878,13 @@
         function GeometryOfVisual(Visual) {
             var Peer = PeerOfVisual(Visual);
             return {
-                x: Peer[0].offsetLeft, Width: Peer[0].offsetWidth,
-                y: Peer[0].offsetTop, Height: Peer[0].offsetHeight
+                x: Peer.offsetLeft, Width: Peer.offsetWidth,
+                y: Peer.offsetTop, Height: Peer.offsetHeight
             };
         }
         /**** GeometryOfVisualOnDisplay ****/
         function GeometryOfVisualOnDisplay(Visual) {
-            var boundingRect = PeerOfVisual(Visual)[0].getBoundingClientRect();
+            var boundingRect = PeerOfVisual(Visual).getBoundingClientRect();
             return {
                 x: boundingRect.left, Width: boundingRect.width,
                 y: boundingRect.top, Height: boundingRect.height
@@ -5854,6 +5893,12 @@
         /**** changeGeometryOfVisualTo ****/
         function changeGeometryOfVisualTo(Visual, x, y, Width, Height) {
             var Peer = PeerOfVisual(Visual);
+            var outerPeer = function () {
+                var Candidate = Peer.parentElement;
+                if (Candidate == null)
+                    throwError('ImpossibleOperation: a detached visual can not be right or bottom aligned');
+                return Candidate;
+            };
             var StyleChanges = {};
             function changeStyles(additionalChanges) {
                 Object.assign(StyleChanges, additionalChanges);
@@ -5862,11 +5907,11 @@
             var horizontalAnchoring, oldLeft, oldWidth, oldRight;
             if ((x != null) || (Width != null)) {
                 horizontalAnchoring = horizontalAnchoringOfVisual(Visual);
-                oldLeft = Math.round(Peer[0].offsetLeft);
-                oldWidth = Math.round(Peer[0].offsetWidth);
+                oldLeft = Math.round(Peer.offsetLeft);
+                oldWidth = Math.round(Peer.offsetWidth);
             }
             if (x != null) {
-                oldRight = (horizontalAnchoring === 'left-width' ? NaN : Peer.parent()[0].offsetWidth - oldLeft - oldWidth);
+                oldRight = (horizontalAnchoring === 'left-width' ? NaN : outerPeer().offsetWidth - oldLeft - oldWidth);
                 x = Math.round(x);
                 var dx = x - oldLeft;
                 switch (horizontalAnchoring) {
@@ -5884,7 +5929,7 @@
             if (Width != null) {
                 Width = Math.round(Width);
                 if (horizontalAnchoring === 'left-right') {
-                    oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : Peer.parent()[0].offsetWidth - oldLeft - oldWidth);
+                    oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : outerPeer().offsetWidth - oldLeft - oldWidth);
                     changeStyles({ right: (oldRight - (Width - oldWidth)) + 'px' });
                 }
                 else {
@@ -5895,11 +5940,11 @@
             var verticalAnchoring, oldTop, oldHeight, oldBottom;
             if ((y != null) || (Height != null)) {
                 verticalAnchoring = verticalAnchoringOfVisual(Visual);
-                oldTop = Math.round(Peer[0].offsetTop);
-                oldHeight = Math.round(Peer[0].offsetHeight);
+                oldTop = Math.round(Peer.offsetTop);
+                oldHeight = Math.round(Peer.offsetHeight);
             }
             if (y != null) {
-                oldBottom = (verticalAnchoring === 'top-height' ? NaN : Peer.parent()[0].offsetHeight - oldTop - oldHeight);
+                oldBottom = (verticalAnchoring === 'top-height' ? NaN : outerPeer().offsetHeight - oldTop - oldHeight);
                 y = Math.round(y);
                 var dy = y - oldTop;
                 switch (verticalAnchoring) {
@@ -5917,7 +5962,7 @@
             if (Height != null) {
                 Height = Math.round(Height);
                 if (verticalAnchoring === 'top-bottom') {
-                    oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : Peer.parent()[0].offsetHeight - oldTop - oldHeight);
+                    oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : outerPeer().offsetHeight - oldTop - oldHeight);
                     changeStyles({ bottom: (oldBottom - (Height - oldHeight)) + 'px' });
                 }
                 else {
@@ -6340,7 +6385,7 @@
             delete MasterInfo.compiledScript;
             if (Script != null) {
                 try {
-                    MasterInfo.compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$$', Script);
+                    MasterInfo.compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$', Script);
                 }
                 catch (Signal) {
                     MasterInfo.ErrorInfo = {
@@ -7688,7 +7733,7 @@
             if (Candidate != null) {
                 return Candidate;
             }
-            Element = $__default['default'](Element).closest('.WAT')[0];
+            Element = Element.closest('.WAT');
             return (Element == null ? undefined : VisualForDOMElement.get(Element));
         }
         WAT.VisualForElement = VisualForElement;
@@ -7702,22 +7747,22 @@
         }
         /**** AppletOfPeer ****/
         function AppletOfPeer(Peer) {
-            return VisualOfElement(Peer.closest('.WAT.Applet')[0]);
+            return VisualOfElement(Peer.closest('.WAT.Applet'));
         } // TODO not fool-proof!
         /**** CategoryOfPeer ****/
         function CategoryOfPeer(Peer, DefaultCategory) {
             switch (true) {
-                case Peer.hasClass('Applet'): return 'Applet';
-                case Peer.hasClass('Card'): return 'Card';
-                case Peer.hasClass('Overlay'): return 'Overlay';
-                case Peer.hasClass('Control'): return 'Control';
-                case Peer.hasClass('Compound'): return 'Compound';
+                case Peer.classList.contains('Applet'): return 'Applet';
+                case Peer.classList.contains('Card'): return 'Card';
+                case Peer.classList.contains('Overlay'): return 'Overlay';
+                case Peer.classList.contains('Control'): return 'Control';
+                case Peer.classList.contains('Compound'): return 'Compound';
                 default: switch (DefaultCategory) {
                     case 'Applet': return 'Applet';
                     case 'Layer': return 'Card';
                     case 'Card': return 'Card';
                     case 'Overlay': return 'Overlay';
-                    case 'Component': return (Peer.children('.WAT.Control,.WAT.Compound').length > 0
+                    case 'Component': return (filtered(Peer.children, '.WAT.Control,.WAT.Compound').length > 0
                         ? 'Compound'
                         : 'Control');
                     case 'Control': return 'Control';
@@ -7728,12 +7773,12 @@
         }
         /**** VersionOfPeer ****/
         function VersionOfPeer(Peer) {
-            var Candidate = Peer.data('wat-master-version');
+            var Candidate = data(Peer, 'wat-master-version');
             return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
         }
         /**** MasterOfPeer ****/
         function MasterOfPeer(Peer, Category) {
-            var Candidate = Peer.data('wat-master');
+            var Candidate = data(Peer, 'wat-master');
             if (ValueIsName(Candidate)) {
                 return Candidate;
             }
@@ -7743,17 +7788,17 @@
         }
         /**** NameOfPeer ****/
         function NameOfPeer(Peer) {
-            var Candidate = Peer.data('wat-name');
+            var Candidate = data(Peer, 'wat-name');
             return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
         }
         /**** ScriptOfPeer ****/
         function ScriptOfPeer(Peer) {
-            var Candidate = Peer.data('wat-script');
+            var Candidate = data(Peer, 'wat-script');
             return (ValueIsText(Candidate) ? Candidate : undefined);
         }
         /**** StateOfPeer ****/
         function StateOfPeer(Peer) {
-            var Candidate = Peer.data('wat-state');
+            var Candidate = data(Peer, 'wat-state');
             if (Candidate == null) {
                 return null;
             }
@@ -7773,7 +7818,7 @@
                     case 'Layer':
                         Category = 'Card';
                         break;
-                    case 'Component': Category = (Peer.children('.WAT.Control,.WAT.Compound').length > 0
+                    case 'Component': Category = (filtered(Peer.children, '.WAT.Control,.WAT.Compound').length > 0
                         ? 'Compound'
                         : 'Control');
                     default: Category = allowedCategory;
@@ -7794,15 +7839,15 @@
             function buildInnerVisuals() {
                 switch (Category) {
                     case 'Applet':
-                        Peer.children('.WAT.Card,.WAT.Overlay').each(function () {
-                            buildVisualFromPeer($__default['default'](this), 'Layer');
+                        filtered(Peer.children, '.WAT.Card,.WAT.Overlay').forEach(function (Peer) {
+                            buildVisualFromPeer(Peer, 'Layer');
                         });
                         break;
                     case 'Card':
                     case 'Overlay':
                     case 'Compound':
-                        Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-                            buildVisualFromPeer($__default['default'](this), 'Component');
+                        filtered(Peer.children, '.WAT.Control,.WAT.Compound').each(function () {
+                            buildVisualFromPeer(Peer, 'Component');
                         });
                 }
             }
@@ -7825,7 +7870,7 @@
             }
             var Classes = MasterInfo.Classes;
             if (Classes != null) {
-                Classes.forEach(function (Class) { Peer.addClass(Class); });
+                Classes.forEach(function (Class) { Peer.classList.add(Class); });
             }
             if (MasterInfo.Category !== Category) {
                 setErrorInfoOfVisual(Visual, {
@@ -7860,8 +7905,8 @@
                 return Visual;
             }
             if (Category === 'Applet') { // every applet must always contain >= 1 cards
-                if (Peer.children('.WAT.Card').length === 0) {
-                    Peer.prepend('<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>');
+                if (flitered(Peer.children, '.WAT.Card').length === 0) {
+                    Peer.insertBefore(ElementFromHTML('<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>'), Peer.firstChild);
                 }
             }
             var Name = NameOfPeer(Peer);
@@ -7928,7 +7973,7 @@
                 var compiledScript = void 0;
                 if (VisualScript != null) {
                     try {
-                        compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$$', VisualScript);
+                        compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$', VisualScript);
                     }
                     catch (Signal) {
                         setErrorInfoOfVisual(Visual, {
@@ -8502,7 +8547,7 @@
                 else {
                     var pendingScriptError = void 0;
                     try { // just compile in order to check for errors
-                        var compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$$', pendingScript);
+                        var compiledScript = new Function('toGet', 'toSet', 'on', 'off', 'trigger', '$', pendingScript);
                     }
                     catch (Signal) {
                         pendingScriptError = {
