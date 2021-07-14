@@ -4,7 +4,6 @@
 *                                                                              *
 *******************************************************************************/
 
-import $           from 'jquery'
 import download    from 'downloadjs'
 import localforage from 'localforage'
 
@@ -32,16 +31,6 @@ import * as JIL from 'javascript-interface-library'
 
 namespace WAT {
   export const Version = '0.1.0'
-
-/**** check any requirements ****/
-
-  if ((typeof jQuery !== 'function') || (jQuery.fn == null)) {
-    window.alert(
-      '"jQuery" not found\n\n' +
-      'The WebApp Tinkerer needs "jQuery" to be loaded first'
-    )
-    throw new Error('MissingDependency: "jQuery" not found')
-  }
 
 /**** common types and values ****/
 
@@ -190,22 +179,6 @@ namespace WAT {
   export const expectElement = ValidatorForClassifier(
     ValueIsElement, rejectNil, 'DOM element'
   ), expectedElement = expectElement
-
-/**** ValueIs$Instance ****/
-
-  export function ValueIs$Instance (Value:any):boolean {
-    return (Value instanceof $)
-  }
-
-/**** allow/expect[ed]$Instance ****/
-
-  export const allow$Instance = ValidatorForClassifier(
-    ValueIs$Instance, acceptNil, '"jQuery" instance'
-  ), allowed$Instance = allow$Instance
-
-  export const expect$Instance = ValidatorForClassifier(
-    ValueIs$Instance, rejectNil, '"jQuery" instance'
-  ), expected$Instance = expect$Instance
 
 /**** ValueIsVisual ****/
 
@@ -542,6 +515,125 @@ namespace WAT {
     let Result = Object.create(null)
       KeyList.forEach(Key => Result[Key] = Key)
     return Result
+  }
+
+/**** camelized ****/
+
+  function camelized (Original:string):string {
+    return Original.replace(/-([a-z])/gi,(Match) => Match[1].toUpperCase())
+  }
+
+/**** forEach ****/
+
+  type IteratorCallback = (Value:any, Index:number, List:any[]) => void
+
+  function forEach (
+    ElementList:HTMLCollection|NodeListOf<Element>, Handler:IteratorCallback
+  ):void {
+    Array.prototype.forEach.call(ElementList,Handler)
+  }
+
+/**** filtered ****/
+
+  type FilterCallback = (Value:any, Index:number, List:any[]) => unknown
+
+  function filtered (
+    ElementList:HTMLCollection|NodeListOf<Element>, Filter:string | FilterCallback
+  ):HTMLElement[] {
+    return (
+      ValueIsString(Filter)
+      ? Array.prototype.filter.call(ElementList,(Candidate:Element) => Candidate.matches(Filter as string))
+      : Array.prototype.filter.call(ElementList,Filter as FilterCallback)
+    )
+  }
+
+/**** closestParent ****/
+
+  function closestParent (DOMElement:HTMLElement, Selector:string):HTMLElement | undefined {
+    let outerElement = DOMElement.parentElement
+    if (outerElement == null) { return undefined }
+
+    return outerElement.closest(Selector) as HTMLElement
+  }
+
+/**** attr ****/
+
+  function attr (DOMElement:Element, Name:string, Value?:string):any {
+    if (arguments.length === 2) {
+      return DOMElement.getAttribute(Name)
+    } else {
+      if (Value == null) {
+        DOMElement.removeAttribute(Name)
+      } else {
+        DOMElement.setAttribute(Name,Value as string)
+      }
+    }
+  }
+
+/**** css ****/
+
+  function css (DOMElement:HTMLElement, Name:string, Value?:string):any {
+    if (arguments.length === 2) {
+// @ts-ignore we want to index literally!
+      return window.getComputedStyle(DOMElement)[camelized(Name)] as string
+    } else {
+// @ts-ignore we want to index literally!
+      DOMElement.style[camelized(Name)] = Value as string
+    }
+  }
+
+/**** html ****/
+
+  function html (DOMElement:Element, Value?:string):any {
+    if (arguments.length === 1) {
+      return DOMElement.innerHTML
+    } else {
+      DOMElement.innerHTML = Value as string
+    }
+  }
+
+/**** text ****/
+
+  function text (DOMElement:HTMLElement, Value?:string):any {
+    if (arguments.length === 1) {
+      return DOMElement.innerText
+    } else {
+      DOMElement.innerText = Value as string
+    }
+  }
+
+/**** data ****/
+
+  function data (DOMElement:HTMLElement, Name:string, Value?:string):any {
+    if (arguments.length === 2) {
+      return DOMElement.dataset[camelized(Name)]
+    } else {
+      DOMElement.dataset[camelized(Name)] = Value as string
+    }
+  }
+
+/**** remove ****/
+
+  function remove (ElementOrList:Element|Element[]|HTMLCollection):void {
+    switch (true) {
+      case ValueIsElement(ElementOrList):
+        let outerElement = (ElementOrList as Element).parentElement
+        if (outerElement != null) { outerElement.removeChild(ElementOrList as Element) }
+        break
+      case ValueIsArray(ElementOrList):
+        (ElementOrList as Element[]).forEach((Element) => remove(Element))
+        break
+      default:
+        forEach(ElementOrList as HTMLCollection,(Element) => remove(Element))
+    }
+  }
+
+/**** ElementFromHTML ****/
+
+  function ElementFromHTML (HTML:string):HTMLElement {
+    let auxElement = document.createElement('div')
+      auxElement.innerHTML = HTML
+    return auxElement.firstChild as HTMLElement
   }
 
 //----------------------------------------------------------------------------//
@@ -979,35 +1071,35 @@ namespace WAT {
       ResourceInfoList.push(ResourceInfo)
     }
 
-    $(document.head).children('link,style,script').each(function () {
-      let Element = $(this), Type, Media, Title, noModule, Value
-      switch (Element[0].tagName) {
+    filtered(document.head.children,'link,style,script').forEach((DOMElement) => {
+      let Type, Media, Title, noModule, Value
+      switch (DOMElement.tagName) {
         case 'LINK':
-          Type  = Element.attr('type')  || 'text/css'
-          Media = Element.attr('media') || 'all'
-          Title = Element.attr('title') || undefined
-          Value = Element.attr('href')
+          Type  = attr(DOMElement,'type')  || 'text/css'
+          Media = attr(DOMElement,'media') || 'all'
+          Title = attr(DOMElement,'title') || undefined
+          Value = attr(DOMElement,'href')
           if ((Type === 'text/css') && (Value != null)) {
             includeResource({ Form:'externalStyle', Type, Media, Title, Value })
           }
           break
         case 'STYLE':
-          Type  = Element.attr('type')  || 'text/css'
-          Media = Element.attr('media') || 'all'
-          Title = Element.attr('title') || undefined
-          Value = Element.html()
+          Type  = attr(DOMElement,'type')  || 'text/css'
+          Media = attr(DOMElement,'media') || 'all'
+          Title = attr(DOMElement,'title') || undefined
+          Value = html(DOMElement)
           if ((Type === 'text/css') && (Value.trim() !== '')) {
             includeResource({ Form:'literalStyle', Type, Media, Title, Value })
           }
           break
         case 'SCRIPT':
-          Type     = Element.attr('type') || 'application/javascript'
+          Type     = attr(DOMElement,'type') || 'application/javascript'
             if (Type === 'text/javascript') { Type = 'application/javascript' }
-          noModule = (Element.attr('nomodule') != null)
-          Value    = Element.attr('src') || Element.html()
+          noModule = (attr(DOMElement,'nomodule') != null)
+          Value    = attr(DOMElement,'src') || html(DOMElement)
 
           if ((Type === 'application/javascript') && (Value.trim() !== '')) {
-            if (Element.attr('src') == null) {
+            if (attr(DOMElement,'src') == null) {
               includeResource({ Form:'literalScript',  Type, noModule, Value })
             } else {
               includeResource({ Form:'externalScript', Type, noModule, Value })
@@ -1081,48 +1173,47 @@ namespace WAT {
     let Resource
     switch (ResourceInfo.Form) {
       case 'literalStyle':
-        Resource = $('<style></style>')
-        Resource.html(ResourceInfo.Value || '')
+        Resource = ElementFromHTML('<style></style>')
+        html(Resource,ResourceInfo.Value || '')
         break
       case 'externalStyle':
-        Resource = $('<link></link>')
+        Resource = ElementFromHTML('<link></link>')
         break
       case 'literalScript':
-        Resource = $('<' + 'script><' + '/script>')
-        Resource.html(ResourceInfo.Value || '')
+        Resource = ElementFromHTML('<' + 'script><' + '/script>')
+        html(Resource,ResourceInfo.Value || '')
         break
       case 'externalScript':
-        Resource = $('<' + 'script><' + '/script>')
+        Resource = ElementFromHTML('<' + 'script><' + '/script>')
         break
       default: throwError('InternalError: unforeseen resource form')
     }
       let AttributeSet = ResourceInfo.AttributeSet || {}
       for (let AttributeName in AttributeSet) {
         if (AttributeSet.hasOwnProperty(AttributeName)) {
-          Resource.attr(AttributeName,AttributeSet[AttributeName].Value)
+          attr(Resource,AttributeName,AttributeSet[AttributeName].Value)
         }
       }
     switch (ResourceInfo.Form) {
       case 'literalStyle':
       case 'externalStyle':
-        $(document.head).append(Resource)
+        document.head.appendChild(Resource)
         break
       case 'literalScript':
         try {
-          $(document.head).append(Resource)
+          document.head.appendChild(Resource)
         } catch (Signal) {
           console.warn('could not attach literal script', Signal)
           throw Signal
         }
         break
       case 'externalScript':
-//      $(document.head).append(Resource)     // does not work, pure JS required
-        document.head.appendChild(Resource[0])
+        document.head.appendChild(Resource)
         break
       default: throwError('InternalError: unforeseen resource form')
     }
 
-    UsageCountOfResource.set(Resource[0],1)
+    UsageCountOfResource.set(Resource,1)
   }
 
 /**** parsedResources - parses resources string into ResourceInfo list ****/
@@ -1232,19 +1323,17 @@ namespace WAT {
 
 /**** reuseResource ****/
 
-  function reuseResource (Resource:JQuery):void {
-    let Element = Resource[0]
+  function reuseResource (Resource:Element):void {
     UsageCountOfResource.set(
-      Element, (UsageCountOfResource.get(Element) || 0) + 1
+      Resource, (UsageCountOfResource.get(Resource) || 0) + 1
     )
   }
 
 /**** unuseResource ****/
 
-  function unuseResource (Resource:JQuery):void {
-    let Element = Resource[0]
+  function unuseResource (Resource:Element):void {
     UsageCountOfResource.set(
-      Element, Math.max(0, (UsageCountOfResource.get(Element) || 0) - 1)
+      Resource, Math.max(0, (UsageCountOfResource.get(Resource) || 0) - 1)
     )
   }
 
@@ -1258,12 +1347,11 @@ namespace WAT {
 
 /**** collectResource ****/
 
-  function collectResource (Resource:JQuery):void {
-    let ResourceElement = Resource[0]
-      for (let i = 0, l = ResourceCollection.length; i < l; i++) {
-        if (ResourceCollection[i] === ResourceElement) { return }
-      }
-    ResourceCollection.push(ResourceElement)
+  function collectResource (Resource:Element):void {
+    for (let i = 0, l = ResourceCollection.length; i < l; i++) {
+      if (ResourceCollection[i] === Resource) { return }
+    }
+    ResourceCollection.push(Resource)
   }
 
 /**** collectedResources ****/
@@ -1304,40 +1392,40 @@ namespace WAT {
 /**** ResourceInfoMatchesElement ****/
 
   function ResourceInfoMatchesElement (
-    ResourceInfo:WAT_ResourceInfo, Element:JQuery
+    ResourceInfo:WAT_ResourceInfo, DOMElement:Element
   ):boolean {
     switch (ResourceInfo.Form) {
       case 'literalStyle': return (
-        (Element[0].tagName === 'STYLE') &&
-        ((Element.attr('type')  || 'text/css') === 'text/css')  &&
-        ((Element.attr('media') || 'all')      === ResourceInfo.Media) &&
-        ((Element.attr('title') || undefined)  === ResourceInfo.Title) &&
-        (Element.text().trim() === ResourceInfo.Value)
+        (DOMElement.tagName === 'STYLE') &&
+        ((attr(DOMElement,'type')  || 'text/css') === 'text/css')  &&
+        ((attr(DOMElement,'media') || 'all')      === ResourceInfo.Media) &&
+        ((attr(DOMElement,'title') || undefined)  === ResourceInfo.Title) &&
+        ((DOMElement.textContent || '').trim() === ResourceInfo.Value)
       )
       case 'externalStyle': return (
-        (Element[0].tagName === 'LINK') && (Element.attr('rel') === 'stylesheet') &&
-        ((Element.attr('type')  || 'text/css') === 'text/css')  &&
-        ((Element.attr('media') || 'all')      === ResourceInfo.Media) &&
-        ((Element.attr('title') || undefined)  === ResourceInfo.Title) &&
-        (Element.attr('href') === ResourceInfo.Value)     // TODO: normalize URL
+        (DOMElement.tagName === 'LINK') && (attr(DOMElement,'rel') === 'stylesheet') &&
+        ((attr(DOMElement,'type')  || 'text/css') === 'text/css')  &&
+        ((attr(DOMElement,'media') || 'all')      === ResourceInfo.Media) &&
+        ((attr(DOMElement,'title') || undefined)  === ResourceInfo.Title) &&
+        (attr(DOMElement,'href') === ResourceInfo.Value)  // TODO: normalize URL
       )
       case 'literalScript': return (
-        (Element[0].tagName === 'SCRIPT') && (
-          (Element.attr('type') == null) ||
-          (Element.attr('type') === 'application/javascript') ||
-          (Element.attr('type') === 'text/javascript')
+        (DOMElement.tagName === 'SCRIPT') && (
+          (attr(DOMElement,'type') == null) ||
+          (attr(DOMElement,'type') === 'application/javascript') ||
+          (attr(DOMElement,'type') === 'text/javascript')
         ) &&
-        ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-        (Element.text().trim() === ResourceInfo.Value)
+        ((attr(DOMElement,'nomodule') || false) === ResourceInfo.noModule) &&
+        ((DOMElement.textContent || '').trim() === ResourceInfo.Value)
       )
       case 'externalScript': return (
-        (Element[0].tagName === 'SCRIPT') && (
-          (Element.attr('type') == null) ||
-          (Element.attr('type') === 'application/javascript') ||
-          (Element.attr('type') === 'text/javascript')
+        (DOMElement.tagName === 'SCRIPT') && (
+          (attr(DOMElement,'type') == null) ||
+          (attr(DOMElement,'type') === 'application/javascript') ||
+          (attr(DOMElement,'type') === 'text/javascript')
         ) &&
-        ((Element.attr('nomodule') || false) === ResourceInfo.noModule) &&
-        (Element.attr('src') === ResourceInfo.Value)      // TODO: normalize URL
+        ((attr(DOMElement,'nomodule') || false) === ResourceInfo.noModule) &&
+        (attr(DOMElement,'src') === ResourceInfo.Value)   // TODO: normalize URL
       )
       default: throwError('InternalError: unforeseen resource form')
     }
@@ -1347,15 +1435,14 @@ namespace WAT {
 
   function ElementMatchingResourceInfo (
     ResourceInfo:WAT_ResourceInfo
-  ):JQuery {
-    let matchingElement:JQuery|undefined = undefined
-      $(document.head).children('link,style,script').each(function () {
-        let Element = $(this)
-        if (ResourceInfoMatchesElement(ResourceInfo,Element)) {
-          matchingElement = Element
+  ):Element | undefined {
+    let matchingElement:Element|undefined = undefined
+      filtered(document.head.children,'link,style,script').forEach((DOMElement) => {
+        if (ResourceInfoMatchesElement(ResourceInfo,DOMElement)) {
+          matchingElement = DOMElement
         }
       })
-    return matchingElement || $()
+    return matchingElement
   }
 
 //----------------------------------------------------------------------------//
@@ -1394,7 +1481,7 @@ namespace WAT {
 /**** AppletHasBackup ****/
 
   export async function AppletHasBackup (
-    AppletOrPeer:WAT_Applet|JQuery
+    AppletOrPeer:WAT_Applet|HTMLElement
   ):Promise<boolean> {
     let AppletName
       switch (true) {
@@ -1402,8 +1489,8 @@ namespace WAT {
           AppletName = (AppletOrPeer as WAT_Applet).Name
           if (AppletName == null) { return false }
           break
-        case ValueIs$Instance(AppletOrPeer):
-          let Candidate = (AppletOrPeer as JQuery).data('wat-name')
+        case ValueIsElement(AppletOrPeer):
+          let Candidate = data(AppletOrPeer as HTMLElement,'wat-name')
           if (ValueIsName(Candidate)) { AppletName = Candidate } else { return false }
           break
         default: throwError(
@@ -1429,11 +1516,11 @@ namespace WAT {
 /**** AppletRestoredIntoPeer (during startup: applet does not yet exist) ****/
 
   async function AppletRestoredIntoPeer (
-    Peer:JQuery
+    Peer:HTMLElement
   ):Promise<WAT_Applet> {
-    expect$Instance('applet peer',Peer)
+    expectElement('applet peer',Peer)
 
-    let AppletName = Peer.data('wat-name')
+    let AppletName = data(Peer,'wat-name')
     if (! ValueIsName(AppletName)) throwError(
       'InvalidArgument: the given applet peer does not have a valid name'
     )
@@ -1458,7 +1545,7 @@ namespace WAT {
       incompatibleUpgrade:  'perform'
     })
 
-    return VisualOfElement(Peer[0]) as WAT_Applet
+    return VisualOfElement(Peer) as WAT_Applet
   }
 
 /**** preserveApplet ****/
@@ -1717,24 +1804,24 @@ namespace WAT {
 
   /**** preserveUniqueIdIn ****/
 
-    function preserveUniqueIdIn (Peer:JQuery):void {
-      let Visual = VisualForDOMElement.get(Peer[0])
-      Peer.attr('data-wat-unique-id',InternalsForVisual.get(Visual).uniqueId)
+    function preserveUniqueIdIn (Peer:HTMLElement):void {
+      let Visual = VisualForDOMElement.get(Peer)
+      attr(Peer,'data-wat-unique-id',InternalsForVisual.get(Visual).uniqueId)
 
-      Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound').toArray()
-      .forEach(function (this:HTMLElement) {
-        preserveUniqueIdIn($(this))
+      filtered(Peer.children,'.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
+      .forEach(function (Peer) {
+        preserveUniqueIdIn(Peer as HTMLElement)
       })
     }
 
   /**** removeUniqueIdFrom ****/
 
-    function removeUniqueIdFrom (Peer:JQuery):void {
-      Peer.attr('data-wat-unique-id',null)
+    function removeUniqueIdFrom (Peer:HTMLElement):void {
+      attr(Peer,'data-wat-unique-id',undefined)
 
-      Peer.children('.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound').toArray()
-      .forEach(function (this:HTMLElement) {
-        removeUniqueIdFrom($(this))
+      filtered(Peer.children,'.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
+      .forEach(function (Peer) {
+        removeUniqueIdFrom(Peer as HTMLElement)
       })
     }
 
@@ -1908,7 +1995,7 @@ namespace WAT {
 /**** deserializeAppletIntoPeer - Peer remains the same! ****/
 
   function deserializeAppletIntoPeer(
-    Serialization:string, Peer:JQuery, CollisionHandling:WAT_CollisionHandling
+    Serialization:string, Peer:HTMLElement, CollisionHandling:WAT_CollisionHandling
   ):void {
     let { serializedMasters, serializedApplets } = parsedSerialization(Serialization)
     if (serializedApplets.length === 0) throwError(
@@ -1922,12 +2009,12 @@ namespace WAT {
 
     let duringStartUp = (WAT_isReady && ! WAT_isRunning)
     if (duringStartUp) {
-      Peer.html('')
+      html(Peer,'')
     } else {
-      let oldApplet = VisualOfElement(Peer[0]) as WAT_Applet
+      let oldApplet = VisualOfElement(Peer) as WAT_Applet
         oldApplet.CardList.forEach((Card:WAT_Card) => Card.remove())
         oldApplet.OverlayList.forEach((Overlay:WAT_Overlay) => Overlay.remove())
-      Peer.html('')          // also removes mandatory card (w/o event handlers)
+      html(Peer,'')          // also removes mandatory card (w/o event handlers)
 
       InternalsForVisual.delete(oldApplet)
     }
@@ -1950,29 +2037,28 @@ namespace WAT {
       )
     }
 
-    let auxiliaryPeer = $(serializedApplets[0])
-      let auxiliaryElement = auxiliaryPeer[0], Element = Peer[0]
-      while (auxiliaryElement.hasChildNodes()) {
-        Element.appendChild(auxiliaryElement.firstChild as ChildNode)
+    let auxiliaryPeer = ElementFromHTML(serializedApplets[0])
+      while (auxiliaryPeer.hasChildNodes()) {
+        Peer.appendChild(auxiliaryPeer.firstChild as ChildNode)
       }
 
-      let AttributeList = auxiliaryElement.attributes
+      let AttributeList = auxiliaryPeer.attributes
       for (let i = 0, l = AttributeList.length; i < l; i++) {
         let AttributeName = AttributeList[i].name
         switch (AttributeName) {
           case 'id': case 'class': case 'style': break
-          default: Peer.attr(AttributeName,AttributeList[i].value)
+          default: attr(Peer,AttributeName,AttributeList[i].value)
         }
       }
 
-      let StyleSet = auxiliaryElement.style
+      let StyleSet = auxiliaryPeer.style
       for (let Property in StyleSet) {
         switch (Property) {
           case 'display': case 'position':
           case 'left': case 'width': case 'right': case 'top':
           case 'height': case 'bottom': break
           default: if (StyleSet.hasOwnProperty(Property)) {
-            Peer.css(Property,StyleSet[Property])
+            css(Peer,Property,StyleSet[Property])
           }
         }
       }
@@ -1996,93 +2082,6 @@ namespace WAT {
         incompatibleUpgrade:  'perform'
       })
     return VisualOfElement(Peer[0]) as WAT_Applet
-  }
-
-/**** CardDeserializedInto ****/
-
-  function CardDeserializedInto (
-    Serialization:string, Applet:WAT_Applet, Index:number
-  ):WAT_Card {
-    let CardPeer = $(Serialization)
-
-    let NeighbourCard = Applet.CardAtIndex(Index)
-    if (NeighbourCard == null) {
-      Applet.Peer.append(CardPeer)
-    } else {
-      CardPeer.insertBefore(NeighbourCard.Peer)
-    }
-
-    return VisualBuiltFromPeer(CardPeer,'Card') as WAT_Card
-  }
-
-/**** OverlayDeserializedInto ****/
-
-  function OverlayDeserializedInto (
-    Serialization:string, Applet:WAT_Applet, Index:number
-  ):WAT_Overlay {
-    let OverlayPeer = $(Serialization)
-
-    let NeighbourOverlay = Applet.OverlayAtIndex(Index)
-    if (NeighbourOverlay == null) {
-      Applet.Peer.append(OverlayPeer)
-    } else {
-      OverlayPeer.insertBefore(NeighbourOverlay.Peer)
-    }
-
-    return VisualBuiltFromPeer(OverlayPeer,'Overlay') as WAT_Overlay
-  }
-
-/**** ComponentDeserializedInto ****/
-
-  function ComponentDeserializedInto (
-    Serialization:string, Container:WAT_Container, Index:number
-  ):WAT_Control|WAT_Compound {
-    let ComponentPeer = $(Serialization)
-
-    let NeighbourComponent = Container.ComponentAtIndex(Index)
-    if (NeighbourComponent == null) {
-      Container.Peer.append(ComponentPeer)
-    } else {
-      ComponentPeer.insertBefore(NeighbourComponent.Peer)
-    }
-
-    return VisualBuiltFromPeer(ComponentPeer,'Component') as WAT_Control|WAT_Compound
-  }
-
-/**** deserializeCardInto ****/
-
-  export function deserializeCardInto (
-    Serialization:string, Applet:WAT_Applet, Index:number
-  ):void {
-    expectText('card serialization',Serialization)
-    expectApplet          ('applet',Applet)
-    expectOrdinal     ('card index',Index)
-
-    CardDeserializedInto(Serialization,Applet,Index)
-  }
-
-/**** deserializeOverlayInto ****/
-
-  export function deserializeOverlayInto (
-    Serialization:string, Applet:WAT_Applet, Index:number
-  ):void {
-    expectText('overlay serialization',Serialization)
-    expectApplet             ('applet',Applet)
-    expectOrdinal     ('overlay index',Index)
-
-    OverlayDeserializedInto(Serialization,Applet,Index)
-  }
-
-/**** deserializeComponentInto ****/
-
-  export function deserializeComponentInto (
-    Serialization:string, Container:WAT_Container, Index:number
-  ):void {
-    expectText('component serialization',Serialization)
-    expectContainer         ('container',Container)
-    expectOrdinal     ('component index',Index)
-
-    ComponentDeserializedInto(Serialization,Container,Index)
   }
 
 //----------------------------------------------------------------------------//
@@ -2354,20 +2353,30 @@ namespace WAT {
 //                             Geometry Handling                              //
 //----------------------------------------------------------------------------//
 
+/**** outerPeerOf ****/
+
+  function outerPeerOf (Peer:HTMLElement):HTMLElement {
+    let Candidate = Peer.parentElement
+    if (Candidate == null) throwError(
+      'ImpossibleOperation: a detached visual can not be right or bottom aligned'
+    )
+    return Candidate
+  }
+
 /**** GeometryOfVisual ****/
 
   function GeometryOfVisual (Visual:WAT_Visual):WAT_Geometry {
     let Peer = PeerOfVisual(Visual)
     return {
-      x:Peer[0].offsetLeft, Width:Peer[0].offsetWidth,
-      y:Peer[0].offsetTop, Height:Peer[0].offsetHeight
+      x:Peer.offsetLeft, Width:Peer.offsetWidth,
+      y:Peer.offsetTop, Height:Peer.offsetHeight
     }
   }
 
 /**** GeometryOfVisualOnDisplay ****/
 
   function GeometryOfVisualOnDisplay (Visual:WAT_Visual):WAT_Geometry {
-    let boundingRect = PeerOfVisual(Visual)[0].getBoundingClientRect()
+    let boundingRect = PeerOfVisual(Visual).getBoundingClientRect()
     return {
       x:boundingRect.left, Width:boundingRect.width,
       y:boundingRect.top, Height:boundingRect.height
@@ -2379,7 +2388,7 @@ namespace WAT {
   function changeGeometryOfVisualTo (
     Visual:WAT_Visual, x?:number, y?:number, Width?:number, Height?:number
   ):void {
-    let Peer = PeerOfVisual(Visual)
+    const Peer = PeerOfVisual(Visual)
 
     let StyleChanges:any = {}
     function changeStyles (additionalChanges:any):void {
@@ -2391,12 +2400,12 @@ namespace WAT {
     let horizontalAnchoring, oldLeft,oldWidth,oldRight
     if ((x != null) || (Width != null)) {
       horizontalAnchoring = horizontalAnchoringOfVisual(Visual)
-      oldLeft  = Math.round(Peer[0].offsetLeft)
-      oldWidth = Math.round(Peer[0].offsetWidth)
+      oldLeft  = Math.round(Peer.offsetLeft)
+      oldWidth = Math.round(Peer.offsetWidth)
     }
 
     if (x != null) {
-      oldRight = (horizontalAnchoring === 'left-width' ? NaN : Peer.parent()[0].offsetWidth-(oldLeft as number)-(oldWidth as number))
+      oldRight = (horizontalAnchoring === 'left-width' ? NaN : outerPeerOf(Peer).offsetWidth-(oldLeft as number)-(oldWidth as number))
 
       x = Math.round(x)
       let dx = x-(oldLeft as number)
@@ -2411,7 +2420,7 @@ namespace WAT {
     if (Width != null) {
       Width = Math.round(Width)
       if (horizontalAnchoring === 'left-right') {
-        oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : Peer.parent()[0].offsetWidth-(oldLeft as number)-(oldWidth as number))
+        oldRight = (StyleChanges.right != null ? parseFloat(StyleChanges.right) : outerPeerOf(Peer).offsetWidth-(oldLeft as number)-(oldWidth as number))
         changeStyles({ right:(oldRight - (Width-(oldWidth as number)))+'px' })
       } else {
         changeStyles({ width:Width+'px' })
@@ -2423,12 +2432,12 @@ namespace WAT {
     let verticalAnchoring, oldTop,oldHeight,oldBottom
     if ((y != null) || (Height != null)) {
       verticalAnchoring = verticalAnchoringOfVisual(Visual)
-      oldTop    = Math.round(Peer[0].offsetTop)
-      oldHeight = Math.round(Peer[0].offsetHeight)
+      oldTop    = Math.round(Peer.offsetTop)
+      oldHeight = Math.round(Peer.offsetHeight)
     }
 
     if (y != null) {
-      oldBottom = (verticalAnchoring === 'top-height' ? NaN : Peer.parent()[0].offsetHeight-(oldTop as number)-(oldHeight as number))
+      oldBottom = (verticalAnchoring === 'top-height' ? NaN : outerPeerOf(Peer).offsetHeight-(oldTop as number)-(oldHeight as number))
 
       y = Math.round(y)
       let dy = y-(oldTop as number)
@@ -2443,7 +2452,7 @@ namespace WAT {
     if (Height != null) {
       Height = Math.round(Height)
       if (verticalAnchoring === 'top-bottom') {
-        oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : Peer.parent()[0].offsetHeight-(oldTop as number)-(oldHeight as number))
+        oldBottom = (StyleChanges.bottom != null ? parseFloat(StyleChanges.bottom) : outerPeerOf(Peer).offsetHeight-(oldTop as number)-(oldHeight as number))
         changeStyles({ bottom:(oldBottom - (Height-(oldHeight as number)))+'px' })
       } else {
         changeStyles({ height:Height+'px' })
@@ -2462,9 +2471,9 @@ namespace WAT {
   function horizontalAnchoringOfVisual (Visual:WAT_Visual):WAT_horizontalAnchoring {
     let Peer = PeerOfVisual(Visual)
 
-    let left  = Peer[0].style.left  || 'auto'
-    let right = Peer[0].style.right || 'auto'
-    let Width = Peer[0].style.width || 'auto'
+    let left  = Peer.style.left  || 'auto'
+    let right = Peer.style.right || 'auto'
+    let Width = Peer.style.width || 'auto'
 
     if (right === 'auto') { return 'left-width' }
     if (Width === 'auto') { return 'left-right' }
@@ -2483,14 +2492,14 @@ namespace WAT {
   function horizontalOffsetsOfVisual (Visual:WAT_Visual):WAT_horizontalOffsets {
     let Peer = PeerOfVisual(Visual)
 
-    let left  = Math.round(Peer[0].offsetLeft)
-    let width = Math.round(Peer[0].offsetWidth)
-    let right = Math.round(Peer.parent()[0].offsetWidth-left-width)
+    let left  = Math.round(Peer.offsetLeft)
+    let width = Math.round(Peer.offsetWidth)
+//  let right = Math.round(outerPeerOf(Peer).offsetWidth-left-width)
 
     switch (horizontalAnchoringOfVisual(Visual)) {
       case 'left-width':  return [left,width]
-      case 'width-right': return [width,right]
-      case 'left-right':  return [left,right]
+      case 'width-right': return [width,Math.round(outerPeerOf(Peer).offsetWidth-left-width)]
+      case 'left-right':  return [left, Math.round(outerPeerOf(Peer).offsetWidth-left-width)]
       default:            return [left,width]
     }
   }
@@ -2505,9 +2514,9 @@ namespace WAT {
 
     let Peer = PeerOfVisual(Visual)
 
-    let left  = Math.round(Peer[0].offsetLeft)
-    let Width = Math.round(Peer[0].offsetWidth)
-    let right = Math.round(Peer.parent()[0].offsetWidth-left-Width)
+    let left  = Math.round(Peer.offsetLeft)
+    let Width = Math.round(Peer.offsetWidth)
+    let right = Math.round(outerPeerOf(Peer).offsetWidth-left-Width)
 
     let StyleSet
       switch (newAnchoring) {
@@ -2546,9 +2555,9 @@ namespace WAT {
   function verticalAnchoringOfVisual (Visual:WAT_Visual):WAT_verticalAnchoring {
     let Peer = PeerOfVisual(Visual)
 
-    let top    = Peer[0].style.top    || 'auto'
-    let bottom = Peer[0].style.bottom || 'auto'
-    let Height = Peer[0].style.height || 'auto'
+    let top    = Peer.style.top    || 'auto'
+    let bottom = Peer.style.bottom || 'auto'
+    let Height = Peer.style.height || 'auto'
 
     if (bottom === 'auto') { return 'top-height' }
     if (Height === 'auto') { return 'top-bottom' }
@@ -2567,14 +2576,14 @@ namespace WAT {
   function verticalOffsetsOfVisual (Visual:WAT_Visual):WAT_verticalOffsets {
     let Peer = PeerOfVisual(Visual)
 
-    let top    = Math.round(Peer[0].offsetTop)
-    let height = Math.round(Peer[0].offsetHeight)
-    let bottom = Math.round(Peer.parent()[0].offsetHeight-top-height)
+    let top    = Math.round(Peer.offsetTop)
+    let height = Math.round(Peer.offsetHeight)
+//  let bottom = Math.round(outerPeer().offsetHeight-top-height)
 
     switch (verticalAnchoringOfVisual(Visual)) {
       case 'top-height':    return [top,height]
-      case 'height-bottom': return [height,bottom]
-      case 'top-bottom':    return [top,bottom]
+      case 'height-bottom': return [height,Math.round(outerPeerOf(Peer).offsetHeight-top-height)]
+      case 'top-bottom':    return [top,   Math.round(outerPeerOf(Peer).offsetHeight-top-height)]
       default:              return [top,height]
     }
   }
@@ -2589,9 +2598,9 @@ namespace WAT {
 
     let Peer = PeerOfVisual(Visual)
 
-    let top    = Math.round(Peer[0].offsetTop)
-    let Height = Math.round(Peer[0].offsetHeight)
-    let bottom = Math.round(Peer.parent()[0].offsetHeight-top-Height)
+    let top    = Math.round(Peer.offsetTop)
+    let Height = Math.round(Peer.offsetHeight)
+    let bottom = Math.round(outerPeerOf(Peer).offsetHeight-top-Height)
 
     let StyleSet
       switch (newAnchoring) {
@@ -2658,8 +2667,8 @@ namespace WAT {
 
 /**** MasterInfoFromElement (script[type="application/wat-master"]) ****/
 
-  function MasterInfoFromElement (Element:JQuery):WAT_MasterInfo {
-    let MasterObject = JSON.parse(Element.html())
+  function MasterInfoFromElement (Element:HTMLElement):WAT_MasterInfo {
+    let MasterObject = JSON.parse(html(Element))
     return parsedMaster(MasterObject)
   }
 
@@ -2882,9 +2891,11 @@ namespace WAT {
 
   function registerMastersInDocument ():void {
     let ErrorOccurred = false
-      $('script[type="application/wat-master"]').each(function () {
+      forEach(
+        document.head.querySelectorAll('script[type="application/wat-master"]'),
+        (ScriptElement) => {
         try {
-          let MasterInfo = MasterInfoFromElement($(this))
+          let MasterInfo = MasterInfoFromElement(ScriptElement)
           if (MasterMayBeRegistered(MasterInfo, {            // n.b.: may throw!
             compatibleDowngrade:  'ignore',
             incompatibleDowngrade:'abort',
@@ -2967,7 +2978,7 @@ namespace WAT {
     if (Script != null) {
       try {
         MasterInfo.compiledScript = new Function(
-          'toGet','toSet','on','off','trigger','$$', Script
+          'toGet','toSet','on','off','trigger','$', Script
         )
       } catch (Signal) {
         MasterInfo.ErrorInfo = {
@@ -3764,9 +3775,11 @@ namespace WAT {
 
   function allMastersInDocument ():WAT_Name[] {
     let MasterSet = Object.create(null)
-      $('script[type="application/wat-master"]').each(function () {
+      forEach(
+        document.head.querySelectorAll('script[type="application/wat-master"]'),
+        (ScriptElement) => {
         try {
-          let MasterInfo = MasterInfoFromElement($(this))
+          let MasterInfo = MasterInfoFromElement(ScriptElement)
           let MasterName = MasterInfo.Name
           if (ValueIsName(MasterName) && (MasterName in MasterRegistry)) {
             MasterSet[MasterName] = MasterName
@@ -4553,17 +4566,19 @@ namespace WAT {
       let InjectionPointSelector = (ArgumentList.shift() as string).slice(1), InjectionElement
       if (InjectionPointSelector[0] === '.') {
         expectName('injection point master name',InjectionPointSelector.slice(1))
-        InjectionElement = Visual.Peer.parent().closest('.WAT' + InjectionPointSelector)
+        InjectionElement = closestParent(Visual.Peer,'.WAT' + InjectionPointSelector)
       } else {
         expectUniversalName('injection point name',InjectionPointSelector)
-        InjectionElement = Visual.Peer.parent('.WAT').filter(
-          function (this:HTMLElement) {
-            return (VisualOfElement(this).Name === InjectionPointSelector)
+
+        InjectionElement = closestParent(Visual.Peer,'.WAT')
+        if (InjectionElement != null) {
+          if (VisualOfElement(InjectionElement).Name !== InjectionPointSelector) {
+            InjectionElement = undefined
           }
-        )
+        }
       }
-      if (InjectionElement.length > 0) {
-        InjectionPoint = VisualOfElement(InjectionElement[0])
+      if (InjectionElement != null) {
+        InjectionPoint = VisualOfElement(InjectionElement)
       }
     } else {
       InjectionPoint = Visual
@@ -4572,7 +4587,7 @@ namespace WAT {
     if (InjectionPoint != null) {
       let EventName = ArgumentList.shift()
       InjectionPoint.Peer.trigger(EventName,ArgumentList)
-    }                                                   // jQuery wants it so...
+    }
   }
 
 //----------------------------------------------------------------------------//
@@ -4602,12 +4617,14 @@ namespace WAT {
     let Internals = InternalsOfVisual(Visual)
     if (newErrorInfo == null) {
       delete Internals.ErrorInfo
-      Internals.Peer.children('.WAT-ErrorIndicator').remove()
+      remove(filtered(Internals.Peer.children,'.WAT-ErrorIndicator'))
     } else {
       if (Internals.ErrorInfo == null) {    // don't overwrite an existing error
         Internals.ErrorInfo = newErrorInfo
-        Internals.Peer.children('.WAT-ErrorIndicator').remove()
-        Internals.Peer.append('<button class="WAT-ErrorIndicator"></button>')
+        remove(filtered(Internals.Peer.children,'.WAT-ErrorIndicator'))
+        Internals.Peer.appendChild(
+          ElementFromHTML('<button class="WAT-ErrorIndicator"></button>')
+        )
       }
     }
   }
@@ -4649,8 +4666,8 @@ namespace WAT {
 /**** firstAppletInDocument (used for errors in masters) ****/
 
   function firstAppletInDocument ():WAT_Applet {
-    let firstAppletPeer = AppletPeersInDocument().first()
-    return VisualOfElement(firstAppletPeer[0]) as WAT_Applet
+    let firstAppletPeer = AppletPeersInDocument()[0]
+    return VisualOfElement(firstAppletPeer) as WAT_Applet
   }
 
 /**** VisualWithUniqueId ****/
@@ -4678,15 +4695,15 @@ namespace WAT {
     let Candidate = VisualForDOMElement.get(Element)
     if (Candidate != null) { return Candidate }
 
-    Element = $(Element).closest('.WAT')[0]
-    return (Element == null ? undefined : VisualForDOMElement.get(Element))
+    Candidate = Element.closest('.WAT')
+    return (Candidate == null ? undefined : VisualForDOMElement.get(Candidate))
   }
 
 /**** InternalsOfVisual ****/
 
   type WAT_Internals = {
     uniqueId:number,                              // internally unique visual id
-    Peer:JQuery,                                           // mandatory property
+    Peer:HTMLElement,                                      // mandatory property
     State?:any,                  // opt. custom state, must be JSON-serializable
     EventHandlers?:any,    // list of event handlers registered from this visual
     reactiveFunctionList?:Function[],              // list of reactive functions
@@ -4704,34 +4721,35 @@ namespace WAT {
 
 /**** PeerOfVisual ****/
 
-  function PeerOfVisual (Visual:WAT_Visual):JQuery {
+  function PeerOfVisual (Visual:WAT_Visual):HTMLElement {
     return InternalsForVisual.get(Visual).Peer
   }
 
 /**** AppletOfPeer ****/
 
-  function AppletOfPeer (Peer:JQuery):WAT_Applet {
-    return VisualOfElement(Peer.closest('.WAT.Applet')[0]) as WAT_Applet
-  }                                                      // TODO not fool-proof!
+  function AppletOfPeer (Peer:HTMLElement):WAT_Applet | undefined {
+    let Candidate = Peer.closest('.WAT.Applet')
+    return (Candidate == null ? undefined : VisualOfElement(Candidate as HTMLElement) as WAT_Applet)
+  }
 
 /**** CategoryOfPeer ****/
 
   function CategoryOfPeer (
-    Peer:JQuery, DefaultCategory?:WAT_Category|'Layer'|'Component'
+    Peer:HTMLElement, DefaultCategory?:WAT_Category|'Layer'|'Component'
   ):WAT_Category {
     switch (true) {
-      case Peer.hasClass('Applet'):   return 'Applet'
-      case Peer.hasClass('Card'):     return 'Card'
-      case Peer.hasClass('Overlay'):  return 'Overlay'
-      case Peer.hasClass('Control'):  return 'Control'
-      case Peer.hasClass('Compound'): return 'Compound'
+      case Peer.classList.contains('Applet'):   return 'Applet'
+      case Peer.classList.contains('Card'):     return 'Card'
+      case Peer.classList.contains('Overlay'):  return 'Overlay'
+      case Peer.classList.contains('Control'):  return 'Control'
+      case Peer.classList.contains('Compound'): return 'Compound'
       default: switch (DefaultCategory) {
         case 'Applet':    return 'Applet'
         case 'Layer':     return 'Card'
         case 'Card':      return 'Card'
         case 'Overlay':   return 'Overlay'
         case 'Component': return (
-          Peer.children('.WAT.Control,.WAT.Compound').length > 0
+          filtered(Peer.children,'.WAT.Control,.WAT.Compound').length > 0
           ? 'Compound'
           : 'Control'
         )
@@ -4746,15 +4764,15 @@ namespace WAT {
 
 /**** VersionOfPeer ****/
 
-  function VersionOfPeer (Peer:JQuery):WAT_Version|undefined {
-    let Candidate = Peer.data('wat-master-version')
+  function VersionOfPeer (Peer:HTMLElement):WAT_Version|undefined {
+    let Candidate = data(Peer,'wat-master-version')
     return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined)
   }
 
 /**** MasterOfPeer ****/
 
-  function MasterOfPeer (Peer:JQuery, Category?:WAT_Category):WAT_Name {
-    let Candidate = Peer.data('wat-master')
+  function MasterOfPeer (Peer:HTMLElement, Category?:WAT_Category):WAT_Name {
+    let Candidate = data(Peer,'wat-master')
     if (ValueIsName(Candidate)) {
       return Candidate
     } else {
@@ -4764,22 +4782,22 @@ namespace WAT {
 
 /**** NameOfPeer ****/
 
-  function NameOfPeer (Peer:JQuery):WAT_Name {
-    let Candidate = Peer.data('wat-name')
+  function NameOfPeer (Peer:HTMLElement):WAT_Name {
+    let Candidate = data(Peer,'wat-name')
     return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
   }
 
 /**** ScriptOfPeer ****/
 
-  function ScriptOfPeer (Peer:JQuery):string {
-    let Candidate = Peer.data('wat-script')
+  function ScriptOfPeer (Peer:HTMLElement):string {
+    let Candidate = data(Peer,'wat-script')
     return (ValueIsText(Candidate) ? Candidate : undefined)
   }
 
 /**** StateOfPeer ****/
 
-  function StateOfPeer (Peer:JQuery):any {
-    let Candidate = Peer.data('wat-state')
+  function StateOfPeer (Peer:HTMLElement):any {
+    let Candidate = data(Peer,'wat-state')
     if (Candidate == null) { return null }
 
     try {
@@ -4792,7 +4810,7 @@ namespace WAT {
 /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
 
   function VisualBuiltFromPeer (
-    Peer:JQuery, allowedCategory:WAT_Category|'Layer'|'Component'
+    Peer:HTMLElement, allowedCategory:WAT_Category|'Layer'|'Component'
   ):WAT_Visual {
     let Category = CategoryOfPeer(Peer,allowedCategory)
     if (CategoryContradictsExpectation(Category,allowedCategory)) {
@@ -4800,7 +4818,7 @@ namespace WAT {
         switch (allowedCategory) {
           case 'Layer':     Category = 'Card'; break
           case 'Component': Category = (
-            Peer.children('.WAT.Control,.WAT.Compound').length > 0
+            filtered(Peer.children,'.WAT.Control,.WAT.Compound').length > 0
             ? 'Compound'
             : 'Control'
           )
@@ -4808,201 +4826,205 @@ namespace WAT {
         }
 
         let Visual = VisualOfCategory(Category,Peer)
-        setErrorInfoOfVisual(Visual,{
-          Title:       'Inappropriate Category',
-          longMessage: 'This visual belongs to category ' +
-                       quoted(originalCategory) + ', which is not allowed here',
-          shortMessage:'inappropriate category ' + quoted(originalCategory),
-          Applet:      AppletOfPeer(Peer),
-          Sufferer:    Visual,
-          Property:    'Category'
-        })
+        let Applet = AppletOfPeer(Peer)
+        if (Applet != null) {
+          setErrorInfoOfVisual(Visual,{
+            Title:       'Inappropriate Category',
+            longMessage: 'This visual belongs to category ' +
+                         quoted(originalCategory) + ', which is not allowed here',
+            shortMessage:'inappropriate category ' + quoted(originalCategory),
+            Applet:      Applet,
+            Sufferer:    Visual,
+            Property:    'Category'
+          })
 
-        buildInnerVisuals()
+          buildInnerVisuals()
+        }
       return Visual
     }
 
     function buildInnerVisuals ():void {
       switch (Category) {
         case 'Applet':
-          Peer.children('.WAT.Card,.WAT.Overlay').each(function () {
-            buildVisualFromPeer($(this),'Layer')
+          filtered(Peer.children,'.WAT.Card,.WAT.Overlay').forEach((Peer) => {
+            buildVisualFromPeer(Peer as HTMLElement,'Layer')
           })
           break
         case 'Card':
         case 'Overlay':
         case 'Compound':
-          Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-            buildVisualFromPeer($(this),'Component')
+          filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach((Peer) => {
+            buildVisualFromPeer(Peer as HTMLElement,'Component')
           })
       }
     }
 
     let Visual = VisualOfCategory(Category,Peer)
     let Applet = AppletOfPeer(Peer)
-
-    let Master     = MasterOfPeer(Peer,Category)
-    let MasterInfo = MasterRegistry[Master]
-    if (MasterInfo == null) {
-      setErrorInfoOfVisual(Visual,{
-        Title:       'No such Master',
-        longMessage: 'A visual master called ' + quoted(Master) + ' is not ' +
-                     'available',
-        shortMessage:'unknown master ' + quoted(Master),
-        Applet:      Applet,
-        Sufferer:    Visual,
-        Property:    'Master'
-      })
-        buildInnerVisuals()
-      return Visual
-    }
-
-    let Classes = MasterInfo.Classes
-    if (Classes != null) {
-      Classes.forEach((Class) => { Peer.addClass(Class) })
-    }
-
-    if (MasterInfo.Category !== Category) {
-      setErrorInfoOfVisual(Visual,{
-        Title:       'Inappropriate Master',
-        longMessage: 'Master ' + quoted(Master) + ' is not foreseen for ' +
-                     'category ' + quoted(Category),
-        shortMessage:'inappropriate master ' + quoted(Master),
-        Applet:      Applet,
-        Sufferer:    Visual,
-        Property:    'Master'
-      })
-        buildInnerVisuals()
-      return Visual
-    }
-
-    let Version = VersionOfPeer(Peer)
-    if ((Version != null) && ! VersionAmatchesB(Version,MasterInfo.Version as WAT_normalizedVersion)) {
-      setErrorInfoOfVisual(Visual,{
-        Title:       'Inappropriate Version',
-        longMessage: 'This visual requires a different version of master ' +
-                     quoted(Master) + ' than available',
-        shortMessage:'inappropriate master ' + quoted(Master),
-        Applet:      Applet,
-        Sufferer:    Visual,
-        Property:    'Version'
-      })
-        buildInnerVisuals()
-      return Visual
-    }
-
-    if (MasterInfo.ErrorInfo != null) {
-      setErrorInfoOfVisual(Visual,MasterInfo.ErrorInfo)
-        buildInnerVisuals()
-      return Visual
-    }
-
-    if (Category === 'Applet') {  // every applet must always contain >= 1 cards
-      if (Peer.children('.WAT.Card').length === 0) {
-        Peer.prepend(
-          '<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>'
-        )
-      }
-    }
-
-    let Name = NameOfPeer(Peer)
-    if ((Name != null) && (Name[0] === '#')) {
-      try {
-        registerGlobalVisualOfApplet(Applet,Visual)
-      } catch (Signal) {
+    if (Applet != null) {
+      let Master     = MasterOfPeer(Peer,Category)
+      let MasterInfo = MasterRegistry[Master]
+      if (MasterInfo == null) {
         setErrorInfoOfVisual(Visual,{
-          Title:       'Global name Collision',
-          longMessage: 'The global name of this visual ' + quoted(Name) + ' ' +
-                       'has already been used',
-          shortMessage:'global name collision ' + quoted(Name),
+          Title:       'No such Master',
+          longMessage: 'A visual master called ' + quoted(Master) + ' is not ' +
+                       'available',
+          shortMessage:'unknown master ' + quoted(Master),
           Applet:      Applet,
           Sufferer:    Visual,
-          Property:    'Name'
+          Property:    'Master'
         })
           buildInnerVisuals()
         return Visual
       }
-    }
 
-    let State = StateOfPeer(Peer)
-    if (State != null) {
-      InternalsOfVisual(Visual).State = State
-    }
+      let Classes = MasterInfo.Classes
+      if (Classes != null) {
+        Classes.forEach((Class) => { Peer.classList.add(Class) })
+      }
 
-    let VisualScript = ScriptOfPeer(Peer)
-    if ((MasterInfo.compiledScript != null) || (VisualScript != null)) {
-      const toGet   = definePropertyGetterForVisual.bind(null,Visual)
-      const toSet   = definePropertySetterForVisual.bind(null,Visual)
-      const on      = registerEventHandlerForVisual.bind(null,Visual)
-      const off     = unregisterEventHandlerForVisual.bind(null,Visual)
-      const trigger = triggerEventFromVisual.bind(null,Visual)
+      if (MasterInfo.Category !== Category) {
+        setErrorInfoOfVisual(Visual,{
+          Title:       'Inappropriate Master',
+          longMessage: 'Master ' + quoted(Master) + ' is not foreseen for ' +
+                       'category ' + quoted(Category),
+          shortMessage:'inappropriate master ' + quoted(Master),
+          Applet:      Applet,
+          Sufferer:    Visual,
+          Property:    'Master'
+        })
+          buildInnerVisuals()
+        return Visual
+      }
 
-      const Reactivity = (...ArgumentList:any[]):any => {
-        ArgumentList.unshift(Visual)
-        return InternalsOfVisual(Applet).ReactivityContext?.$.apply(
+      let Version = VersionOfPeer(Peer)
+      if ((Version != null) && ! VersionAmatchesB(Version,MasterInfo.Version as WAT_normalizedVersion)) {
+        setErrorInfoOfVisual(Visual,{
+          Title:       'Inappropriate Version',
+          longMessage: 'This visual requires a different version of master ' +
+                       quoted(Master) + ' than available',
+          shortMessage:'inappropriate master ' + quoted(Master),
+          Applet:      Applet,
+          Sufferer:    Visual,
+          Property:    'Version'
+        })
+          buildInnerVisuals()
+        return Visual
+      }
+
+      if (MasterInfo.ErrorInfo != null) {
+        setErrorInfoOfVisual(Visual,MasterInfo.ErrorInfo)
+          buildInnerVisuals()
+        return Visual
+      }
+
+      if (Category === 'Applet') {// every applet must always contain >= 1 cards
+        if (filtered(Peer.children,'.WAT.Card').length === 0) {
+          Peer.insertBefore(ElementFromHTML(
+            '<div class="WAT Card" data-wat-master="plainCard" style="visibility:visible"></div>'
+          ), Peer.firstChild)
+        }
+      }
+
+      let Name = NameOfPeer(Peer)
+      if ((Name != null) && (Name[0] === '#')) {
+        try {
+          registerGlobalVisualOfApplet(Applet,Visual)
+        } catch (Signal) {
+          setErrorInfoOfVisual(Visual,{
+            Title:       'Global name Collision',
+            longMessage: 'The global name of this visual ' + quoted(Name) + ' ' +
+                         'has already been used',
+            shortMessage:'global name collision ' + quoted(Name),
+            Applet:      Applet,
+            Sufferer:    Visual,
+            Property:    'Name'
+          })
+            buildInnerVisuals()
+          return Visual
+        }
+      }
+
+      let State = StateOfPeer(Peer)
+      if (State != null) {
+        InternalsOfVisual(Visual).State = State
+      }
+
+      let VisualScript = ScriptOfPeer(Peer)
+      if ((MasterInfo.compiledScript != null) || (VisualScript != null)) {
+        const toGet   = definePropertyGetterForVisual.bind(null,Visual)
+        const toSet   = definePropertySetterForVisual.bind(null,Visual)
+        const on      = registerEventHandlerForVisual.bind(null,Visual)
+        const off     = unregisterEventHandlerForVisual.bind(null,Visual)
+        const trigger = triggerEventFromVisual.bind(null,Visual)
+
+        const Reactivity = (...ArgumentList:any[]):any => {
+          ArgumentList.unshift(Visual)
+          return InternalsOfVisual(Applet as WAT_Applet).ReactivityContext?.$.apply(
 // @ts-ignore don't worry about number of arguments
-          null,ArgumentList            // since number of arguments is important
-        )
-      }
-
-      if (MasterInfo.compiledScript != null) {
-        try {
-          MasterInfo.compiledScript.call(Visual, toGet,toSet,on,off,trigger,Reactivity)
-        } catch (Signal) {
-          setErrorInfoOfVisual(Visual,{
-            Title:       'Execution Error in Master Script',
-            longMessage: 'The script of master ' + quoted(Master) + ' could ' +
-                         'not be applied to this visual',
-            shortMessage:Signal.message,
-            Reason:      Signal,
-            Applet:      Applet,
-            Sufferer:    Visual,
-            Property:    'Master'
-          })
-            buildInnerVisuals()
-          return Visual
-        }
-      }
-
-      let compiledScript
-      if (VisualScript != null) {
-        try {
-          compiledScript = new Function(
-            'toGet','toSet','on','off','trigger','$$', VisualScript
+            null,ArgumentList          // since number of arguments is important
           )
-        } catch (Signal) {
-          setErrorInfoOfVisual(Visual,{
-            Title:       'Compilation Error',
-            longMessage: 'The script of this visual could not be compiled',
-            shortMessage:Signal.message,
-            Reason:      Signal,
-            Applet:      Applet,
-            Sufferer:    Visual,
-            Property:    'Script'
-          })
-            buildInnerVisuals()
-          return Visual
         }
 
-        try {
-          compiledScript.call(Visual, toGet,toSet,on,off,trigger,Reactivity)
-        } catch (Signal) {
-          setErrorInfoOfVisual(Visual,{
-            Title:       'Execution Error in Visual Script',
-            longMessage: 'The script of this visual failed',
-            shortMessage:Signal.message,
-            Reason:      Signal,
-            Applet:      Applet,
-            Sufferer:    Visual,
-            Property:    'Script'
-          })
-            buildInnerVisuals()
-          return Visual
+        if (MasterInfo.compiledScript != null) {
+          try {
+            MasterInfo.compiledScript.call(Visual, toGet,toSet,on,off,trigger,Reactivity)
+          } catch (Signal) {
+            setErrorInfoOfVisual(Visual,{
+              Title:       'Execution Error in Master Script',
+              longMessage: 'The script of master ' + quoted(Master) + ' could ' +
+                           'not be applied to this visual',
+              shortMessage:Signal.message,
+              Reason:      Signal,
+              Applet:      Applet,
+              Sufferer:    Visual,
+              Property:    'Master'
+            })
+              buildInnerVisuals()
+            return Visual
+          }
+        }
+
+        let compiledScript
+        if (VisualScript != null) {
+          try {
+            compiledScript = new Function(
+              'toGet','toSet','on','off','trigger','$', VisualScript
+            )
+          } catch (Signal) {
+            setErrorInfoOfVisual(Visual,{
+              Title:       'Compilation Error',
+              longMessage: 'The script of this visual could not be compiled',
+              shortMessage:Signal.message,
+              Reason:      Signal,
+              Applet:      Applet,
+              Sufferer:    Visual,
+              Property:    'Script'
+            })
+              buildInnerVisuals()
+            return Visual
+          }
+
+          try {
+            compiledScript.call(Visual, toGet,toSet,on,off,trigger,Reactivity)
+          } catch (Signal) {
+            setErrorInfoOfVisual(Visual,{
+              Title:       'Execution Error in Visual Script',
+              longMessage: 'The script of this visual failed',
+              shortMessage:Signal.message,
+              Reason:      Signal,
+              Applet:      Applet,
+              Sufferer:    Visual,
+              Property:    'Script'
+            })
+              buildInnerVisuals()
+            return Visual
+          }
         }
       }
-    }
 
-    buildInnerVisuals()
+      buildInnerVisuals()
+    }
 
     return Visual
   }
@@ -5010,7 +5032,7 @@ namespace WAT {
 /**** buildVisualFromPeer ****/
 
   function buildVisualFromPeer (
-    Peer:JQuery, allowedCategory:WAT_Category|'Layer'|'Component'
+    Peer:HTMLElement, allowedCategory:WAT_Category|'Layer'|'Component'
   ):void {
     VisualBuiltFromPeer(Peer,allowedCategory)
   }
@@ -5020,12 +5042,12 @@ namespace WAT {
   let uniqueIdCounter = 0
 
   function VisualOfCategory (
-    Category:WAT_Category, Peer:JQuery
+    Category:WAT_Category, Peer:HTMLElement
   ):WAT_Visual {
     let uniqueId
-      let oldVisual = VisualForDOMElement.get(Peer[0])
+      let oldVisual = VisualForDOMElement.get(Peer)
       if (oldVisual == null) {                                // deserialization
-        let serializedId = Peer.attr('data-wat-unique-id')
+        let serializedId = attr(Peer,'data-wat-unique-id')
         if (serializedId != null) {
           let newId = parseInt(serializedId,10)
           if (
@@ -5034,7 +5056,7 @@ namespace WAT {
             (VisualRegistry[newId] == null)
           ) { uniqueId = newId }
 
-          Peer.attr('data-wat-unique-id', null)
+          attr(Peer,'data-wat-unique-id',undefined)
         }
       } else {                                                        // refresh
         uniqueId = InternalsForVisual.get(oldVisual).uniqueId
@@ -5050,10 +5072,10 @@ namespace WAT {
         case 'Compound': newVisual = new WAT_Compound(); break
         default: throwError('InternalError: unforeseen visual category')
       }
-      VisualForDOMElement.set(Peer[0],newVisual)
+      VisualForDOMElement.set(Peer,newVisual)
       VisualRegistry[uniqueId] = newVisual
 
-      Peer.addClass('WAT').addClass(Category)
+      Peer.classList.add('WAT',Category)
 
       InternalsForVisual.set(newVisual,{ uniqueId, Peer })
       if (Category === 'Applet') {
@@ -5101,7 +5123,7 @@ namespace WAT {
         StyleValue = MasterStyle
       }
     }
-    PeerOfVisual(Visual).css(StyleName,StyleValue)
+    css(PeerOfVisual(Visual),StyleName,StyleValue)
   }
 
 /**** applyStylesToVisual ****/
@@ -5130,10 +5152,13 @@ namespace WAT {
           }
         }
       }
-
-      if (newStyleSet != null) {
-        PeerOfVisual(Visual).css(newStyleSet)
+    if (newStyleSet != null) {
+      for (let StyleName in newStyleSet) {
+        if (newStyleSet.hasOwnProperty(StyleName)) {
+          css(PeerOfVisual(Visual),StyleName,newStyleSet[StyleName])
+        }
       }
+    }
   }
 
 /**** refreshVisual ****/
@@ -5214,7 +5239,7 @@ namespace WAT {
   /**** isAttached ****/
 
     get isAttached () {
-      return document.body.contains( InternalsOfVisual(this).Peer[0] )
+      return document.body.contains( InternalsOfVisual(this).Peer )
     }
 
     set isAttached (newAttachment:any) { throwReadOnlyError('isAttached') }
@@ -5222,7 +5247,7 @@ namespace WAT {
   /**** Id ****/
 
     get Id () {
-      let Candidate = PeerOfVisual(this).attr('id')
+      let Candidate = attr(PeerOfVisual(this),'id')
       return (ValueIsId(Candidate) ? Candidate : undefined)
     }
 
@@ -5231,14 +5256,14 @@ namespace WAT {
 
       let Peer = PeerOfVisual(this)
 
-      let oldId = Peer.attr('id')
+      let oldId = attr(Peer,'id')
       if (newId == oldId) { return }
 
       if (newId == null) {
-        Peer.attr('id',null)
+        attr(Peer,'id',undefined)
       } else {
         if (document.getElementById(newId) == null) {
-          Peer.attr('id',newId)
+          attr(Peer,'id',newId)
         } else {
           throwError('InvalidArgument: the given HTML id is not unique')
         }
@@ -5248,7 +5273,7 @@ namespace WAT {
   /**** Name ****/
 
     get Name () {
-      let Candidate = PeerOfVisual(this).data('wat-name')
+      let Candidate = data(PeerOfVisual(this),'wat-name')
       return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
     }
 
@@ -5257,7 +5282,7 @@ namespace WAT {
 
       let Peer = PeerOfVisual(this)
 
-      let oldName = Peer.data('wat-name')
+      let oldName = data(Peer,'wat-name')
       if (newName == oldName) { return }
 
       let Applet = this.Applet
@@ -5268,7 +5293,7 @@ namespace WAT {
           ?.clearReactiveVariable(oldName)
       }
 
-      Peer.data('wat-name',newName || null)
+      data(Peer,'wat-name',newName || undefined)
       if (newName.startsWith('#')) {
         registerGlobalVisualOfApplet(Applet,this)
         InternalsOfVisual(this.Applet)?.ReactivityContext
@@ -5279,13 +5304,13 @@ namespace WAT {
   /**** Label ****/
 
     get Label () {
-      let Candidate = PeerOfVisual(this).data('wat-label')
+      let Candidate = data(PeerOfVisual(this),'wat-label')
       return (ValueIsLabel(Candidate) ? Candidate : undefined)
     }
 
     set Label (newLabel:WAT_Label) {
       allowLabel('label',newLabel)
-      PeerOfVisual(this).data('wat-label',newLabel || null)
+      data(PeerOfVisual(this),'wat-label',newLabel || undefined)
     }
 
   /**** Category ****/
@@ -5293,11 +5318,11 @@ namespace WAT {
     get Category () {
       let Peer = PeerOfVisual(this)
       switch (true) {
-        case Peer.hasClass('Applet'):   return 'Applet'
-        case Peer.hasClass('Card'):     return 'Card'
-        case Peer.hasClass('Overlay'):  return 'Overlay'
-        case Peer.hasClass('Control'):  return 'Control'
-        case Peer.hasClass('Compound'): return 'Compound'
+        case Peer.classList.contains('Applet'):   return 'Applet'
+        case Peer.classList.contains('Card'):     return 'Card'
+        case Peer.classList.contains('Overlay'):  return 'Overlay'
+        case Peer.classList.contains('Control'):  return 'Control'
+        case Peer.classList.contains('Compound'): return 'Compound'
         default: throwError(
           'BrokenVisual: cannot determine category of given visual'
         )
@@ -5310,7 +5335,7 @@ namespace WAT {
     get Master () {
       let Peer = PeerOfVisual(this)
 
-      let Master = Peer.data('wat-master')
+      let Master = data(Peer,'wat-master')
       if (ValueIsName(Master)) {
         return Master             // independent of whether master exists or not
       } else {
@@ -5332,10 +5357,10 @@ namespace WAT {
 
       let Peer = PeerOfVisual(this)
 
-      let oldMaster = Peer.data('wat-master')
+      let oldMaster = data(Peer,'wat-master')
       if (newMaster == oldMaster) { return }
 
-      Peer.data('wat-master',newMaster)
+      data(Peer,'wat-master',newMaster)
       refreshVisual(this)
     }
 
@@ -5347,13 +5372,13 @@ namespace WAT {
   /**** Container ****/
 
     get Container () {
-      let ContainerPeer = PeerOfVisual(this).parent(
-        '.WAT.Card,.WAT.Overlay,.WAT.Compound'
+      let ContainerPeer = closestParent(
+        PeerOfVisual(this), '.WAT.Card,.WAT.Overlay,.WAT.Compound'
       )
       return (
-        ContainerPeer.length === 0
+        ContainerPeer == null
         ? undefined
-        : VisualOfElement(ContainerPeer[0])
+        : VisualOfElement(ContainerPeer)
       )
     }
     set Container (newContainer:any) { throwReadOnlyError('Container') }
@@ -5361,11 +5386,11 @@ namespace WAT {
   /**** Layer ****/
 
     get Layer () {
-      let LayerPeer = PeerOfVisual(this).parent('.WAT.Card,.WAT.Overlay')
+      let LayerPeer = PeerOfVisual(this).closest('.WAT.Card,.WAT.Overlay') // no typo!
       return (
-        LayerPeer.length === 0
+        LayerPeer == null
         ? undefined
-        : VisualOfElement(LayerPeer[0])
+        : VisualOfElement(LayerPeer as HTMLElement)
       )
     }
     set Layer (newLayer:any) { throwReadOnlyError('Layer') }
@@ -5375,9 +5400,9 @@ namespace WAT {
     get Applet () {
       let AppletPeer = PeerOfVisual(this).closest('.WAT.Applet')     // no typo!
       return (
-        AppletPeer.length === 0
+        AppletPeer == null
         ? undefined
-        : VisualOfElement(AppletPeer[0])
+        : VisualOfElement(AppletPeer as HTMLElement)
       )
     }
     set Applet (newApplet:any) { throwReadOnlyError('Applet') }
@@ -5573,7 +5598,7 @@ namespace WAT {
         let pendingScriptError
         try {                       // just compile in order to check for errors
           let compiledScript = new Function(
-            'toGet','toSet','on','off','trigger','$$', pendingScript
+            'toGet','toSet','on','off','trigger','$', pendingScript
           )
         } catch (Signal) {
           pendingScriptError = {
@@ -6527,7 +6552,7 @@ namespace WAT {
   /**** Name ****/
 
     get Name () {
-      let Candidate = PeerOfVisual(this).data('wat-name')
+      let Candidate = data(PeerOfVisual(this),'wat-name')
       return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
     }
 
@@ -6570,8 +6595,8 @@ namespace WAT {
     get CardList () {
       let Result:WAT_Card[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Card').each(function () {
-          Result.push(VisualOfElement(this) as WAT_Card)
+        filtered(Peer.children,'.WAT.Card').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement) as WAT_Card)
         })
       return Result
     }
@@ -6582,8 +6607,8 @@ namespace WAT {
     get CardLabelList () {
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Card').each(function () {
-          Result.push(VisualOfElement(this).Label)
+        filtered(Peer.children,'.WAT.Card').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement).Label)
         })
       return Result
     }
@@ -6593,7 +6618,7 @@ namespace WAT {
 
     get CardCount () {
       let Peer = PeerOfVisual(this)
-      return Peer.children('.WAT.Card').length
+      return filtered(Peer.children,'.WAT.Card').length
     }
     set CardCount (newCardCount:any) { throwReadOnlyError('CardCount') }
 
@@ -6722,7 +6747,7 @@ namespace WAT {
         'part of this applet'
       )
 
-      return CardDeserializedInto(MasterInfo.Template,this,Index)
+      return this.CardDeserializedFrom(MasterInfo.Template,Index)
     }
 
   /**** DuplicateOfCard ****/
@@ -6735,7 +6760,7 @@ namespace WAT {
       )
 
       let CardSerialization = serializedVisual(this.CardList[Index])
-      return CardDeserializedInto(CardSerialization,this,Index+1)
+      return this.CardDeserializedFrom(CardSerialization,Index+1)
     }
 
   /**** CardDeserializedFrom ****/
@@ -6755,25 +6780,25 @@ namespace WAT {
         'part of this applet'
       )
 
-      let CardPeer = $(Serialization)
+      let CardPeer = ElementFromHTML(Serialization)
 
       let NeighbourCard = this.CardAtIndex(Index)
       if (NeighbourCard == null) {
         this.Peer.append(CardPeer)
       } else {
-        CardPeer.insertBefore(NeighbourCard.Peer)
+       this.Peer.insertBefore(CardPeer,NeighbourCard.Peer)
       }
 
       let newCard
         try {
           newCard = VisualBuiltFromPeer(CardPeer,'Card') as WAT_Card
         } catch (Signal) {
-          CardPeer.remove()
+          remove(CardPeer)
           throw Signal
         }
 
         if (! this.acceptsCardAt(newCard,Index)) {
-          CardPeer.remove()
+          remove(CardPeer)
           throwError(
             'InvalidOperation: the given serialized card must not be ' +
             'inserted into this applet'
@@ -6935,7 +6960,7 @@ namespace WAT {
           'this applet'
         )
       } else {
-        let CardElement = PeerOfVisual(this.CardAtIndex(CardIndex) as WAT_Card)[0]
+        let CardElement = PeerOfVisual(this.CardAtIndex(CardIndex) as WAT_Card)
 
         this.Peer.children('.WAT.Card').each(function (this:HTMLElement) {
           if (this === CardElement) {
@@ -6974,8 +6999,8 @@ namespace WAT {
     get OverlayList () {
       let Result:WAT_Overlay[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Overlay').each(function () {
-          Result.push(VisualOfElement(this) as WAT_Overlay)
+        filtered(Peer.children,'.WAT.Overlay').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement) as WAT_Overlay)
         })
       return Result
     }
@@ -6986,8 +7011,8 @@ namespace WAT {
     get OverlayLabelList () {
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Overlay').each(function () {
-          Result.push(VisualOfElement(this).Label)
+        filtered(Peer.children,'.WAT.Overlay').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement).Label)
         })
       return Result
     }
@@ -6997,7 +7022,7 @@ namespace WAT {
 
     get OverlayCount () {
       let Peer = PeerOfVisual(this)
-      return Peer.children('.WAT.Overlay').length
+      return filtered(Peer.children,'.WAT.Overlay').length
     }
     set OverlayCount (newOverlayCount:any) { throwReadOnlyError('OverlayCount') }
 
@@ -7126,7 +7151,7 @@ namespace WAT {
         'part of this applet'
       )
 
-      return OverlayDeserializedInto(MasterInfo.Template,this,Index)
+      return this.OverlayDeserializedFrom(MasterInfo.Template,Index)
     }
 
   /**** DuplicateOfOverlay ****/
@@ -7139,7 +7164,7 @@ namespace WAT {
       )
 
       let OverlaySerialization = serializedVisual(this.OverlayList[Index])
-      return OverlayDeserializedInto(OverlaySerialization,this,Index+1)
+      return this.OverlayDeserializedFrom(OverlaySerialization,Index+1)
     }
 
   /**** OverlayDeserializedFrom ****/
@@ -7159,25 +7184,25 @@ namespace WAT {
         'part of this applet'
       )
 
-      let OverlayPeer = $(Serialization)
+      let OverlayPeer = ElementFromHTML(Serialization)
 
       let NeighbourOverlay = this.OverlayAtIndex(Index)
       if (NeighbourOverlay == null) {
         this.Peer.append(OverlayPeer)
       } else {
-        OverlayPeer.insertBefore(NeighbourOverlay.Peer)
+        this.Peer.insertBefore(OverlayPeer,NeighbourOverlay.Peer)
       }
 
       let newOverlay
         try {
           newOverlay = VisualBuiltFromPeer(OverlayPeer,'Overlay') as WAT_Overlay
         } catch (Signal) {
-          OverlayPeer.remove()
+          remove(OverlayPeer)
           throw Signal
         }
 
         if (! this.acceptsOverlayAt(newOverlay,Index)) {
-          OverlayPeer.remove()
+          remove(OverlayPeer)
           throwError(
             'InvalidOperation: the given serialized overlay must not be ' +
             'inserted into this applet'
@@ -7338,8 +7363,8 @@ namespace WAT {
     get ComponentList () {
       let Result:(WAT_Control|WAT_Compound)[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-          Result.push(VisualOfElement(this) as WAT_Control|WAT_Compound)
+        filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement) as WAT_Control|WAT_Compound)
         })
       return Result
     }
@@ -7350,8 +7375,8 @@ namespace WAT {
     get ComponentLabelList () {
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
-        Peer.children('.WAT.Control,.WAT.Compound').each(function () {
-          Result.push(VisualOfElement(this).Label)
+        filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach(function (Peer) {
+          Result.push(VisualOfElement(Peer as HTMLElement).Label)
         })
       return Result
     }
@@ -7361,7 +7386,7 @@ namespace WAT {
 
     get ComponentCount () {
       let Peer = PeerOfVisual(this)
-      return Peer.children('.WAT.Control,.WAT.Compound').length
+      return filtered(Peer.children,'.WAT.Control,.WAT.Compound').length
     }
     set ComponentCount (newComponentCount:any) { throwReadOnlyError('ComponentCount') }
 
@@ -7506,7 +7531,7 @@ namespace WAT {
         'part of this applet'
       )
 
-      return ComponentDeserializedInto(MasterInfo.Template,this,Index)
+      return this.ComponentDeserializedFrom(MasterInfo.Template,Index)
     }
 
   /**** DuplicateOfComponent ****/
@@ -7521,46 +7546,46 @@ namespace WAT {
       )
 
       let ComponentSerialization = serializedVisual(this.ComponentList[Index])
-      return ComponentDeserializedInto(ComponentSerialization,this,Index+1)
+      return this.ComponentDeserializedFrom(ComponentSerialization,Index+1)
     }
 
   /**** ComponentDeserializedFrom ****/
 
     public ComponentDeserializedFrom (
       Serialization:string,
-      ComponentOrNameOrIndex?:WAT_Control|WAT_Compound|WAT_Name|number
+      InsertionPoint?:WAT_Control|WAT_Compound|WAT_Name|number
     ):WAT_Control|WAT_Compound {
       expectText('component serialization',Serialization)
 
       let Index = (
-        ComponentOrNameOrIndex == null
+        InsertionPoint == null
         ? this.ComponentCount
-        : this.IndexOfComponent(ComponentOrNameOrIndex)
+        : this.IndexOfComponent(InsertionPoint)
       )
       if (Index < 0) throwError(
         'InvalidArgument: the given insertion point does not exist or is not ' +
         'part of this container'
       )
 
-      let ComponentPeer = $(Serialization)
+      let ComponentPeer = ElementFromHTML(Serialization)
 
       let NeighbourComponent = this.ComponentAtIndex(Index)
       if (NeighbourComponent == null) {
         this.Peer.append(ComponentPeer)
       } else {
-        ComponentPeer.insertBefore(NeighbourComponent.Peer)
+        this.Peer.insertBefore(ComponentPeer,NeighbourComponent.Peer)
       }
 
       let newComponent
         try {
           newComponent = VisualBuiltFromPeer(ComponentPeer,'Component') as WAT_Control|WAT_Compound
         } catch (Signal) {
-          ComponentPeer.remove()
+          remove(ComponentPeer)
           throw Signal
         }
 
         if (! this.acceptsComponentAt(newComponent,Index)) {
-          ComponentPeer.remove()
+          remove(ComponentPeer)
           throwError(
             'InvalidOperation: the given serialized component must not be ' +
             'inserted into this container'
@@ -7694,7 +7719,7 @@ namespace WAT {
         if (prevComponent == null) {
           this.Peer.append(Component.Peer)
         } else {
-          Component.Peer.insertAfter(prevComponent.Peer)
+          this.Peer.insertAfter(Component.Peer,prevComponent.Peer)
         }
       }
     }
@@ -7913,7 +7938,7 @@ namespace WAT {
 //----------------------------------------------------------------------------//
 
   export interface WAT_Component {
-    Peer:JQuery,
+    Peer:HTMLElement,
     trigger:(...ArgumentList:any) => void,
 
     Index:number
@@ -8154,9 +8179,12 @@ namespace WAT {
 
 /**** AppletPeersInDocument ****/
 
-  export function AppletPeersInDocument ():JQuery {
-    return $('.WAT.Applet').filter(                // applets must not be nested
-      function (this:HTMLElement) { return ($(this).parent().closest('.WAT.Applet').length === 0)}
+  export function AppletPeersInDocument ():HTMLElement[] {
+    return filtered(
+      document.body.querySelectorAll('.WAT.Applet'),
+      (Peer) => {                                  // applets must not be nested
+        return (closestParent(Peer as HTMLElement,'.WAT.Applet') == null)
+      }
     )
   }
 
@@ -8269,9 +8297,6 @@ namespace WAT {
 
   global['WAT'] = Object.assign(WAT.ready,WAT)
 
-  const head = $(document.head)
-  let   body
-
 /**** startWAT ****/
 
   async function startWAT ():Promise<void> {
@@ -8287,15 +8312,15 @@ namespace WAT {
 /**** startAllApplets ****/
 
   async function startAllApplets ():Promise<void> {
-    let AppletPeerList = AppletPeersInDocument().toArray()
+    let AppletPeerList = AppletPeersInDocument()
     await AppletPeerList.forEach(async function (AppletPeer:HTMLElement) {
-      await startAppletFromPeer($(AppletPeer))
+      await startAppletFromPeer(AppletPeer)
     })
   }
 
 /**** startAppletFromPeer ****/
 
-  async function startAppletFromPeer (AppletPeer:JQuery):Promise<void> {
+  async function startAppletFromPeer (AppletPeer:HTMLElement):Promise<void> {
     let Applet
     if (BackupIsSupported && await AppletHasBackup(AppletPeer)) {
       Applet = await AppletRestoredIntoPeer(AppletPeer)
@@ -8309,8 +8334,6 @@ namespace WAT {
 /**** start WAT and applets ****/
 
   function startup () {
-    body = $(document.body)
-
     defineForbiddenPropertyNames()
     registerMastersInDocument()            // nota bene: WAT is not yet "ready"!
 
