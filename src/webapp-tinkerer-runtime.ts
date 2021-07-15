@@ -4,35 +4,30 @@
 *                                                                              *
 *******************************************************************************/
 
-import download    from 'downloadjs'
-import localforage from 'localforage'
+  import download    from 'downloadjs'
+  import localforage from 'localforage'
 
-import {
-  global, throwError, quoted,
-  ObjectIsEmpty,
-  ValueIsBoolean,
-  ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsOrdinal,
-  ValueIsString, ValueIsStringMatching,
-  ValueIsText, ValueIsTextline, ValueIsArray, ValueIsFunction,
-  ValueIsOneOf, ValueIsURL,
-  allowBoolean, expectBoolean, expectedBoolean,
-  expectedNumber, allowNumberInRange, expectNumberInRange, expectedNumberInRange,
-  allowIntegerInRange, expectedIntegerInRange, allowOrdinal, expectOrdinal,
-  allowString, expectedStringMatching, allowText, allowedText, expectText,
-  allowTextline, allowedTextline, expectedTextline,
-  allowFunction, allowedFunction, expectFunction, expectedFunction,
-  expectObject, allowPlainObject, expectPlainObject, allowArray, expectedArray,
-  allowOneOf, expectedOneOf, expectOneOf,
-  allowColor, expectColor, expectURL,
-  ValidatorForClassifier, acceptNil, rejectNil,
-  ValuesAreEqual, HexColor, shortHexColor
-} from 'javascript-interface-library'
-import * as JIL from 'javascript-interface-library'
-
-namespace WAT {
-  export const Version = '0.1.0'
-
-  const ReadyFunctionsToCall:Function[] = []     // "ready" will be called early
+  import {
+    global, throwError, quoted,
+    ObjectIsEmpty,
+    ValueIsBoolean,
+    ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsOrdinal,
+    ValueIsString, ValueIsStringMatching,
+    ValueIsText, ValueIsTextline, ValueIsArray, ValueIsFunction,
+    ValueIsOneOf, ValueIsURL,
+    allowBoolean, expectBoolean, expectedBoolean,
+    expectedNumber, allowNumberInRange, expectNumberInRange, expectedNumberInRange,
+    allowIntegerInRange, expectedIntegerInRange, allowOrdinal, expectOrdinal,
+    allowString, expectedStringMatching, allowText, allowedText, expectText,
+    allowTextline, allowedTextline, expectedTextline,
+    allowFunction, allowedFunction, expectFunction, expectedFunction,
+    expectObject, allowPlainObject, expectPlainObject, allowArray, expectedArray,
+    allowOneOf, expectedOneOf, expectOneOf,
+    allowColor, expectColor, expectURL,
+    ValidatorForClassifier, acceptNil, rejectNil,
+    ValuesAreEqual, HexColor, shortHexColor
+  } from 'javascript-interface-library'
+  import * as JIL from 'javascript-interface-library'
 
 /**** common types and values ****/
 
@@ -48,6 +43,11 @@ namespace WAT {
   type WAT_normalizedVersion = {                           // not to be exported
     major:number, minor:number, Patch:number, Build:number
   }
+
+  export type WAT_Id         = string        // mainly for illustrative purposes
+  export type WAT_Name       = string                                    // dto.
+  export type WAT_Label      = string                                    // dto.
+  export type WAT_Identifier = string                                    // dto.
 
 /**** layout setting types ****/
 
@@ -74,7 +74,7 @@ namespace WAT {
   ]
   export type WAT_FontWeight = typeof WAT_FontWeights[number]
 
-  const WAT_FontWeightValues = Object.assign(Object.create(null),{
+  export const WAT_FontWeightValues = Object.assign(Object.create(null),{
     'thin':100, 'extra-light':200, 'light':300, 'normal':400, 'medium':500,
     'semi-bold':600, 'bold':700, 'extra-bold':800, 'heavy':900
   })
@@ -158,6 +158,11 @@ namespace WAT {
   export type WAT_Textline = string                                      // dto.
   export type WAT_Color    = string                                      // dto.
   export type WAT_URL      = string                                      // dto.
+
+export namespace WAT {
+  export const Version = '0.1.0'
+
+  const ReadyFunctionsToCall:Function[] = []     // "ready" will be called early
 
 /**** re-export contents of javascript-interface-library ****/
 
@@ -330,8 +335,6 @@ namespace WAT {
 
 /**** ValueIsId (i.e., HTML id) ****/
 
-  export type WAT_Id = string                // mainly for illustrative purposes
-
   const WAT_IdPattern = /^[a-z][-_a-z.0-9]*$/i
 // see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id
 
@@ -350,8 +353,6 @@ namespace WAT {
   ), expectedId = expectId
 
 /**** ValueIsName ****/
-
-  export type WAT_Name = string              // mainly for illustrative purposes
 
   const WAT_NamePattern = /^[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i
 
@@ -389,8 +390,6 @@ namespace WAT {
 
 /**** ValueIsLabel ****/
 
-  export type WAT_Label = string             // mainly for illustrative purposes
-
   export function ValueIsLabel (Value:any):boolean {
     return ValueIsTextline(Value)
   }
@@ -406,8 +405,6 @@ namespace WAT {
   ), expectedLabel = expectLabel
 
 /**** ValueIsIdentifier ****/
-
-  export type WAT_Identifier = string        // mainly for illustrative purposes
 
   const IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i
 
@@ -8510,3 +8507,14 @@ namespace WAT {
 
   global.WAT = WAT
 }
+
+export type WAT_Visual    = WAT.WAT_Visual
+export type WAT_Applet    = WAT.WAT_Applet
+export type WAT_Container = WAT.WAT_Container
+export type WAT_Layer     = WAT.WAT_Layer
+export type WAT_Card      = WAT.WAT_Card
+export type WAT_Overlay   = WAT.WAT_Overlay
+export type WAT_Component = WAT.WAT_Component
+export type WAT_Compound  = WAT.WAT_Compound
+export type WAT_Control   = WAT.WAT_Control
+
