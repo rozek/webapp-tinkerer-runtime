@@ -32,6 +32,8 @@ import * as JIL from 'javascript-interface-library'
 namespace WAT {
   export const Version = '0.1.0'
 
+  const ReadyFunctionsToCall:Function[] = []     // "ready" will be called early
+
 /**** common types and values ****/
 
   type WAT_uniqueId = string
@@ -736,27 +738,19 @@ namespace WAT {
         case 'mousedown': case 'mousemove': case 'mouseup':
         case 'mouseover': case 'mouseenter': case 'mouseleave': case 'mouseout':
         case 'click': case 'dblclick': case 'contextmenu':
-          simulatedEvent = new MouseEvent(EventName)
+          simulatedEvent = new MouseEvent(EventName, { detail:extraParameters })
           break
         case 'keydown': case 'keypress': case 'keyup':
-          simulatedEvent = new KeyboardEvent(EventName)
+          simulatedEvent = new KeyboardEvent(EventName, { detail:extraParameters })
           break
         default:
-          simulatedEvent = new CustomEvent(EventName)
-      }
-
-      if (extraParameters != null) {
-// @ts-ignore always allow "detail"
-        simulatedEvent['detail'] = extraParameters
+          simulatedEvent = new CustomEvent(
+            EventName, { detail:extraParameters }
+          )
       }
 
       DOMElement.dispatchEvent(simulatedEvent)
     } else {                                         // ValueIsInstanceOf(Event)
-      if (extraParameters != null) {
-// @ts-ignore always allow "detail"
-        (EventOrName as Event)['detail'] = extraParameters
-      }
-
       DOMElement.dispatchEvent(EventOrName as Event)
     }
   }
@@ -4495,17 +4489,19 @@ namespace WAT {
 
 /**** make global visuals "reactive" ****/
 
-  on(document.body, 'value-changed', undefined, function (DOMEvent:Event) {
-    let Origin = VisualOfElement(DOMEvent.target as HTMLElement)
-    if (Origin == null) { return }
+  ready(() => {
+    on(document.body, 'value-changed', undefined, function (DOMEvent:Event) {
+      let Origin = VisualOfElement(DOMEvent.target as HTMLElement)
+      if (Origin == null) { return }
 
-    let Name = Origin.Name
-    if ((Name || '')[0] === '#') {
-      InternalsOfVisual(Origin.Applet).ReactivityContext?.setReactiveVariable(
+      let Name = Origin.Name
+      if ((Name || '')[0] === '#') {
+        InternalsOfVisual(Origin.Applet).ReactivityContext?.setReactiveVariable(
 // @ts-ignore always use "detail"
-        Name, DOMEvent.detail, false, 'wasControlValueChange'
-      )
-    }
+          Name, DOMEvent.detail, false, 'wasControlValueChange'
+        )
+      }
+    })
   })
 
 //----------------------------------------------------------------------------//
@@ -4529,20 +4525,22 @@ namespace WAT {
     }
   }
 
-  document.body.addEventListener('mousedown',swallowEventWhileLayouting)
-  document.body.addEventListener('mousemove',swallowEventWhileLayouting)
-  document.body.addEventListener('mouseup',  swallowEventWhileLayouting)
+  ready(() => {
+    document.body.addEventListener('mousedown',swallowEventWhileLayouting)
+    document.body.addEventListener('mousemove',swallowEventWhileLayouting)
+    document.body.addEventListener('mouseup',  swallowEventWhileLayouting)
 
-  document.body.addEventListener('mouseenter',swallowEventWhileLayouting)
-  document.body.addEventListener('mouseleave',swallowEventWhileLayouting)
+    document.body.addEventListener('mouseenter',swallowEventWhileLayouting)
+    document.body.addEventListener('mouseleave',swallowEventWhileLayouting)
 
-  document.body.addEventListener('keydown', swallowEventWhileLayouting)
-  document.body.addEventListener('keypress',swallowEventWhileLayouting)
-  document.body.addEventListener('keyup',   swallowEventWhileLayouting)
+    document.body.addEventListener('keydown', swallowEventWhileLayouting)
+    document.body.addEventListener('keypress',swallowEventWhileLayouting)
+    document.body.addEventListener('keyup',   swallowEventWhileLayouting)
 
-  document.body.addEventListener('input', swallowEventWhileLayouting)
-  document.body.addEventListener('change',swallowEventWhileLayouting)
-  document.body.addEventListener('click', swallowEventWhileLayouting)
+    document.body.addEventListener('input', swallowEventWhileLayouting)
+    document.body.addEventListener('change',swallowEventWhileLayouting)
+    document.body.addEventListener('click', swallowEventWhileLayouting)
+  })
 
 /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
 
@@ -4618,11 +4616,7 @@ namespace WAT {
       TapPoint, EventName, EventSelector, EventHandler, actualHandler
     })                       // n.b.: a missing selector is specified as "null"!
 
-    if (EventSelector == null) {
-      TapPoint.Peer.on(EventName, actualHandler)
-    } else {
-      TapPoint.Peer.on(EventName, EventSelector, actualHandler)
-    }
+    on(TapPoint.Peer, EventName, EventSelector, actualHandler)
   }
 
 /**** unregisterEventHandlerForVisual - off([TapPoint,]Event[,Selector],Handler) ****/
@@ -4678,11 +4672,7 @@ namespace WAT {
       ) {
         let actualHandler = Candidate.actualHandler
 
-        if (Candidate.EventSelector == null) {
-          TapPoint.Peer.off(Candidate.EventName, actualHandler)
-        } else {
-          TapPoint.Peer.off(Candidate.EventName, Candidate.EventSelector, actualHandler)
-        }
+        off(TapPoint.Peer, Candidate.EventName, Candidate.EventSelector, actualHandler)
 
         EventHandlers.splice(i,1)
       }
@@ -4699,11 +4689,7 @@ namespace WAT {
 
     for (let i = 0, l = EventHandlers.length; i < l; i++) {
       let [TapPoint, EventName, EventSelector, actualHandler] = EventHandlers[i]
-      if (EventSelector == null) {
-        TapPoint.Peer.off(EventName, actualHandler)
-      } else {
-        TapPoint.Peer.off(EventName, EventSelector, actualHandler)
-      }
+      off(TapPoint.Peer, EventName, EventSelector, actualHandler)
     }
     delete Internals.EventHandlers
   }
@@ -4736,7 +4722,7 @@ namespace WAT {
 
     if (InjectionPoint != null) {
       let EventName = ArgumentList.shift()
-      InjectionPoint.Peer.trigger(EventName,ArgumentList)
+      trigger(InjectionPoint.Peer, EventName,ArgumentList)
     }
   }
 
@@ -8377,7 +8363,7 @@ namespace WAT {
 /**** ready - similar to jQuery.ready ****/
 
   let   WAT_isReady                     = false
-  const ReadyFunctionsToCall:Function[] = []
+//const ReadyFunctionsToCall:Function[] = []
 
   export function ready (FunctionToCall:Function):void {
     expectFunction('function to call',FunctionToCall)
