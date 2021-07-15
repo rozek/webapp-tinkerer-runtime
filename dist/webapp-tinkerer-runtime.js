@@ -4370,7 +4370,7 @@
         /**** allow/expect[ed]Name ****/
         WAT.allowName = ValidatorForClassifier(ValueIsName, acceptNil, 'WAT name'), WAT.allowedName = WAT.allowName;
         WAT.expectName = ValidatorForClassifier(ValueIsName, rejectNil, 'WAT name'), WAT.expectedName = WAT.expectName;
-        /**** ValueIsUniversalName ****/
+        /**** ValueIsUniversalName - for global (reactive) variables ****/
         var WAT_UniversalNamePattern = /^#?[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i;
         function ValueIsUniversalName(Value) {
             return ValueIsStringMatching(Value, WAT_UniversalNamePattern);
@@ -4396,7 +4396,7 @@
         WAT.expectIdentifier = ValidatorForClassifier(ValueIsIdentifier, rejectNil, 'WAT identifier'), WAT.expectedIdentifier = WAT.expectIdentifier;
         /**** ValueIsLocation ****/
         function ValueIsLocation(Value) {
-            return ValueIsNumberInRange(Value, 0, Infinity, true, false);
+            return ValueIsFiniteNumber(Value);
         }
         WAT.ValueIsLocation = ValueIsLocation;
         /**** allow/expect[ed]Location ****/
@@ -4449,6 +4449,9 @@
             KeyList.forEach(function (Key) { return Result[Key] = Key; });
             return Result;
         }
+        //----------------------------------------------------------------------------//
+        //                                DOM Helpers                                 //
+        //----------------------------------------------------------------------------//
         /**** camelized ****/
         function camelized(Original) {
             return Original.replace(/-([a-z])/gi, function (Match) { return Match[1].toUpperCase(); });
@@ -4531,6 +4534,31 @@
                 DOMElement.dataset[camelized(Name)] = Value;
             }
         }
+        /**** remove ****/
+        function remove(ElementOrList) {
+            switch (true) {
+                case ValueIsElement(ElementOrList):
+                    var outerElement = ElementOrList.parentElement;
+                    if (outerElement != null) {
+                        outerElement.removeChild(ElementOrList);
+                    }
+                    break;
+                case ValueIsArray(ElementOrList):
+                    ElementOrList.forEach(function (Element) { return remove(Element); });
+                    break;
+                default:
+                    forEach(ElementOrList, function (Element) { return remove(Element); });
+            }
+        }
+        /**** ElementFromHTML ****/
+        function ElementFromHTML(HTML) {
+            var auxElement = document.createElement('div');
+            auxElement.innerHTML = HTML;
+            return auxElement.firstChild;
+        }
+        //----------------------------------------------------------------------------//
+        //                             DOM Event Handling                             //
+        //----------------------------------------------------------------------------//
         var EventHandlerRegistry = new WeakMap();
         function registerEventHandlerIn(Element, EventName, Selector, Handler, onceOnly) {
             var EventNames = pruned(EventName).split(' ');
@@ -4592,7 +4620,7 @@
         /**** trigger ****/
         function trigger(DOMElement, EventOrName, extraParameters) {
             if (ValueIsString(EventOrName)) {
-                var EventName = EventOrName, simulatedEvent = void 0;
+                var EventName = EventOrName, triggeredEvent = void 0;
                 switch (EventName) {
                     case 'mousedown':
                     case 'mousemove':
@@ -4604,43 +4632,21 @@
                     case 'click':
                     case 'dblclick':
                     case 'contextmenu':
-                        simulatedEvent = new MouseEvent(EventName, { detail: extraParameters });
+                        triggeredEvent = new MouseEvent(EventName, { detail: extraParameters });
                         break;
                     case 'keydown':
                     case 'keypress':
                     case 'keyup':
-                        simulatedEvent = new KeyboardEvent(EventName, { detail: extraParameters });
+                        triggeredEvent = new KeyboardEvent(EventName, { detail: extraParameters });
                         break;
                     default:
-                        simulatedEvent = new CustomEvent(EventName, { detail: extraParameters });
+                        triggeredEvent = new CustomEvent(EventName, { detail: extraParameters });
                 }
-                DOMElement.dispatchEvent(simulatedEvent);
+                DOMElement.dispatchEvent(triggeredEvent);
             }
             else { // ValueIsInstanceOf(Event)
                 DOMElement.dispatchEvent(EventOrName);
             }
-        }
-        /**** remove ****/
-        function remove(ElementOrList) {
-            switch (true) {
-                case ValueIsElement(ElementOrList):
-                    var outerElement = ElementOrList.parentElement;
-                    if (outerElement != null) {
-                        outerElement.removeChild(ElementOrList);
-                    }
-                    break;
-                case ValueIsArray(ElementOrList):
-                    ElementOrList.forEach(function (Element) { return remove(Element); });
-                    break;
-                default:
-                    forEach(ElementOrList, function (Element) { return remove(Element); });
-            }
-        }
-        /**** ElementFromHTML ****/
-        function ElementFromHTML(HTML) {
-            var auxElement = document.createElement('div');
-            auxElement.innerHTML = HTML;
-            return auxElement.firstChild;
         }
         function parseHTML(HTML, Callbacks) {
             var StartTagPattern = /^<([-a-z0-9_]+)((?:[\s\xA0]+[-a-z0-9_]+(?:[\s\xA0]*=[\s\xA0]*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s\xA0]+))?)*)[\s\xA0]*(\/?)>/i;
@@ -4842,17 +4848,17 @@
         /**** VersionAeqB ****/
         function VersionAeqB(VersionA, VersionB) {
             return ((VersionA.major === VersionB.major) &&
-                ((VersionA.minor || 0) === (VersionB.minor || 0)) &&
-                ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-                ((VersionA.Build || 1) === (VersionB.Build || 1)));
+                (VersionA.minor === VersionB.minor) &&
+                (VersionA.Patch === VersionB.Patch) &&
+                (VersionA.Build === VersionB.Build));
         }
         /**** VersionAgtB ****/
         function VersionAgtB(VersionA, VersionB) {
             return ((VersionA.major > VersionB.major) ||
-                (VersionA.major === VersionB.major) && (((VersionA.minor || 0) > (VersionB.minor || 0)) ||
-                    ((VersionA.minor || 0) === (VersionB.minor || 0)) && (((VersionA.Patch || 0) > (VersionB.Patch || 0)) ||
-                        ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-                            ((VersionA.Build || 1) > (VersionB.Build || 1)))));
+                (VersionA.major === VersionB.major) && ((VersionA.minor > VersionB.minor) ||
+                    (VersionA.minor === VersionB.minor) && ((VersionA.Patch > VersionB.Patch) ||
+                        (VersionA.Patch === VersionB.Patch) &&
+                            (VersionA.Build > VersionB.Build))));
         }
         /**** VersionAmatchesB - A was requested and B is already loaded ****/
         function VersionAmatchesB(VersionA, VersionB) {
@@ -5179,13 +5185,15 @@
         //                              Backup Handling                               //
         //----------------------------------------------------------------------------//
         var BackupIsSupported = false;
-        try {
-            localforage.config({
-                driver: [localforage.INDEXEDDB, localforage.WEBSQL]
-            });
-            BackupIsSupported = true;
-        }
-        catch (Signal) { /* nop */ }
+        ready(function () {
+            try {
+                localforage.config({
+                    driver: [localforage.INDEXEDDB, localforage.WEBSQL]
+                });
+                BackupIsSupported = true;
+            }
+            catch (Signal) { /* nop */ }
+        });
         var AppletStore; // will be filled during start-up
         /**** AppletsMayBePreserved ****/
         function AppletsMayBePreserved() {
