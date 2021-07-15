@@ -4619,6 +4619,17 @@
         }
         /**** trigger ****/
         function trigger(DOMElement, EventOrName, extraParameters) {
+            if ((Designer != null) && (DOMElement !== document)) {
+                var Peer = DOMElement.closest('.WAT');
+                if (Peer != null) {
+                    var Visual = VisualOfElement(Peer);
+                    if (Visual != null) {
+                        if (Designer.inhibitsEventsFrom(Visual)) {
+                            return;
+                        }
+                    }
+                }
+            }
             if (ValueIsString(EventOrName)) {
                 DOMElement.dispatchEvent(new CustomEvent(EventOrName, { detail: extraParameters, bubbles: true, cancelable: true }));
             }
@@ -7518,35 +7529,35 @@
         //                               Event Handling                               //
         //----------------------------------------------------------------------------//
         /**** ignore some events while an applet is under design ****/
-        function swallowEventWhileLayouting(Event) {
+        function swallowEventWhileInhibited(Event) {
             if (Designer == null) {
                 return;
             }
-            var AppletPeer = Event.target.closest('.WAT.Applet');
-            if (AppletPeer == null) {
+            var Peer = Event.target.closest('.WAT');
+            if (Peer == null) {
                 return;
             }
-            var Applet = VisualOfElement(AppletPeer);
-            if (Applet == null) {
+            var Visual = VisualOfElement(Peer);
+            if (Visual == null) {
                 return;
             }
-            if (Designer.layoutsApplet(Applet)) {
+            if (Designer.inhibitsEventsFrom(Visual)) {
                 Event.stopPropagation();
                 Event.preventDefault();
             }
         }
         ready(function () {
-            document.body.addEventListener('mousedown', swallowEventWhileLayouting);
-            document.body.addEventListener('mousemove', swallowEventWhileLayouting);
-            document.body.addEventListener('mouseup', swallowEventWhileLayouting);
-            document.body.addEventListener('mouseenter', swallowEventWhileLayouting);
-            document.body.addEventListener('mouseleave', swallowEventWhileLayouting);
-            document.body.addEventListener('keydown', swallowEventWhileLayouting);
-            document.body.addEventListener('keypress', swallowEventWhileLayouting);
-            document.body.addEventListener('keyup', swallowEventWhileLayouting);
-            document.body.addEventListener('input', swallowEventWhileLayouting);
-            document.body.addEventListener('change', swallowEventWhileLayouting);
-            document.body.addEventListener('click', swallowEventWhileLayouting);
+            document.body.addEventListener('mousedown', swallowEventWhileInhibited);
+            document.body.addEventListener('mousemove', swallowEventWhileInhibited);
+            document.body.addEventListener('mouseup', swallowEventWhileInhibited);
+            document.body.addEventListener('mouseenter', swallowEventWhileInhibited);
+            document.body.addEventListener('mouseleave', swallowEventWhileInhibited);
+            document.body.addEventListener('keydown', swallowEventWhileInhibited);
+            document.body.addEventListener('keypress', swallowEventWhileInhibited);
+            document.body.addEventListener('keyup', swallowEventWhileInhibited);
+            document.body.addEventListener('input', swallowEventWhileInhibited);
+            document.body.addEventListener('change', swallowEventWhileInhibited);
+            document.body.addEventListener('click', swallowEventWhileInhibited);
         });
         /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
         function registerEventHandlerForVisual(Visual) {
@@ -7587,7 +7598,7 @@
                     ArgumentList[_i] = arguments[_i];
                 }
                 var Event = ArgumentList[0];
-                if ((Designer != null) && Designer.layoutsApplet(Visual.Applet)) {
+                if ((Designer != null) && Designer.inhibitsEventsFrom(Visual)) {
                     Event.stopPropagation();
                     Event.preventDefault();
                     return;
@@ -10958,7 +10969,7 @@
         function registerDesigner(newDesigner) {
             expectPlainObject('WAT designer', newDesigner);
             if (!ValueIsFunction(newDesigner.startDesigning) ||
-                !ValueIsFunction(newDesigner.layoutsApplet))
+                !ValueIsFunction(newDesigner.inhibitsEventsFrom))
                 throwError('InvalidArgument: the given object is no valid WAT Designer');
             if (Designer == null) {
                 Designer = newDesigner;
