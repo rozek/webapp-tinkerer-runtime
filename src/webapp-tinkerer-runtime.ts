@@ -764,6 +764,16 @@ namespace WAT {
   function trigger (
     DOMElement:Document|HTMLElement, EventOrName:Event|string, extraParameters?:any
   ):void {
+    if ((Designer != null) && (DOMElement !== document)) {
+      let Peer = (DOMElement as HTMLElement).closest('.WAT') as HTMLElement
+      if (Peer != null) {
+        let Visual = VisualOfElement(Peer)
+        if (Visual != null) {
+          if (Designer.inhibitsEventsFrom(Visual)) { return }
+        }
+      }
+    }
+
     if (ValueIsString(EventOrName)) {
       DOMElement.dispatchEvent(new CustomEvent(
         EventOrName as string,
@@ -4508,36 +4518,36 @@ namespace WAT {
 
 /**** ignore some events while an applet is under design ****/
 
-  function swallowEventWhileLayouting (Event:any):void {
+  function swallowEventWhileInhibited (Event:any):void {
     if (Designer == null) { return }
 
-    let AppletPeer = Event.target.closest('.WAT.Applet')
-    if (AppletPeer == null) { return }
+    let Peer = Event.target.closest('.WAT')
+    if (Peer == null) { return }
 
-    let Applet = VisualOfElement(AppletPeer) as WAT_Applet
-    if (Applet == null) { return }
+    let Visual = VisualOfElement(Peer) as WAT_Visual
+    if (Visual == null) { return }
 
-    if (Designer.layoutsApplet(Applet)) {
+    if (Designer.inhibitsEventsFrom(Visual)) {
       Event.stopPropagation()
       Event.preventDefault()
     }
   }
 
   ready(() => {
-    document.body.addEventListener('mousedown',swallowEventWhileLayouting)
-    document.body.addEventListener('mousemove',swallowEventWhileLayouting)
-    document.body.addEventListener('mouseup',  swallowEventWhileLayouting)
+    document.body.addEventListener('mousedown',swallowEventWhileInhibited)
+    document.body.addEventListener('mousemove',swallowEventWhileInhibited)
+    document.body.addEventListener('mouseup',  swallowEventWhileInhibited)
 
-    document.body.addEventListener('mouseenter',swallowEventWhileLayouting)
-    document.body.addEventListener('mouseleave',swallowEventWhileLayouting)
+    document.body.addEventListener('mouseenter',swallowEventWhileInhibited)
+    document.body.addEventListener('mouseleave',swallowEventWhileInhibited)
 
-    document.body.addEventListener('keydown', swallowEventWhileLayouting)
-    document.body.addEventListener('keypress',swallowEventWhileLayouting)
-    document.body.addEventListener('keyup',   swallowEventWhileLayouting)
+    document.body.addEventListener('keydown', swallowEventWhileInhibited)
+    document.body.addEventListener('keypress',swallowEventWhileInhibited)
+    document.body.addEventListener('keyup',   swallowEventWhileInhibited)
 
-    document.body.addEventListener('input', swallowEventWhileLayouting)
-    document.body.addEventListener('change',swallowEventWhileLayouting)
-    document.body.addEventListener('click', swallowEventWhileLayouting)
+    document.body.addEventListener('input', swallowEventWhileInhibited)
+    document.body.addEventListener('change',swallowEventWhileInhibited)
+    document.body.addEventListener('click', swallowEventWhileInhibited)
   })
 
 /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
@@ -4581,7 +4591,7 @@ namespace WAT {
     let actualHandler = function actualEventHandler (...ArgumentList:any) {
       let Event = ArgumentList[0]
 
-      if ((Designer != null) && Designer.layoutsApplet(Visual.Applet)) {
+      if ((Designer != null) && Designer.inhibitsEventsFrom(Visual)) {
         Event.stopPropagation()
         Event.preventDefault()
         return
@@ -8332,7 +8342,7 @@ namespace WAT {
       Target:WAT_Visual|WAT_Name, Property?:WAT_Identifier,
       x?:number, y?:number
     ) => void,
-    layoutsApplet: (Applet:WAT_Applet) => boolean          // for event handlers
+    inhibitsEventsFrom: (Visual:WAT_Visual) => boolean     // for event handlers
   }
 
   let Designer:WAT_Designer
@@ -8344,7 +8354,7 @@ namespace WAT {
 
     if (
       ! ValueIsFunction(newDesigner.startDesigning) ||
-      ! ValueIsFunction(newDesigner.layoutsApplet)
+      ! ValueIsFunction(newDesigner.inhibitsEventsFrom)
     ) throwError(
       'InvalidArgument: the given object is no valid WAT Designer'
     )
