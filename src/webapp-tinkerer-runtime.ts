@@ -36,7 +36,7 @@ namespace WAT {
 
 /**** common types and values ****/
 
-  type WAT_uniqueId = string
+  type WAT_uniqueId = string                                   // format "wat-#"
 
   export const WAT_Categories = ['Applet','Card','Overlay','Control','Compound']
   export type  WAT_Category   = typeof WAT_Categories[number]
@@ -369,7 +369,7 @@ namespace WAT {
     ValueIsName, rejectNil, 'WAT name'
   ), expectedName = expectName
 
-/**** ValueIsUniversalName ****/
+/**** ValueIsUniversalName - for global (reactive) variables ****/
 
   const WAT_UniversalNamePattern = /^#?[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i
 
@@ -428,7 +428,7 @@ namespace WAT {
 /**** ValueIsLocation ****/
 
   export function ValueIsLocation (Value:any):boolean {
-    return ValueIsNumberInRange(Value, 0,Infinity, true,false)
+    return ValueIsFiniteNumber(Value)
   }
 
 /**** allow/expect[ed]Location ****/
@@ -518,6 +518,10 @@ namespace WAT {
       KeyList.forEach(Key => Result[Key] = Key)
     return Result
   }
+
+//----------------------------------------------------------------------------//
+//                                DOM Helpers                                 //
+//----------------------------------------------------------------------------//
 
 /**** camelized ****/
 
@@ -637,6 +641,34 @@ namespace WAT {
     }
   }
 
+/**** remove ****/
+
+  function remove (ElementOrList:Element|Element[]|HTMLCollection):void {
+    switch (true) {
+      case ValueIsElement(ElementOrList):
+        let outerElement = (ElementOrList as Element).parentElement
+        if (outerElement != null) { outerElement.removeChild(ElementOrList as Element) }
+        break
+      case ValueIsArray(ElementOrList):
+        (ElementOrList as Element[]).forEach((Element) => remove(Element))
+        break
+      default:
+        forEach(ElementOrList as HTMLCollection,(Element) => remove(Element))
+    }
+  }
+
+/**** ElementFromHTML ****/
+
+  function ElementFromHTML (HTML:string):HTMLElement {
+    let auxElement = document.createElement('div')
+      auxElement.innerHTML = HTML
+    return auxElement.firstChild as HTMLElement
+  }
+
+//----------------------------------------------------------------------------//
+//                             DOM Event Handling                             //
+//----------------------------------------------------------------------------//
+
   const EventHandlerRegistry = new WeakMap()
 
   function registerEventHandlerIn (
@@ -733,50 +765,26 @@ namespace WAT {
     DOMElement:Document|HTMLElement, EventOrName:Event|string, extraParameters?:any
   ):void {
     if (ValueIsString(EventOrName)) {
-      let EventName = EventOrName as string, simulatedEvent:Event
+      let EventName = EventOrName as string, triggeredEvent:Event
       switch (EventName) {
         case 'mousedown': case 'mousemove': case 'mouseup':
         case 'mouseover': case 'mouseenter': case 'mouseleave': case 'mouseout':
         case 'click': case 'dblclick': case 'contextmenu':
-          simulatedEvent = new MouseEvent(EventName, { detail:extraParameters })
+          triggeredEvent = new MouseEvent(EventName, { detail:extraParameters })
           break
         case 'keydown': case 'keypress': case 'keyup':
-          simulatedEvent = new KeyboardEvent(EventName, { detail:extraParameters })
+          triggeredEvent = new KeyboardEvent(EventName, { detail:extraParameters })
           break
         default:
-          simulatedEvent = new CustomEvent(
+          triggeredEvent = new CustomEvent(
             EventName, { detail:extraParameters }
           )
       }
 
-      DOMElement.dispatchEvent(simulatedEvent)
+      DOMElement.dispatchEvent(triggeredEvent)
     } else {                                         // ValueIsInstanceOf(Event)
       DOMElement.dispatchEvent(EventOrName as Event)
     }
-  }
-
-/**** remove ****/
-
-  function remove (ElementOrList:Element|Element[]|HTMLCollection):void {
-    switch (true) {
-      case ValueIsElement(ElementOrList):
-        let outerElement = (ElementOrList as Element).parentElement
-        if (outerElement != null) { outerElement.removeChild(ElementOrList as Element) }
-        break
-      case ValueIsArray(ElementOrList):
-        (ElementOrList as Element[]).forEach((Element) => remove(Element))
-        break
-      default:
-        forEach(ElementOrList as HTMLCollection,(Element) => remove(Element))
-    }
-  }
-
-/**** ElementFromHTML ****/
-
-  function ElementFromHTML (HTML:string):HTMLElement {
-    let auxElement = document.createElement('div')
-      auxElement.innerHTML = HTML
-    return auxElement.firstChild as HTMLElement
   }
 
 //----------------------------------------------------------------------------//
@@ -1096,29 +1104,29 @@ namespace WAT {
 /**** VersionAeqB ****/
 
   function VersionAeqB (
-    VersionA:WAT_Version, VersionB:WAT_Version
+    VersionA:WAT_normalizedVersion, VersionB:WAT_normalizedVersion
   ):boolean {
     return (
-       (VersionA.major       ===  VersionB.major) &&
-      ((VersionA.minor || 0) === (VersionB.minor || 0)) &&
-      ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-      ((VersionA.Build || 1) === (VersionB.Build || 1))
+      (VersionA.major === VersionB.major) &&
+      (VersionA.minor === VersionB.minor) &&
+      (VersionA.Patch === VersionB.Patch) &&
+      (VersionA.Build === VersionB.Build)
     )
   }
 
 /**** VersionAgtB ****/
 
   function VersionAgtB (
-    VersionA:WAT_Version, VersionB:WAT_Version
+    VersionA:WAT_normalizedVersion, VersionB:WAT_normalizedVersion
   ):boolean {
     return (
       (VersionA.major  >  VersionB.major) ||
       (VersionA.major === VersionB.major) && (
-        ((VersionA.minor || 0)  >  (VersionB.minor || 0)) ||
-        ((VersionA.minor || 0) === (VersionB.minor || 0)) && (
-          ((VersionA.Patch || 0)  >  (VersionB.Patch || 0)) ||
-          ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-            ((VersionA.Build || 1)  >  (VersionB.Build || 1))
+        (VersionA.minor  >  VersionB.minor) ||
+        (VersionA.minor === VersionB.minor) && (
+          (VersionA.Patch  >  VersionB.Patch) ||
+          (VersionA.Patch === VersionB.Patch) &&
+            (VersionA.Build  >  VersionB.Build)
         )
       )
     )
@@ -1593,12 +1601,15 @@ namespace WAT {
 //----------------------------------------------------------------------------//
 
   let BackupIsSupported = false
-  try {
-    localforage.config({
-      driver: [localforage.INDEXEDDB, localforage.WEBSQL]
-    })
-    BackupIsSupported = true
-  } catch (Signal) { /* nop */ }
+
+  ready(() => {
+    try {
+      localforage.config({
+        driver: [localforage.INDEXEDDB, localforage.WEBSQL]
+      })
+      BackupIsSupported = true
+    } catch (Signal) { /* nop */ }
+  })
 
   let AppletStore:any                          // will be filled during start-up
 
@@ -3334,7 +3345,7 @@ namespace WAT {
   export function setVersionOfMaster (Name:WAT_Name, newSemVer:WAT_SemVer):void {
     let MasterInfo = existingInfoForMaster(Name) as WAT_MasterInfo
     let newVersion = normalized(parsedVersion(newSemVer))
-      if (VersionAgtB((MasterInfo.Version as WAT_Version),newVersion)) throwError(
+      if (VersionAgtB((MasterInfo.Version as WAT_normalizedVersion),newVersion)) throwError(
         'InvalidArgument: the new version of a master must be greater than ' +
         'the existing one'
       )
