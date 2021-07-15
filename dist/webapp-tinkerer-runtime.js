@@ -4620,29 +4620,7 @@
         /**** trigger ****/
         function trigger(DOMElement, EventOrName, extraParameters) {
             if (ValueIsString(EventOrName)) {
-                var EventName = EventOrName, triggeredEvent = void 0;
-                switch (EventName) {
-                    case 'mousedown':
-                    case 'mousemove':
-                    case 'mouseup':
-                    case 'mouseover':
-                    case 'mouseenter':
-                    case 'mouseleave':
-                    case 'mouseout':
-                    case 'click':
-                    case 'dblclick':
-                    case 'contextmenu':
-                        triggeredEvent = new MouseEvent(EventName, { detail: extraParameters });
-                        break;
-                    case 'keydown':
-                    case 'keypress':
-                    case 'keyup':
-                        triggeredEvent = new KeyboardEvent(EventName, { detail: extraParameters });
-                        break;
-                    default:
-                        triggeredEvent = new CustomEvent(EventName, { detail: extraParameters });
-                }
-                DOMElement.dispatchEvent(triggeredEvent);
+                DOMElement.dispatchEvent(new CustomEvent(EventOrName, { detail: extraParameters, bubbles: true, cancelable: true }));
             }
             else { // ValueIsInstanceOf(Event)
                 DOMElement.dispatchEvent(EventOrName);
@@ -7285,7 +7263,7 @@
                         return;
                     }
                     else {
-                        throw new Error('CircularDependency: trigger variable "' + VariableName + '" ' +
+                        throwError('CircularDependency: trigger variable "' + VariableName + '" ' +
                             'has been changed during an ongoing recalculation');
                     }
                 }
@@ -7532,7 +7510,7 @@
                 if ((Name || '')[0] === '#') {
                     (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
                     // @ts-ignore always use "detail"
-                    Name, DOMEvent.detail, false, 'wasControlValueChange');
+                    Name, DOMEvent.detail[0], false, 'wasControlValueChange');
                 }
             });
         });
