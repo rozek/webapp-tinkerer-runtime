@@ -765,23 +765,10 @@ namespace WAT {
     DOMElement:Document|HTMLElement, EventOrName:Event|string, extraParameters?:any
   ):void {
     if (ValueIsString(EventOrName)) {
-      let EventName = EventOrName as string, triggeredEvent:Event
-      switch (EventName) {
-        case 'mousedown': case 'mousemove': case 'mouseup':
-        case 'mouseover': case 'mouseenter': case 'mouseleave': case 'mouseout':
-        case 'click': case 'dblclick': case 'contextmenu':
-          triggeredEvent = new MouseEvent(EventName, { detail:extraParameters })
-          break
-        case 'keydown': case 'keypress': case 'keyup':
-          triggeredEvent = new KeyboardEvent(EventName, { detail:extraParameters })
-          break
-        default:
-          triggeredEvent = new CustomEvent(
-            EventName, { detail:extraParameters }
-          )
-      }
-
-      DOMElement.dispatchEvent(triggeredEvent)
+      DOMElement.dispatchEvent(new CustomEvent(
+        EventOrName as string,
+        { detail:extraParameters, bubbles:true, cancelable:true }
+      ))
     } else {                                         // ValueIsInstanceOf(Event)
       DOMElement.dispatchEvent(EventOrName as Event)
     }
@@ -4215,7 +4202,7 @@ namespace WAT {
         if (equalValues) {
           return
         } else {
-          throw new Error(
+          throwError(
             'CircularDependency: trigger variable "' + VariableName + '" ' +
             'has been changed during an ongoing recalculation'
           )
@@ -4509,7 +4496,7 @@ namespace WAT {
       if ((Name || '')[0] === '#') {
         InternalsOfVisual(Origin.Applet).ReactivityContext?.setReactiveVariable(
 // @ts-ignore always use "detail"
-          Name, DOMEvent.detail, false, 'wasControlValueChange'
+          Name, DOMEvent.detail[0], false, 'wasControlValueChange'
         )
       }
     })
