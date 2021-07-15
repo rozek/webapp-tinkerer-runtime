@@ -4227,40 +4227,41 @@ var JIL = /*#__PURE__*/Object.freeze({
 *                        WebApp Tinkerer (WAT) Runtime                         *
 *                                                                              *
 *******************************************************************************/
+var WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
+var WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
+var WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
+/**** visual setting types ****/
+var WAT_FontWeights = [
+    'thin', 'extra-light', 'light', 'normal', 'medium', 'semi-bold',
+    'bold', 'extra-bold', 'heavy', 'lighter', 'bolder'
+];
+var WAT_FontWeightValues = Object.assign(Object.create(null), {
+    'thin': 100, 'extra-light': 200, 'light': 300, 'normal': 400, 'medium': 500,
+    'semi-bold': 600, 'bold': 700, 'extra-bold': 800, 'heavy': 900
+});
+var WAT_FontStyles = ['normal', 'italic'];
+var WAT_TextDecorationLines = ['none', 'underline', 'overline', 'line-through'];
+var WAT_TextDecorationStyles = ['solid', 'double', 'dotted', 'dashed', 'wavy'];
+var WAT_TextAlignments = ['left', 'center', 'right', 'justify'];
+var WAT_BackgroundModes = ['normal', 'contain', 'cover', 'fill', 'tile'];
+var WAT_BorderStyles = [
+    'none', 'dotted', 'dashed', 'solid', 'double',
+    'groove', 'ridge', 'inset', 'outset'
+];
+var WAT_Cursors = [
+    'alias', 'all-scroll', 'auto', 'cell', 'context-menu', 'col-resize', 'copy',
+    'crosshair', 'default', 'e-resize', 'ew-resize', 'grab', 'grabbing', 'help',
+    'move', 'n-resize', 'ne-resize', 'nesw-resize', 'ns-resize', 'nw-resize',
+    'nwse-resize', 'no-drop', 'none', 'not-allowed', 'pointer', 'progress',
+    'row-resize', 's-resize', 'se-resize', 'sw-resize', 'text', 'vertical-text',
+    'w-resize', 'wait', 'zoom-in', 'zoom-out'
+];
+var WAT_Overflows = ['visible', 'hidden', 'scroll', 'auto'];
+var WAT_TextOverflows = ['clip', 'ellipsis'];
 var WAT;
 (function (WAT) {
     WAT.Version = '0.1.0';
-    WAT.WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
-    WAT.WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
-    WAT.WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
-    /**** visual setting types ****/
-    WAT.WAT_FontWeights = [
-        'thin', 'extra-light', 'light', 'normal', 'medium', 'semi-bold',
-        'bold', 'extra-bold', 'heavy', 'lighter', 'bolder'
-    ];
-    var WAT_FontWeightValues = Object.assign(Object.create(null), {
-        'thin': 100, 'extra-light': 200, 'light': 300, 'normal': 400, 'medium': 500,
-        'semi-bold': 600, 'bold': 700, 'extra-bold': 800, 'heavy': 900
-    });
-    WAT.WAT_FontStyles = ['normal', 'italic'];
-    WAT.WAT_TextDecorationLines = ['none', 'underline', 'overline', 'line-through'];
-    WAT.WAT_TextDecorationStyles = ['solid', 'double', 'dotted', 'dashed', 'wavy'];
-    WAT.WAT_TextAlignments = ['left', 'center', 'right', 'justify'];
-    WAT.WAT_BackgroundModes = ['normal', 'contain', 'cover', 'fill', 'tile'];
-    WAT.WAT_BorderStyles = [
-        'none', 'dotted', 'dashed', 'solid', 'double',
-        'groove', 'ridge', 'inset', 'outset'
-    ];
-    WAT.WAT_Cursors = [
-        'alias', 'all-scroll', 'auto', 'cell', 'context-menu', 'col-resize', 'copy',
-        'crosshair', 'default', 'e-resize', 'ew-resize', 'grab', 'grabbing', 'help',
-        'move', 'n-resize', 'ne-resize', 'nesw-resize', 'ns-resize', 'nw-resize',
-        'nwse-resize', 'no-drop', 'none', 'not-allowed', 'pointer', 'progress',
-        'row-resize', 's-resize', 'se-resize', 'sw-resize', 'text', 'vertical-text',
-        'w-resize', 'wait', 'zoom-in', 'zoom-out'
-    ];
-    WAT.WAT_Overflows = ['visible', 'hidden', 'scroll', 'auto'];
-    WAT.WAT_TextOverflows = ['clip', 'ellipsis'];
+    var ReadyFunctionsToCall = []; // "ready" will be called early
     /**** re-export contents of javascript-interface-library ****/
     for (var Key in JIL) {
         // @ts-ignore don't worry about typing
@@ -4349,6 +4350,7 @@ var WAT;
     /**** allow/expect[ed]UniqueId ****/
     WAT.allowUniqueId = ValidatorForClassifier(ValueIsUniqueId, acceptNil, 'unique WAT id'), WAT.allowedUniqueId = WAT.allowUniqueId;
     WAT.expectUniqueId = ValidatorForClassifier(ValueIsUniqueId, rejectNil, 'unique WAT id'), WAT.expectedUniqueId = WAT.expectUniqueId;
+    /**** ValueIsId (i.e., HTML id) ****/
     var WAT_IdPattern = /^[a-z][-_a-z.0-9]*$/i;
     // see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id
     function ValueIsId(Value) {
@@ -4358,6 +4360,7 @@ var WAT;
     /**** allow/expect[ed]Id ****/
     WAT.allowId = ValidatorForClassifier(ValueIsId, acceptNil, 'WAT HTML id'), WAT.allowedId = WAT.allowId;
     WAT.expectId = ValidatorForClassifier(ValueIsId, rejectNil, 'WAT HTML id'), WAT.expectedId = WAT.expectId;
+    /**** ValueIsName ****/
     var WAT_NamePattern = /^[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i;
     function ValueIsName(Value) {
         return ValueIsStringMatching(Value, WAT_NamePattern);
@@ -4366,7 +4369,7 @@ var WAT;
     /**** allow/expect[ed]Name ****/
     WAT.allowName = ValidatorForClassifier(ValueIsName, acceptNil, 'WAT name'), WAT.allowedName = WAT.allowName;
     WAT.expectName = ValidatorForClassifier(ValueIsName, rejectNil, 'WAT name'), WAT.expectedName = WAT.expectName;
-    /**** ValueIsUniversalName ****/
+    /**** ValueIsUniversalName - for global (reactive) variables ****/
     var WAT_UniversalNamePattern = /^#?[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i;
     function ValueIsUniversalName(Value) {
         return ValueIsStringMatching(Value, WAT_UniversalNamePattern);
@@ -4375,6 +4378,7 @@ var WAT;
     /**** allow/expect[ed]UniversalName ****/
     WAT.allowUniversalName = ValidatorForClassifier(ValueIsUniversalName, acceptNil, 'WAT name'), WAT.allowedUniversalName = WAT.allowUniversalName;
     WAT.expectUniversalName = ValidatorForClassifier(ValueIsUniversalName, rejectNil, 'WAT name'), WAT.expectedUniversalName = WAT.expectUniversalName;
+    /**** ValueIsLabel ****/
     function ValueIsLabel(Value) {
         return ValueIsTextline(Value);
     }
@@ -4382,6 +4386,7 @@ var WAT;
     /**** allow/expect[ed]Label ****/
     WAT.allowLabel = ValidatorForClassifier(ValueIsLabel, acceptNil, 'WAT visual label'), WAT.allowedLabel = WAT.allowLabel;
     WAT.expectLabel = ValidatorForClassifier(ValueIsLabel, rejectNil, 'WAT visual label'), WAT.expectedLabel = WAT.expectLabel;
+    /**** ValueIsIdentifier ****/
     var IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
     function ValueIsIdentifier(Value) {
         return ValueIsStringMatching(Value, IdentifierPattern);
@@ -4392,7 +4397,7 @@ var WAT;
     WAT.expectIdentifier = ValidatorForClassifier(ValueIsIdentifier, rejectNil, 'WAT identifier'), WAT.expectedIdentifier = WAT.expectIdentifier;
     /**** ValueIsLocation ****/
     function ValueIsLocation(Value) {
-        return ValueIsNumberInRange(Value, 0, Infinity, true, false);
+        return ValueIsFiniteNumber(Value);
     }
     WAT.ValueIsLocation = ValueIsLocation;
     /**** allow/expect[ed]Location ****/
@@ -4445,6 +4450,9 @@ var WAT;
         KeyList.forEach(function (Key) { return Result[Key] = Key; });
         return Result;
     }
+    //----------------------------------------------------------------------------//
+    //                                DOM Helpers                                 //
+    //----------------------------------------------------------------------------//
     /**** camelized ****/
     function camelized(Original) {
         return Original.replace(/-([a-z])/gi, function (Match) { return Match[1].toUpperCase(); });
@@ -4527,6 +4535,31 @@ var WAT;
             DOMElement.dataset[camelized(Name)] = Value;
         }
     }
+    /**** remove ****/
+    function remove(ElementOrList) {
+        switch (true) {
+            case ValueIsElement(ElementOrList):
+                var outerElement = ElementOrList.parentElement;
+                if (outerElement != null) {
+                    outerElement.removeChild(ElementOrList);
+                }
+                break;
+            case ValueIsArray(ElementOrList):
+                ElementOrList.forEach(function (Element) { return remove(Element); });
+                break;
+            default:
+                forEach(ElementOrList, function (Element) { return remove(Element); });
+        }
+    }
+    /**** ElementFromHTML ****/
+    function ElementFromHTML(HTML) {
+        var auxElement = document.createElement('div');
+        auxElement.innerHTML = HTML;
+        return auxElement.firstChild;
+    }
+    //----------------------------------------------------------------------------//
+    //                             DOM Event Handling                             //
+    //----------------------------------------------------------------------------//
     var EventHandlerRegistry = new WeakMap();
     function registerEventHandlerIn(Element, EventName, Selector, Handler, onceOnly) {
         var EventNames = pruned(EventName).split(' ');
@@ -4585,27 +4618,25 @@ var WAT;
             }
         }
     }
-    /**** remove ****/
-    function remove(ElementOrList) {
-        switch (true) {
-            case ValueIsElement(ElementOrList):
-                var outerElement = ElementOrList.parentElement;
-                if (outerElement != null) {
-                    outerElement.removeChild(ElementOrList);
+    /**** trigger ****/
+    function trigger(DOMElement, EventOrName, extraParameters) {
+        if ((Designer != null) && (DOMElement !== document)) {
+            var Peer = DOMElement.closest('.WAT');
+            if (Peer != null) {
+                var Visual = VisualOfElement(Peer);
+                if (Visual != null) {
+                    if (Designer.inhibitsEventsFrom(Visual)) {
+                        return;
+                    }
                 }
-                break;
-            case ValueIsArray(ElementOrList):
-                ElementOrList.forEach(function (Element) { return remove(Element); });
-                break;
-            default:
-                forEach(ElementOrList, function (Element) { return remove(Element); });
+            }
         }
-    }
-    /**** ElementFromHTML ****/
-    function ElementFromHTML(HTML) {
-        var auxElement = document.createElement('div');
-        auxElement.innerHTML = HTML;
-        return auxElement.firstChild;
+        if (ValueIsString(EventOrName)) {
+            DOMElement.dispatchEvent(new CustomEvent(EventOrName, { detail: extraParameters, bubbles: true, cancelable: true }));
+        }
+        else { // ValueIsInstanceOf(Event)
+            DOMElement.dispatchEvent(EventOrName);
+        }
     }
     function parseHTML(HTML, Callbacks) {
         var StartTagPattern = /^<([-a-z0-9_]+)((?:[\s\xA0]+[-a-z0-9_]+(?:[\s\xA0]*=[\s\xA0]*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s\xA0]+))?)*)[\s\xA0]*(\/?)>/i;
@@ -4807,17 +4838,17 @@ var WAT;
     /**** VersionAeqB ****/
     function VersionAeqB(VersionA, VersionB) {
         return ((VersionA.major === VersionB.major) &&
-            ((VersionA.minor || 0) === (VersionB.minor || 0)) &&
-            ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-            ((VersionA.Build || 1) === (VersionB.Build || 1)));
+            (VersionA.minor === VersionB.minor) &&
+            (VersionA.Patch === VersionB.Patch) &&
+            (VersionA.Build === VersionB.Build));
     }
     /**** VersionAgtB ****/
     function VersionAgtB(VersionA, VersionB) {
         return ((VersionA.major > VersionB.major) ||
-            (VersionA.major === VersionB.major) && (((VersionA.minor || 0) > (VersionB.minor || 0)) ||
-                ((VersionA.minor || 0) === (VersionB.minor || 0)) && (((VersionA.Patch || 0) > (VersionB.Patch || 0)) ||
-                    ((VersionA.Patch || 0) === (VersionB.Patch || 0)) &&
-                        ((VersionA.Build || 1) > (VersionB.Build || 1)))));
+            (VersionA.major === VersionB.major) && ((VersionA.minor > VersionB.minor) ||
+                (VersionA.minor === VersionB.minor) && ((VersionA.Patch > VersionB.Patch) ||
+                    (VersionA.Patch === VersionB.Patch) &&
+                        (VersionA.Build > VersionB.Build))));
     }
     /**** VersionAmatchesB - A was requested and B is already loaded ****/
     function VersionAmatchesB(VersionA, VersionB) {
@@ -5144,13 +5175,15 @@ var WAT;
     //                              Backup Handling                               //
     //----------------------------------------------------------------------------//
     var BackupIsSupported = false;
-    try {
-        localforage.config({
-            driver: [localforage.INDEXEDDB, localforage.WEBSQL]
-        });
-        BackupIsSupported = true;
-    }
-    catch (Signal) { /* nop */ }
+    ready(function () {
+        try {
+            localforage.config({
+                driver: [localforage.INDEXEDDB, localforage.WEBSQL]
+            });
+            BackupIsSupported = true;
+        }
+        catch (Signal) { /* nop */ }
+    });
     var AppletStore; // will be filled during start-up
     /**** AppletsMayBePreserved ****/
     function AppletsMayBePreserved() {
@@ -6196,7 +6229,7 @@ var WAT;
             throwError('InvalidImport: the name of a master must not be global');
         }
         var Version = normalized(parsedVersion(WAT.allowedSemVer('master version', MasterObject.Version) || '0.0.1'));
-        var Category = expectedOneOf('master category', MasterObject.Category, WAT.WAT_Categories);
+        var Category = expectedOneOf('master category', MasterObject.Category, WAT_Categories);
         var Resources = allowedText('master resources', MasterObject.Resources);
         if ((Resources != null) && (Resources.trim() === '')) {
             Resources = null;
@@ -6481,7 +6514,7 @@ var WAT;
     /**** createMaster ****/
     function createMaster(Name, Category, Version, Template) {
         WAT.expectName('master name', Name);
-        expectOneOf('master category', Category, WAT.WAT_Categories);
+        expectOneOf('master category', Category, WAT_Categories);
         WAT.allowSemVer('master version', Version);
         allowText('master template', Template);
         if (Name in MasterRegistry)
@@ -7242,7 +7275,7 @@ var WAT;
                     return;
                 }
                 else {
-                    throw new Error('CircularDependency: trigger variable "' + VariableName + '" ' +
+                    throwError('CircularDependency: trigger variable "' + VariableName + '" ' +
                         'has been changed during an ongoing recalculation');
                 }
             }
@@ -7478,51 +7511,55 @@ var WAT;
         return 'BRE-' + KeyCounter;
     }
     /**** make global visuals "reactive" ****/
-    on(document.body, 'value-changed', undefined, function (DOMEvent) {
-        var _a;
-        var Origin = VisualOfElement(DOMEvent.target);
-        if (Origin == null) {
-            return;
-        }
-        var Name = Origin.Name;
-        if ((Name || '')[0] === '#') {
-            (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
-            // @ts-ignore always use "detail"
-            Name, DOMEvent.detail, false, 'wasControlValueChange');
-        }
+    ready(function () {
+        on(document.body, 'value-changed', undefined, function (DOMEvent) {
+            var _a;
+            var Origin = VisualOfElement(DOMEvent.target);
+            if (Origin == null) {
+                return;
+            }
+            var Name = Origin.Name;
+            if ((Name || '')[0] === '#') {
+                (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
+                // @ts-ignore always use "detail"
+                Name, DOMEvent.detail[0], false, 'wasControlValueChange');
+            }
+        });
     });
     //----------------------------------------------------------------------------//
     //                               Event Handling                               //
     //----------------------------------------------------------------------------//
     /**** ignore some events while an applet is under design ****/
-    function swallowEventWhileLayouting(Event) {
+    function swallowEventWhileInhibited(Event) {
         if (Designer == null) {
             return;
         }
-        var AppletPeer = Event.target.closest('.WAT.Applet');
-        if (AppletPeer == null) {
+        var Peer = Event.target.closest('.WAT');
+        if (Peer == null) {
             return;
         }
-        var Applet = VisualOfElement(AppletPeer);
-        if (Applet == null) {
+        var Visual = VisualOfElement(Peer);
+        if (Visual == null) {
             return;
         }
-        if (Designer.layoutsApplet(Applet)) {
+        if (Designer.inhibitsEventsFrom(Visual)) {
             Event.stopPropagation();
             Event.preventDefault();
         }
     }
-    document.body.addEventListener('mousedown', swallowEventWhileLayouting);
-    document.body.addEventListener('mousemove', swallowEventWhileLayouting);
-    document.body.addEventListener('mouseup', swallowEventWhileLayouting);
-    document.body.addEventListener('mouseenter', swallowEventWhileLayouting);
-    document.body.addEventListener('mouseleave', swallowEventWhileLayouting);
-    document.body.addEventListener('keydown', swallowEventWhileLayouting);
-    document.body.addEventListener('keypress', swallowEventWhileLayouting);
-    document.body.addEventListener('keyup', swallowEventWhileLayouting);
-    document.body.addEventListener('input', swallowEventWhileLayouting);
-    document.body.addEventListener('change', swallowEventWhileLayouting);
-    document.body.addEventListener('click', swallowEventWhileLayouting);
+    ready(function () {
+        document.body.addEventListener('mousedown', swallowEventWhileInhibited);
+        document.body.addEventListener('mousemove', swallowEventWhileInhibited);
+        document.body.addEventListener('mouseup', swallowEventWhileInhibited);
+        document.body.addEventListener('mouseenter', swallowEventWhileInhibited);
+        document.body.addEventListener('mouseleave', swallowEventWhileInhibited);
+        document.body.addEventListener('keydown', swallowEventWhileInhibited);
+        document.body.addEventListener('keypress', swallowEventWhileInhibited);
+        document.body.addEventListener('keyup', swallowEventWhileInhibited);
+        document.body.addEventListener('input', swallowEventWhileInhibited);
+        document.body.addEventListener('change', swallowEventWhileInhibited);
+        document.body.addEventListener('click', swallowEventWhileInhibited);
+    });
     /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
     function registerEventHandlerForVisual(Visual) {
         var ArgumentList = [];
@@ -7562,7 +7599,7 @@ var WAT;
                 ArgumentList[_i] = arguments[_i];
             }
             var Event = ArgumentList[0];
-            if ((Designer != null) && Designer.layoutsApplet(Visual.Applet)) {
+            if ((Designer != null) && Designer.inhibitsEventsFrom(Visual)) {
                 Event.stopPropagation();
                 Event.preventDefault();
                 return;
@@ -7590,12 +7627,7 @@ var WAT;
         EventHandlers.push({
             TapPoint: TapPoint, EventName: EventName, EventSelector: EventSelector, EventHandler: EventHandler, actualHandler: actualHandler
         }); // n.b.: a missing selector is specified as "null"!
-        if (EventSelector == null) {
-            TapPoint.Peer.on(EventName, actualHandler);
-        }
-        else {
-            TapPoint.Peer.on(EventName, EventSelector, actualHandler);
-        }
+        on(TapPoint.Peer, EventName, EventSelector, actualHandler);
     }
     /**** unregisterEventHandlerForVisual - off([TapPoint,]Event[,Selector],Handler) ****/
     function unregisterEventHandlerForVisual(Visual) {
@@ -7640,12 +7672,7 @@ var WAT;
                 (Candidate.EventSelector === EventSelector) && // even for missing ones
                 ((EventHandler == null) || (Candidate.EventHandler === EventHandler))) {
                 var actualHandler = Candidate.actualHandler;
-                if (Candidate.EventSelector == null) {
-                    TapPoint.Peer.off(Candidate.EventName, actualHandler);
-                }
-                else {
-                    TapPoint.Peer.off(Candidate.EventName, Candidate.EventSelector, actualHandler);
-                }
+                off(TapPoint.Peer, Candidate.EventName, Candidate.EventSelector, actualHandler);
                 EventHandlers.splice(i, 1);
             }
         }
@@ -7662,12 +7689,7 @@ var WAT;
         }
         for (var i = 0, l = EventHandlers.length; i < l; i++) {
             var _a = EventHandlers[i], TapPoint = _a[0], EventName = _a[1], EventSelector = _a[2], actualHandler = _a[3];
-            if (EventSelector == null) {
-                TapPoint.Peer.off(EventName, actualHandler);
-            }
-            else {
-                TapPoint.Peer.off(EventName, EventSelector, actualHandler);
-            }
+            off(TapPoint.Peer, EventName, EventSelector, actualHandler);
         }
         delete Internals.EventHandlers;
     }
@@ -7697,7 +7719,7 @@ var WAT;
         }
         if (InjectionPoint != null) {
             var EventName = ArgumentList.shift();
-            InjectionPoint.Peer.trigger(EventName, ArgumentList);
+            trigger(InjectionPoint.Peer, EventName, ArgumentList);
         }
     }
     /**** [set]ErrorInfoOfVisual ****/
@@ -8700,8 +8722,8 @@ var WAT;
             set: function (newOverflows) {
                 allowArray('list of overflow settings', newOverflows);
                 if (newOverflows != null) {
-                    expectOneOf('horizontal overflow', newOverflows[0], WAT.WAT_Overflows);
-                    expectOneOf('vertical overflow', newOverflows[1], WAT.WAT_Overflows);
+                    expectOneOf('horizontal overflow', newOverflows[0], WAT_Overflows);
+                    expectOneOf('vertical overflow', newOverflows[1], WAT_Overflows);
                 }
                 if (newOverflows == null) {
                     applyStyleToVisual(this, 'overflow', null);
@@ -8719,7 +8741,7 @@ var WAT;
                 return (css(this.Peer, 'text-overflow') === 'clip' ? 'clip' : 'ellipsis');
             },
             set: function (newTextOverflow) {
-                allowOneOf('text overflow', newTextOverflow, WAT.WAT_TextOverflows);
+                allowOneOf('text overflow', newTextOverflow, WAT_TextOverflows);
                 applyStyleToVisual(this, 'text-overflow', newTextOverflow);
             },
             enumerable: false,
@@ -8832,7 +8854,7 @@ var WAT;
             /**** horizontalAnchoring ****/
             get: function () { return horizontalAnchoringOfVisual(this); },
             set: function (newAnchoring) {
-                expectOneOf('horizontal anchoring', newAnchoring, WAT.WAT_horizontalAnchorings);
+                expectOneOf('horizontal anchoring', newAnchoring, WAT_horizontalAnchorings);
                 changeHorizontalAnchoringOfVisualTo(this, newAnchoring);
             },
             enumerable: false,
@@ -8842,7 +8864,7 @@ var WAT;
             /**** verticalAnchoring ****/
             get: function () { return verticalAnchoringOfVisual(this); },
             set: function (newAnchoring) {
-                expectOneOf('vertical anchoring', newAnchoring, WAT.WAT_verticalAnchorings);
+                expectOneOf('vertical anchoring', newAnchoring, WAT_verticalAnchorings);
                 changeVerticalAnchoringOfVisualTo(this, newAnchoring);
             },
             enumerable: false,
@@ -8996,11 +9018,11 @@ var WAT;
                         return FontWeight;
                     default:
                         var BoldnessIndex = Math.max(1, Math.min(9, Math.round(parseFloat(FontWeight) / 100))) - 1;
-                        return WAT.WAT_FontWeights[BoldnessIndex];
+                        return WAT_FontWeights[BoldnessIndex];
                 }
             },
             set: function (newFontWeight) {
-                allowOneOf('font weight', newFontWeight, WAT.WAT_FontWeights);
+                allowOneOf('font weight', newFontWeight, WAT_FontWeights);
                 switch (newFontWeight) {
                     case null:
                     case undefined:
@@ -9032,7 +9054,7 @@ var WAT;
                 }
             },
             set: function (newFontStyle) {
-                allowOneOf('font weight', newFontStyle, WAT.WAT_FontStyles);
+                allowOneOf('font weight', newFontStyle, WAT_FontStyles);
                 applyStyleToVisual(this, 'font-style', newFontStyle);
             },
             enumerable: false,
@@ -9065,7 +9087,7 @@ var WAT;
                 // @ts-ignore
                 textDecorationThickness = _a.textDecorationThickness;
                 if ((textDecorationLine === 'none') ||
-                    !ValueIsOneOf(textDecorationLine, WAT.WAT_TextDecorationLines)) {
+                    !ValueIsOneOf(textDecorationLine, WAT_TextDecorationLines)) {
                     return { Line: 'none' };
                 }
                 else {
@@ -9073,7 +9095,7 @@ var WAT;
                     return {
                         Line: textDecorationLine,
                         Color: HexColor(textDecorationColor || '#000000'),
-                        Style: ValueIsOneOf(textDecorationStyle, WAT.WAT_TextDecorationStyles) ? textDecorationStyle : 'solid',
+                        Style: ValueIsOneOf(textDecorationStyle, WAT_TextDecorationStyles) ? textDecorationStyle : 'solid',
                         Thickness: isNaN(Thickness) ? 1 : Math.round(Thickness)
                     };
                 }
@@ -9081,9 +9103,9 @@ var WAT;
             set: function (newTextDecoration) {
                 allowPlainObject('text decoration', newTextDecoration);
                 if (newTextDecoration != null) {
-                    expectOneOf('text decoration shape', newTextDecoration.Line, WAT.WAT_TextDecorationLines);
+                    expectOneOf('text decoration shape', newTextDecoration.Line, WAT_TextDecorationLines);
                     allowColor('text decoration color', newTextDecoration.Color);
-                    expectOneOf('text decoration style', newTextDecoration.Style, WAT.WAT_TextDecorationStyles);
+                    expectOneOf('text decoration style', newTextDecoration.Style, WAT_TextDecorationStyles);
                     WAT.allowDimension('text decoration thickness', newTextDecoration.Thickness);
                 }
                 if (newTextDecoration == null) {
@@ -9165,7 +9187,7 @@ var WAT;
                 return css(this.Peer, 'text-align');
             },
             set: function (newTextAlignment) {
-                allowOneOf('text alignment', newTextAlignment, WAT.WAT_TextAlignments);
+                allowOneOf('text alignment', newTextAlignment, WAT_TextAlignments);
                 applyStyleToVisual(this, 'text-align', newTextAlignment);
             },
             enumerable: false,
@@ -9237,7 +9259,7 @@ var WAT;
                 allowPlainObject('background texture', newTexture);
                 if (newTexture != null) {
                     expectURL('background image url', newTexture.ImageURL);
-                    expectOneOf('background image mode', newTexture.Mode, WAT.WAT_BackgroundModes);
+                    expectOneOf('background image mode', newTexture.Mode, WAT_BackgroundModes);
                     WAT.expectLocation('background image x offset', newTexture.xOffset);
                     WAT.expectLocation('background image y offset', newTexture.yOffset);
                 }
@@ -9354,7 +9376,7 @@ var WAT;
             /**** BorderStyles ****/
             get: function () {
                 function normalizedBorderStyle(Value) {
-                    return (ValueIsOneOf(Value, WAT.WAT_BorderStyles) ? Value : 'none');
+                    return (ValueIsOneOf(Value, WAT_BorderStyles) ? Value : 'none');
                 }
                 var Peer = this.Peer;
                 return [
@@ -9367,10 +9389,10 @@ var WAT;
             set: function (newBorderStyles) {
                 allowArray('list of border styles', newBorderStyles);
                 if (newBorderStyles != null) {
-                    expectOneOf('top border style', newBorderStyles[0], WAT.WAT_BorderStyles);
-                    expectOneOf('right border style', newBorderStyles[1], WAT.WAT_BorderStyles);
-                    expectOneOf('bottom border style', newBorderStyles[2], WAT.WAT_BorderStyles);
-                    expectOneOf('left border style', newBorderStyles[3], WAT.WAT_BorderStyles);
+                    expectOneOf('top border style', newBorderStyles[0], WAT_BorderStyles);
+                    expectOneOf('right border style', newBorderStyles[1], WAT_BorderStyles);
+                    expectOneOf('bottom border style', newBorderStyles[2], WAT_BorderStyles);
+                    expectOneOf('left border style', newBorderStyles[3], WAT_BorderStyles);
                 }
                 if (newBorderStyles == null) {
                     applyStylesToVisual(this, {
@@ -9488,7 +9510,7 @@ var WAT;
                     : CursorSpec);
             },
             set: function (newCursor) {
-                allowOneOf('cursor', newCursor, WAT.WAT_Cursors);
+                allowOneOf('cursor', newCursor, WAT_Cursors);
                 if (newCursor == null) {
                     applyStyleToVisual(this, 'cursor', null); // also clears any "customCursor"
                 }
@@ -10948,7 +10970,7 @@ var WAT;
     function registerDesigner(newDesigner) {
         expectPlainObject('WAT designer', newDesigner);
         if (!ValueIsFunction(newDesigner.startDesigning) ||
-            !ValueIsFunction(newDesigner.layoutsApplet))
+            !ValueIsFunction(newDesigner.inhibitsEventsFrom))
             throwError('InvalidArgument: the given object is no valid WAT Designer');
         if (Designer == null) {
             Designer = newDesigner;
@@ -10961,7 +10983,7 @@ var WAT;
     WAT.registerDesigner = registerDesigner;
     /**** ready - similar to jQuery.ready ****/
     var WAT_isReady = false;
-    var ReadyFunctionsToCall = [];
+    //const ReadyFunctionsToCall:Function[] = []
     function ready(FunctionToCall) {
         expectFunction('function to call', FunctionToCall);
         if (WAT_isReady && !ReadyFunctionsAreRunning) {
@@ -11122,4 +11144,6 @@ var WAT;
     }
     global$1.WAT = WAT;
 })(WAT || (WAT = {}));
+
+export { WAT, WAT_BackgroundModes, WAT_BorderStyles, WAT_Categories, WAT_Cursors, WAT_FontStyles, WAT_FontWeightValues, WAT_FontWeights, WAT_Overflows, WAT_TextAlignments, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextOverflows, WAT_horizontalAnchorings, WAT_verticalAnchorings };
 //# sourceMappingURL=webapp-tinkerer-runtime.esm.js.map

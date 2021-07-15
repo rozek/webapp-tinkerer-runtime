@@ -1,4 +1,4 @@
-(function () {
+var WAT = (function (exports) {
     'use strict';
 
     /*! *****************************************************************************
@@ -4230,41 +4230,41 @@
     *                        WebApp Tinkerer (WAT) Runtime                         *
     *                                                                              *
     *******************************************************************************/
-    var WAT;
+    var WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
+    var WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
+    var WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
+    /**** visual setting types ****/
+    var WAT_FontWeights = [
+        'thin', 'extra-light', 'light', 'normal', 'medium', 'semi-bold',
+        'bold', 'extra-bold', 'heavy', 'lighter', 'bolder'
+    ];
+    var WAT_FontWeightValues = Object.assign(Object.create(null), {
+        'thin': 100, 'extra-light': 200, 'light': 300, 'normal': 400, 'medium': 500,
+        'semi-bold': 600, 'bold': 700, 'extra-bold': 800, 'heavy': 900
+    });
+    var WAT_FontStyles = ['normal', 'italic'];
+    var WAT_TextDecorationLines = ['none', 'underline', 'overline', 'line-through'];
+    var WAT_TextDecorationStyles = ['solid', 'double', 'dotted', 'dashed', 'wavy'];
+    var WAT_TextAlignments = ['left', 'center', 'right', 'justify'];
+    var WAT_BackgroundModes = ['normal', 'contain', 'cover', 'fill', 'tile'];
+    var WAT_BorderStyles = [
+        'none', 'dotted', 'dashed', 'solid', 'double',
+        'groove', 'ridge', 'inset', 'outset'
+    ];
+    var WAT_Cursors = [
+        'alias', 'all-scroll', 'auto', 'cell', 'context-menu', 'col-resize', 'copy',
+        'crosshair', 'default', 'e-resize', 'ew-resize', 'grab', 'grabbing', 'help',
+        'move', 'n-resize', 'ne-resize', 'nesw-resize', 'ns-resize', 'nw-resize',
+        'nwse-resize', 'no-drop', 'none', 'not-allowed', 'pointer', 'progress',
+        'row-resize', 's-resize', 'se-resize', 'sw-resize', 'text', 'vertical-text',
+        'w-resize', 'wait', 'zoom-in', 'zoom-out'
+    ];
+    var WAT_Overflows = ['visible', 'hidden', 'scroll', 'auto'];
+    var WAT_TextOverflows = ['clip', 'ellipsis'];
+    exports.WAT = void 0;
     (function (WAT) {
         WAT.Version = '0.1.0';
         var ReadyFunctionsToCall = []; // "ready" will be called early
-        WAT.WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
-        WAT.WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
-        WAT.WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
-        /**** visual setting types ****/
-        WAT.WAT_FontWeights = [
-            'thin', 'extra-light', 'light', 'normal', 'medium', 'semi-bold',
-            'bold', 'extra-bold', 'heavy', 'lighter', 'bolder'
-        ];
-        var WAT_FontWeightValues = Object.assign(Object.create(null), {
-            'thin': 100, 'extra-light': 200, 'light': 300, 'normal': 400, 'medium': 500,
-            'semi-bold': 600, 'bold': 700, 'extra-bold': 800, 'heavy': 900
-        });
-        WAT.WAT_FontStyles = ['normal', 'italic'];
-        WAT.WAT_TextDecorationLines = ['none', 'underline', 'overline', 'line-through'];
-        WAT.WAT_TextDecorationStyles = ['solid', 'double', 'dotted', 'dashed', 'wavy'];
-        WAT.WAT_TextAlignments = ['left', 'center', 'right', 'justify'];
-        WAT.WAT_BackgroundModes = ['normal', 'contain', 'cover', 'fill', 'tile'];
-        WAT.WAT_BorderStyles = [
-            'none', 'dotted', 'dashed', 'solid', 'double',
-            'groove', 'ridge', 'inset', 'outset'
-        ];
-        WAT.WAT_Cursors = [
-            'alias', 'all-scroll', 'auto', 'cell', 'context-menu', 'col-resize', 'copy',
-            'crosshair', 'default', 'e-resize', 'ew-resize', 'grab', 'grabbing', 'help',
-            'move', 'n-resize', 'ne-resize', 'nesw-resize', 'ns-resize', 'nw-resize',
-            'nwse-resize', 'no-drop', 'none', 'not-allowed', 'pointer', 'progress',
-            'row-resize', 's-resize', 'se-resize', 'sw-resize', 'text', 'vertical-text',
-            'w-resize', 'wait', 'zoom-in', 'zoom-out'
-        ];
-        WAT.WAT_Overflows = ['visible', 'hidden', 'scroll', 'auto'];
-        WAT.WAT_TextOverflows = ['clip', 'ellipsis'];
         /**** re-export contents of javascript-interface-library ****/
         for (var Key in JIL) {
             // @ts-ignore don't worry about typing
@@ -4353,6 +4353,7 @@
         /**** allow/expect[ed]UniqueId ****/
         WAT.allowUniqueId = ValidatorForClassifier(ValueIsUniqueId, acceptNil, 'unique WAT id'), WAT.allowedUniqueId = WAT.allowUniqueId;
         WAT.expectUniqueId = ValidatorForClassifier(ValueIsUniqueId, rejectNil, 'unique WAT id'), WAT.expectedUniqueId = WAT.expectUniqueId;
+        /**** ValueIsId (i.e., HTML id) ****/
         var WAT_IdPattern = /^[a-z][-_a-z.0-9]*$/i;
         // see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id
         function ValueIsId(Value) {
@@ -4362,6 +4363,7 @@
         /**** allow/expect[ed]Id ****/
         WAT.allowId = ValidatorForClassifier(ValueIsId, acceptNil, 'WAT HTML id'), WAT.allowedId = WAT.allowId;
         WAT.expectId = ValidatorForClassifier(ValueIsId, rejectNil, 'WAT HTML id'), WAT.expectedId = WAT.expectId;
+        /**** ValueIsName ****/
         var WAT_NamePattern = /^[a-z$_][a-z$_0-9]*(-[a-z$_][a-z$_0-9]*)*$/i;
         function ValueIsName(Value) {
             return ValueIsStringMatching(Value, WAT_NamePattern);
@@ -4379,6 +4381,7 @@
         /**** allow/expect[ed]UniversalName ****/
         WAT.allowUniversalName = ValidatorForClassifier(ValueIsUniversalName, acceptNil, 'WAT name'), WAT.allowedUniversalName = WAT.allowUniversalName;
         WAT.expectUniversalName = ValidatorForClassifier(ValueIsUniversalName, rejectNil, 'WAT name'), WAT.expectedUniversalName = WAT.expectUniversalName;
+        /**** ValueIsLabel ****/
         function ValueIsLabel(Value) {
             return ValueIsTextline(Value);
         }
@@ -4386,6 +4389,7 @@
         /**** allow/expect[ed]Label ****/
         WAT.allowLabel = ValidatorForClassifier(ValueIsLabel, acceptNil, 'WAT visual label'), WAT.allowedLabel = WAT.allowLabel;
         WAT.expectLabel = ValidatorForClassifier(ValueIsLabel, rejectNil, 'WAT visual label'), WAT.expectedLabel = WAT.expectLabel;
+        /**** ValueIsIdentifier ****/
         var IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
         function ValueIsIdentifier(Value) {
             return ValueIsStringMatching(Value, IdentifierPattern);
@@ -6228,7 +6232,7 @@
                 throwError('InvalidImport: the name of a master must not be global');
             }
             var Version = normalized(parsedVersion(WAT.allowedSemVer('master version', MasterObject.Version) || '0.0.1'));
-            var Category = expectedOneOf('master category', MasterObject.Category, WAT.WAT_Categories);
+            var Category = expectedOneOf('master category', MasterObject.Category, WAT_Categories);
             var Resources = allowedText('master resources', MasterObject.Resources);
             if ((Resources != null) && (Resources.trim() === '')) {
                 Resources = null;
@@ -6513,7 +6517,7 @@
         /**** createMaster ****/
         function createMaster(Name, Category, Version, Template) {
             WAT.expectName('master name', Name);
-            expectOneOf('master category', Category, WAT.WAT_Categories);
+            expectOneOf('master category', Category, WAT_Categories);
             WAT.allowSemVer('master version', Version);
             allowText('master template', Template);
             if (Name in MasterRegistry)
@@ -8721,8 +8725,8 @@
                 set: function (newOverflows) {
                     allowArray('list of overflow settings', newOverflows);
                     if (newOverflows != null) {
-                        expectOneOf('horizontal overflow', newOverflows[0], WAT.WAT_Overflows);
-                        expectOneOf('vertical overflow', newOverflows[1], WAT.WAT_Overflows);
+                        expectOneOf('horizontal overflow', newOverflows[0], WAT_Overflows);
+                        expectOneOf('vertical overflow', newOverflows[1], WAT_Overflows);
                     }
                     if (newOverflows == null) {
                         applyStyleToVisual(this, 'overflow', null);
@@ -8740,7 +8744,7 @@
                     return (css(this.Peer, 'text-overflow') === 'clip' ? 'clip' : 'ellipsis');
                 },
                 set: function (newTextOverflow) {
-                    allowOneOf('text overflow', newTextOverflow, WAT.WAT_TextOverflows);
+                    allowOneOf('text overflow', newTextOverflow, WAT_TextOverflows);
                     applyStyleToVisual(this, 'text-overflow', newTextOverflow);
                 },
                 enumerable: false,
@@ -8853,7 +8857,7 @@
                 /**** horizontalAnchoring ****/
                 get: function () { return horizontalAnchoringOfVisual(this); },
                 set: function (newAnchoring) {
-                    expectOneOf('horizontal anchoring', newAnchoring, WAT.WAT_horizontalAnchorings);
+                    expectOneOf('horizontal anchoring', newAnchoring, WAT_horizontalAnchorings);
                     changeHorizontalAnchoringOfVisualTo(this, newAnchoring);
                 },
                 enumerable: false,
@@ -8863,7 +8867,7 @@
                 /**** verticalAnchoring ****/
                 get: function () { return verticalAnchoringOfVisual(this); },
                 set: function (newAnchoring) {
-                    expectOneOf('vertical anchoring', newAnchoring, WAT.WAT_verticalAnchorings);
+                    expectOneOf('vertical anchoring', newAnchoring, WAT_verticalAnchorings);
                     changeVerticalAnchoringOfVisualTo(this, newAnchoring);
                 },
                 enumerable: false,
@@ -9017,11 +9021,11 @@
                             return FontWeight;
                         default:
                             var BoldnessIndex = Math.max(1, Math.min(9, Math.round(parseFloat(FontWeight) / 100))) - 1;
-                            return WAT.WAT_FontWeights[BoldnessIndex];
+                            return WAT_FontWeights[BoldnessIndex];
                     }
                 },
                 set: function (newFontWeight) {
-                    allowOneOf('font weight', newFontWeight, WAT.WAT_FontWeights);
+                    allowOneOf('font weight', newFontWeight, WAT_FontWeights);
                     switch (newFontWeight) {
                         case null:
                         case undefined:
@@ -9053,7 +9057,7 @@
                     }
                 },
                 set: function (newFontStyle) {
-                    allowOneOf('font weight', newFontStyle, WAT.WAT_FontStyles);
+                    allowOneOf('font weight', newFontStyle, WAT_FontStyles);
                     applyStyleToVisual(this, 'font-style', newFontStyle);
                 },
                 enumerable: false,
@@ -9086,7 +9090,7 @@
                     // @ts-ignore
                     textDecorationThickness = _a.textDecorationThickness;
                     if ((textDecorationLine === 'none') ||
-                        !ValueIsOneOf(textDecorationLine, WAT.WAT_TextDecorationLines)) {
+                        !ValueIsOneOf(textDecorationLine, WAT_TextDecorationLines)) {
                         return { Line: 'none' };
                     }
                     else {
@@ -9094,7 +9098,7 @@
                         return {
                             Line: textDecorationLine,
                             Color: HexColor(textDecorationColor || '#000000'),
-                            Style: ValueIsOneOf(textDecorationStyle, WAT.WAT_TextDecorationStyles) ? textDecorationStyle : 'solid',
+                            Style: ValueIsOneOf(textDecorationStyle, WAT_TextDecorationStyles) ? textDecorationStyle : 'solid',
                             Thickness: isNaN(Thickness) ? 1 : Math.round(Thickness)
                         };
                     }
@@ -9102,9 +9106,9 @@
                 set: function (newTextDecoration) {
                     allowPlainObject('text decoration', newTextDecoration);
                     if (newTextDecoration != null) {
-                        expectOneOf('text decoration shape', newTextDecoration.Line, WAT.WAT_TextDecorationLines);
+                        expectOneOf('text decoration shape', newTextDecoration.Line, WAT_TextDecorationLines);
                         allowColor('text decoration color', newTextDecoration.Color);
-                        expectOneOf('text decoration style', newTextDecoration.Style, WAT.WAT_TextDecorationStyles);
+                        expectOneOf('text decoration style', newTextDecoration.Style, WAT_TextDecorationStyles);
                         WAT.allowDimension('text decoration thickness', newTextDecoration.Thickness);
                     }
                     if (newTextDecoration == null) {
@@ -9186,7 +9190,7 @@
                     return css(this.Peer, 'text-align');
                 },
                 set: function (newTextAlignment) {
-                    allowOneOf('text alignment', newTextAlignment, WAT.WAT_TextAlignments);
+                    allowOneOf('text alignment', newTextAlignment, WAT_TextAlignments);
                     applyStyleToVisual(this, 'text-align', newTextAlignment);
                 },
                 enumerable: false,
@@ -9258,7 +9262,7 @@
                     allowPlainObject('background texture', newTexture);
                     if (newTexture != null) {
                         expectURL('background image url', newTexture.ImageURL);
-                        expectOneOf('background image mode', newTexture.Mode, WAT.WAT_BackgroundModes);
+                        expectOneOf('background image mode', newTexture.Mode, WAT_BackgroundModes);
                         WAT.expectLocation('background image x offset', newTexture.xOffset);
                         WAT.expectLocation('background image y offset', newTexture.yOffset);
                     }
@@ -9375,7 +9379,7 @@
                 /**** BorderStyles ****/
                 get: function () {
                     function normalizedBorderStyle(Value) {
-                        return (ValueIsOneOf(Value, WAT.WAT_BorderStyles) ? Value : 'none');
+                        return (ValueIsOneOf(Value, WAT_BorderStyles) ? Value : 'none');
                     }
                     var Peer = this.Peer;
                     return [
@@ -9388,10 +9392,10 @@
                 set: function (newBorderStyles) {
                     allowArray('list of border styles', newBorderStyles);
                     if (newBorderStyles != null) {
-                        expectOneOf('top border style', newBorderStyles[0], WAT.WAT_BorderStyles);
-                        expectOneOf('right border style', newBorderStyles[1], WAT.WAT_BorderStyles);
-                        expectOneOf('bottom border style', newBorderStyles[2], WAT.WAT_BorderStyles);
-                        expectOneOf('left border style', newBorderStyles[3], WAT.WAT_BorderStyles);
+                        expectOneOf('top border style', newBorderStyles[0], WAT_BorderStyles);
+                        expectOneOf('right border style', newBorderStyles[1], WAT_BorderStyles);
+                        expectOneOf('bottom border style', newBorderStyles[2], WAT_BorderStyles);
+                        expectOneOf('left border style', newBorderStyles[3], WAT_BorderStyles);
                     }
                     if (newBorderStyles == null) {
                         applyStylesToVisual(this, {
@@ -9509,7 +9513,7 @@
                         : CursorSpec);
                 },
                 set: function (newCursor) {
-                    allowOneOf('cursor', newCursor, WAT.WAT_Cursors);
+                    allowOneOf('cursor', newCursor, WAT_Cursors);
                     if (newCursor == null) {
                         applyStyleToVisual(this, 'cursor', null); // also clears any "customCursor"
                     }
@@ -11142,7 +11146,26 @@
             window.addEventListener('DOMContentLoaded', startup);
         }
         global$1.WAT = WAT;
-    })(WAT || (WAT = {}));
+    })(exports.WAT || (exports.WAT = {}));
 
-}());
+    exports.WAT_BackgroundModes = WAT_BackgroundModes;
+    exports.WAT_BorderStyles = WAT_BorderStyles;
+    exports.WAT_Categories = WAT_Categories;
+    exports.WAT_Cursors = WAT_Cursors;
+    exports.WAT_FontStyles = WAT_FontStyles;
+    exports.WAT_FontWeightValues = WAT_FontWeightValues;
+    exports.WAT_FontWeights = WAT_FontWeights;
+    exports.WAT_Overflows = WAT_Overflows;
+    exports.WAT_TextAlignments = WAT_TextAlignments;
+    exports.WAT_TextDecorationLines = WAT_TextDecorationLines;
+    exports.WAT_TextDecorationStyles = WAT_TextDecorationStyles;
+    exports.WAT_TextOverflows = WAT_TextOverflows;
+    exports.WAT_horizontalAnchorings = WAT_horizontalAnchorings;
+    exports.WAT_verticalAnchorings = WAT_verticalAnchorings;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+    return exports;
+
+}({}));
 //# sourceMappingURL=webapp-tinkerer-runtime.js.map
