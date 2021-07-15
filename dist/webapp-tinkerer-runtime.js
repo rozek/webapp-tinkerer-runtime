@@ -4233,6 +4233,7 @@
     var WAT;
     (function (WAT) {
         WAT.Version = '0.1.0';
+        var ReadyFunctionsToCall = []; // "ready" will be called early
         WAT.WAT_Categories = ['Applet', 'Card', 'Overlay', 'Control', 'Compound'];
         WAT.WAT_horizontalAnchorings = ['left-width', 'left-right', 'width-right'];
         WAT.WAT_verticalAnchorings = ['top-height', 'top-bottom', 'height-bottom'];
@@ -4586,6 +4587,37 @@
                     Element.removeEventListener(HandlerEntry.EventName, HandlerEntry.actualHandler);
                     HandlerList.splice(i, 1);
                 }
+            }
+        }
+        /**** trigger ****/
+        function trigger(DOMElement, EventOrName, extraParameters) {
+            if (ValueIsString(EventOrName)) {
+                var EventName = EventOrName, simulatedEvent = void 0;
+                switch (EventName) {
+                    case 'mousedown':
+                    case 'mousemove':
+                    case 'mouseup':
+                    case 'mouseover':
+                    case 'mouseenter':
+                    case 'mouseleave':
+                    case 'mouseout':
+                    case 'click':
+                    case 'dblclick':
+                    case 'contextmenu':
+                        simulatedEvent = new MouseEvent(EventName, { detail: extraParameters });
+                        break;
+                    case 'keydown':
+                    case 'keypress':
+                    case 'keyup':
+                        simulatedEvent = new KeyboardEvent(EventName, { detail: extraParameters });
+                        break;
+                    default:
+                        simulatedEvent = new CustomEvent(EventName, { detail: extraParameters });
+                }
+                DOMElement.dispatchEvent(simulatedEvent);
+            }
+            else { // ValueIsInstanceOf(Event)
+                DOMElement.dispatchEvent(EventOrName);
             }
         }
         /**** remove ****/
@@ -7481,18 +7513,20 @@
             return 'BRE-' + KeyCounter;
         }
         /**** make global visuals "reactive" ****/
-        on(document.body, 'value-changed', undefined, function (DOMEvent) {
-            var _a;
-            var Origin = VisualOfElement(DOMEvent.target);
-            if (Origin == null) {
-                return;
-            }
-            var Name = Origin.Name;
-            if ((Name || '')[0] === '#') {
-                (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
-                // @ts-ignore always use "detail"
-                Name, DOMEvent.detail, false, 'wasControlValueChange');
-            }
+        ready(function () {
+            on(document.body, 'value-changed', undefined, function (DOMEvent) {
+                var _a;
+                var Origin = VisualOfElement(DOMEvent.target);
+                if (Origin == null) {
+                    return;
+                }
+                var Name = Origin.Name;
+                if ((Name || '')[0] === '#') {
+                    (_a = InternalsOfVisual(Origin.Applet).ReactivityContext) === null || _a === void 0 ? void 0 : _a.setReactiveVariable(
+                    // @ts-ignore always use "detail"
+                    Name, DOMEvent.detail, false, 'wasControlValueChange');
+                }
+            });
         });
         //----------------------------------------------------------------------------//
         //                               Event Handling                               //
@@ -7515,17 +7549,19 @@
                 Event.preventDefault();
             }
         }
-        document.body.addEventListener('mousedown', swallowEventWhileLayouting);
-        document.body.addEventListener('mousemove', swallowEventWhileLayouting);
-        document.body.addEventListener('mouseup', swallowEventWhileLayouting);
-        document.body.addEventListener('mouseenter', swallowEventWhileLayouting);
-        document.body.addEventListener('mouseleave', swallowEventWhileLayouting);
-        document.body.addEventListener('keydown', swallowEventWhileLayouting);
-        document.body.addEventListener('keypress', swallowEventWhileLayouting);
-        document.body.addEventListener('keyup', swallowEventWhileLayouting);
-        document.body.addEventListener('input', swallowEventWhileLayouting);
-        document.body.addEventListener('change', swallowEventWhileLayouting);
-        document.body.addEventListener('click', swallowEventWhileLayouting);
+        ready(function () {
+            document.body.addEventListener('mousedown', swallowEventWhileLayouting);
+            document.body.addEventListener('mousemove', swallowEventWhileLayouting);
+            document.body.addEventListener('mouseup', swallowEventWhileLayouting);
+            document.body.addEventListener('mouseenter', swallowEventWhileLayouting);
+            document.body.addEventListener('mouseleave', swallowEventWhileLayouting);
+            document.body.addEventListener('keydown', swallowEventWhileLayouting);
+            document.body.addEventListener('keypress', swallowEventWhileLayouting);
+            document.body.addEventListener('keyup', swallowEventWhileLayouting);
+            document.body.addEventListener('input', swallowEventWhileLayouting);
+            document.body.addEventListener('change', swallowEventWhileLayouting);
+            document.body.addEventListener('click', swallowEventWhileLayouting);
+        });
         /**** registerEventHandlerForVisual - on([TapPoint,]Event[,Selector],Handler) ****/
         function registerEventHandlerForVisual(Visual) {
             var ArgumentList = [];
@@ -7593,12 +7629,7 @@
             EventHandlers.push({
                 TapPoint: TapPoint, EventName: EventName, EventSelector: EventSelector, EventHandler: EventHandler, actualHandler: actualHandler
             }); // n.b.: a missing selector is specified as "null"!
-            if (EventSelector == null) {
-                TapPoint.Peer.on(EventName, actualHandler);
-            }
-            else {
-                TapPoint.Peer.on(EventName, EventSelector, actualHandler);
-            }
+            on(TapPoint.Peer, EventName, EventSelector, actualHandler);
         }
         /**** unregisterEventHandlerForVisual - off([TapPoint,]Event[,Selector],Handler) ****/
         function unregisterEventHandlerForVisual(Visual) {
@@ -7643,12 +7674,7 @@
                     (Candidate.EventSelector === EventSelector) && // even for missing ones
                     ((EventHandler == null) || (Candidate.EventHandler === EventHandler))) {
                     var actualHandler = Candidate.actualHandler;
-                    if (Candidate.EventSelector == null) {
-                        TapPoint.Peer.off(Candidate.EventName, actualHandler);
-                    }
-                    else {
-                        TapPoint.Peer.off(Candidate.EventName, Candidate.EventSelector, actualHandler);
-                    }
+                    off(TapPoint.Peer, Candidate.EventName, Candidate.EventSelector, actualHandler);
                     EventHandlers.splice(i, 1);
                 }
             }
@@ -7665,12 +7691,7 @@
             }
             for (var i = 0, l = EventHandlers.length; i < l; i++) {
                 var _a = EventHandlers[i], TapPoint = _a[0], EventName = _a[1], EventSelector = _a[2], actualHandler = _a[3];
-                if (EventSelector == null) {
-                    TapPoint.Peer.off(EventName, actualHandler);
-                }
-                else {
-                    TapPoint.Peer.off(EventName, EventSelector, actualHandler);
-                }
+                off(TapPoint.Peer, EventName, EventSelector, actualHandler);
             }
             delete Internals.EventHandlers;
         }
@@ -7700,7 +7721,7 @@
             }
             if (InjectionPoint != null) {
                 var EventName = ArgumentList.shift();
-                InjectionPoint.Peer.trigger(EventName, ArgumentList);
+                trigger(InjectionPoint.Peer, EventName, ArgumentList);
             }
         }
         /**** [set]ErrorInfoOfVisual ****/
@@ -10964,7 +10985,7 @@
         WAT.registerDesigner = registerDesigner;
         /**** ready - similar to jQuery.ready ****/
         var WAT_isReady = false;
-        var ReadyFunctionsToCall = [];
+        //const ReadyFunctionsToCall:Function[] = []
         function ready(FunctionToCall) {
             expectFunction('function to call', FunctionToCall);
             if (WAT_isReady && !ReadyFunctionsAreRunning) {
