@@ -29,6 +29,10 @@
   } from 'javascript-interface-library'
   import * as JIL from 'javascript-interface-library'
 
+  export const Version = '0.1.0'
+
+  const ReadyFunctionsToCall:Function[] = []     // "ready" will be called early
+
 /**** common types and values ****/
 
   type WAT_uniqueId = string                                   // format "wat-#"
@@ -158,11 +162,6 @@
   export type WAT_Textline = string                                      // dto.
   export type WAT_Color    = string                                      // dto.
   export type WAT_URL      = string                                      // dto.
-
-export namespace WAT {
-  export const Version = '0.1.0'
-
-  const ReadyFunctionsToCall:Function[] = []     // "ready" will be called early
 
 /**** re-export contents of javascript-interface-library ****/
 
@@ -8437,8 +8436,6 @@ export namespace WAT {
 //                                WAT Start-Up                                //
 //----------------------------------------------------------------------------//
 
-  global['WAT'] = Object.assign(WAT.ready,WAT)
-
 /**** startWAT ****/
 
   async function startWAT ():Promise<void> {
@@ -8504,17 +8501,4 @@ export namespace WAT {
   } else {
     window.addEventListener('DOMContentLoaded', startup)
   }
-
-  global.WAT = WAT
-}
-
-export type WAT_Visual    = WAT.WAT_Visual
-export type WAT_Applet    = WAT.WAT_Applet
-export type WAT_Container = WAT.WAT_Container
-export type WAT_Layer     = WAT.WAT_Layer
-export type WAT_Card      = WAT.WAT_Card
-export type WAT_Overlay   = WAT.WAT_Overlay
-export type WAT_Component = WAT.WAT_Component
-export type WAT_Compound  = WAT.WAT_Compound
-export type WAT_Control   = WAT.WAT_Control
 
