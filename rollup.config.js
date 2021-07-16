@@ -12,14 +12,14 @@ export default {
   ],
   output: [{
     file:      './dist/webapp-tinkerer-runtime.js',
-    format:    'iife',
+    format:    'umd',
     name:      'WAT',
     globals:   { 'jquery':'jQuery' },
     noConflict:true,
     sourcemap: true,
   },{
     file:      './dist/webapp-tinkerer-runtime.min.js',
-    format:    'iife',
+    format:    'umd',
     name:      'WAT',
     globals:   { 'jquery':'jQuery' },
     noConflict:true,

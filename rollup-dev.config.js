@@ -12,7 +12,7 @@ export default {
   ],
   output: {
     file:      './dist/webapp-tinkerer-runtime.js',
-    format:    'iife',
+    format:    'cjs',
     name:      'WAT',
     globals:   { 'jquery':'jQuery' },
     noConflict:true,
