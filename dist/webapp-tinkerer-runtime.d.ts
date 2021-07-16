@@ -918,7 +918,7 @@ export declare class WAT_Control extends WAT_Visual implements WAT_Component {
 /**** AppletPeersInDocument ****/
 export declare function AppletPeersInDocument(): HTMLElement[];
 export declare type WAT_Designer = {
-    startDesigning: (Target: WAT_Visual | WAT_Name, Property?: WAT_Identifier, x?: number, y?: number) => void;
+    startDesigning: (Applet: WAT_Applet, Target?: WAT_Visual | WAT_Name, Property?: WAT_Identifier, x?: number, y?: number) => void;
     inhibitsEventsFrom: (Visual: WAT_Visual) => boolean;
 };
 /**** registerDesigner ****/

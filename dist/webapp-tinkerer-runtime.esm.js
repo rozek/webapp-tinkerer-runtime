@@ -7662,7 +7662,7 @@ function installEventHandlerForErrorIndicators() {
                 if (window.confirm(ErrorInfo.Title + '\n\n' + ErrorInfo.longMessage +
                     (ErrorInfo.Reason != null ? '\n\nReason:\n' + ErrorInfo.Reason : '') +
                     '\n\nDo you want to proceed to the Designer?')) {
-                    Designer.startDesigning(ErrorInfo.Sufferer, ErrorInfo.Property);
+                    Designer.startDesigning(affectedVisual.Applet, ErrorInfo.Sufferer, ErrorInfo.Property);
                 }
             }
             else {
