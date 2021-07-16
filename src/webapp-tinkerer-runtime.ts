@@ -5308,7 +5308,7 @@
       let newMaster:WAT_Name
       if (oldMaster != null) {
         newMaster = MasterOfPeer(Peer)        // new Visual will use this master
-        Peer.data('wat-master',oldMaster) // but the current one still uses this
+        data(Peer,'wat-master',oldMaster) // but the current one still uses this
       }
 
       Visual.trigger('prepare-refresh')        // still using the current master
@@ -5550,26 +5550,26 @@
   /**** mayBeDesigned ****/
 
     get mayBeDesigned () {
-      return (this.Peer.data('wat-designability') !== 'false')
+      return (data(this.Peer,'wat-designability') !== 'false')
     }
 
     set mayBeDesigned (newDesignability:boolean) {
       expectBoolean('designability',newDesignability)
-      this.Peer.data(
-        'wat-designability', newDesignability === false ? 'false' : null
+      data(
+        this.Peer, 'wat-designability', newDesignability === false ? 'false' : undefined
       )
     }
 
   /**** mayBeDeleted ****/
 
     get mayBeDeleted () {
-      return (this.Peer.data('wat-deletability') !== 'false')
+      return (data(this.Peer,'wat-deletability') !== 'false')
     }
 
     set mayBeDeleted (newDeletability:boolean) {
       expectBoolean('deletability',newDeletability)
-      this.Peer.data(
-        'wat-deletability', newDeletability === false ? 'false' : null
+      data(
+        this.Peer, 'wat-deletability', newDeletability === false ? 'false' : undefined
       )
     }
 
@@ -5707,17 +5707,18 @@
 
   /**** Script ****/
 
-    get Script () { return this.Peer.data('wat-script') }
+    get Script () { return data(this.Peer,'wat-script') }
     set Script (newScript:any) { throwReadOnlyError('Script') }
 
   /**** pendingScript ****/
 
-    get pendingScript () { return this.Peer.data('wat-pending-script') }
+    get pendingScript () { return data(this.Peer,'wat-pending-script') }
     set pendingScript (newPendingScript:WAT_Text) {
       allowText('script',newPendingScript)
 
-      this.Peer.data(
-        'wat-pending-script', (newPendingScript || '').trim() === '' ? null : newPendingScript
+      data(
+        this.Peer, 'wat-pending-script',
+        (newPendingScript || '').trim() === '' ? undefined : newPendingScript
       )
     }
 
@@ -5731,7 +5732,7 @@
       let pendingScript = this.pendingScript
       if (pendingScript == null) {
         if ((this.Script || '').trim() !== '') {
-          this.Peer.data('wat-script',null)
+          data(this.Peer,'wat-script',undefined)
           refreshVisual(this)         // serialization still done by old script!
         }
       } else {
@@ -5755,8 +5756,8 @@
         }
 
         if (pendingScriptError == null) {
-          this.Peer.data('wat-script',pendingScript)
-          this.Peer.data('wat-pending-script',null)
+          data(this.Peer, 'wat-script',pendingScript)
+          data(this.Peer, 'wat-pending-script',undefined)
 
           refreshVisual(this)         // serialization still done by old script!
         }
