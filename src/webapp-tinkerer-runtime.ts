@@ -4790,7 +4790,7 @@
             '\n\nDo you want to proceed to the Designer?'
           )) {
             Designer.startDesigning(
-              ErrorInfo.Sufferer,  ErrorInfo.Property
+              affectedVisual.Applet, ErrorInfo.Sufferer, ErrorInfo.Property
             )
           }
         } else {
@@ -8335,7 +8335,7 @@
 
   export type WAT_Designer = {
     startDesigning: (
-      Target:WAT_Visual|WAT_Name, Property?:WAT_Identifier,
+      Applet:WAT_Applet, Target?:WAT_Visual|WAT_Name, Property?:WAT_Identifier,
       x?:number, y?:number
     ) => void,
     inhibitsEventsFrom: (Visual:WAT_Visual) => boolean     // for event handlers
