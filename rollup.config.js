@@ -7,21 +7,16 @@ import { terser } from 'rollup-plugin-terser'
 
 export default {
   input: './src/webapp-tinkerer-runtime.ts',
-  external:[                                 // list of (unbundled) dependencies
-    'jquery',                                // partial bundling
-  ],
   output: [{
     file:      './dist/webapp-tinkerer-runtime.js',
     format:    'umd',
     name:      'WAT',
-    globals:   { 'jquery':'jQuery' },
     noConflict:true,
     sourcemap: true,
   },{
     file:      './dist/webapp-tinkerer-runtime.min.js',
     format:    'umd',
     name:      'WAT',
-    globals:   { 'jquery':'jQuery' },
     noConflict:true,
     sourcemap: true,
     plugins: [ terser({ format:{ comments:false, safari10:true } }) ],
