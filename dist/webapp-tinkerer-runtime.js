@@ -8110,7 +8110,7 @@
         var Peer = Visual.Peer; // Peer remains the same, but Visual changes
         if (oldMaster != null) {
             MasterOfPeer(Peer); // new Visual will use this master
-            Peer.data('wat-master', oldMaster); // but the current one still uses this
+            data(Peer, 'wat-master', oldMaster); // but the current one still uses this
         }
         Visual.trigger('prepare-refresh'); // still using the current master
         releaseVisual(Visual); // NOT recursively!
@@ -8340,11 +8340,11 @@
         Object.defineProperty(WAT_Visual.prototype, "mayBeDesigned", {
             /**** mayBeDesigned ****/
             get: function () {
-                return (this.Peer.data('wat-designability') !== 'false');
+                return (data(this.Peer, 'wat-designability') !== 'false');
             },
             set: function (newDesignability) {
                 expectBoolean('designability', newDesignability);
-                this.Peer.data('wat-designability', newDesignability === false ? 'false' : null);
+                data(this.Peer, 'wat-designability', newDesignability === false ? 'false' : undefined);
             },
             enumerable: false,
             configurable: true
@@ -8352,11 +8352,11 @@
         Object.defineProperty(WAT_Visual.prototype, "mayBeDeleted", {
             /**** mayBeDeleted ****/
             get: function () {
-                return (this.Peer.data('wat-deletability') !== 'false');
+                return (data(this.Peer, 'wat-deletability') !== 'false');
             },
             set: function (newDeletability) {
                 expectBoolean('deletability', newDeletability);
-                this.Peer.data('wat-deletability', newDeletability === false ? 'false' : null);
+                data(this.Peer, 'wat-deletability', newDeletability === false ? 'false' : undefined);
             },
             enumerable: false,
             configurable: true
@@ -8495,17 +8495,17 @@
         });
         Object.defineProperty(WAT_Visual.prototype, "Script", {
             /**** Script ****/
-            get: function () { return this.Peer.data('wat-script'); },
+            get: function () { return data(this.Peer, 'wat-script'); },
             set: function (newScript) { throwReadOnlyError('Script'); },
             enumerable: false,
             configurable: true
         });
         Object.defineProperty(WAT_Visual.prototype, "pendingScript", {
             /**** pendingScript ****/
-            get: function () { return this.Peer.data('wat-pending-script'); },
+            get: function () { return data(this.Peer, 'wat-pending-script'); },
             set: function (newPendingScript) {
                 allowText('script', newPendingScript);
-                this.Peer.data('wat-pending-script', (newPendingScript || '').trim() === '' ? null : newPendingScript);
+                data(this.Peer, 'wat-pending-script', (newPendingScript || '').trim() === '' ? undefined : newPendingScript);
             },
             enumerable: false,
             configurable: true
@@ -8517,7 +8517,7 @@
             var pendingScript = this.pendingScript;
             if (pendingScript == null) {
                 if ((this.Script || '').trim() !== '') {
-                    this.Peer.data('wat-script', null);
+                    data(this.Peer, 'wat-script', undefined);
                     refreshVisual(this); // serialization still done by old script!
                 }
             }
@@ -8539,8 +8539,8 @@
                     Internals.pendingScriptError = pendingScriptError;
                 }
                 if (pendingScriptError == null) {
-                    this.Peer.data('wat-script', pendingScript);
-                    this.Peer.data('wat-pending-script', null);
+                    data(this.Peer, 'wat-script', pendingScript);
+                    data(this.Peer, 'wat-pending-script', undefined);
                     refreshVisual(this); // serialization still done by old script!
                 }
             }
