@@ -8336,8 +8336,7 @@
 
   export type WAT_Designer = {
     startDesigning: (
-      Applet:WAT_Applet, Target?:WAT_Visual|WAT_Name, Property?:WAT_Identifier,
-      x?:number, y?:number
+      Applet:WAT_Applet, Target?:WAT_Visual|WAT_Name, Property?:WAT_Identifier
     ) => void,
     inhibitsEventsFrom: (Visual:WAT_Visual) => boolean     // for event handlers
   }
