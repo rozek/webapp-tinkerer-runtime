@@ -4969,6 +4969,17 @@
     }
   }
 
+/**** LabelOfPeer ****/
+
+  function LabelOfPeer (Peer:HTMLElement, newLabel?:WAT_Label):WAT_Label|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-label')
+      return (ValueIsLabel(Candidate) ? Candidate : undefined)
+    } else {
+      data(Peer,'wat-label',newLabel)
+    }
+  }
+
 /**** ScriptOfPeer ****/
 
   function ScriptOfPeer (Peer:HTMLElement):string {
@@ -5494,14 +5505,10 @@
 
   /**** Label ****/
 
-    get Label () {
-      let Candidate = data(PeerOfVisual(this),'wat-label')
-      return (ValueIsLabel(Candidate) ? Candidate : undefined)
-    }
-
-    set Label (newLabel:WAT_Label) {
+    get Label () { return LabelOfPeer(PeerOfVisual(this)) }
+    set Label (newLabel:WAT_Label | undefined) {
       allowLabel('label',newLabel)
-      data(PeerOfVisual(this),'wat-label',newLabel || undefined)
+      LabelOfPeer(PeerOfVisual(this),newLabel)
     }
 
   /**** Category ****/
@@ -6805,7 +6812,8 @@
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
         filtered(Peer.children,'.WAT.Card').forEach(function (Peer) {
-          Result.push(VisualOfElement(Peer as HTMLElement).Label)
+          let Label = LabelOfPeer(Peer)
+          Result.push(Label == null ? '' : Label)
         })
       return Result
     }
@@ -7209,7 +7217,8 @@
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
         filtered(Peer.children,'.WAT.Overlay').forEach(function (Peer) {
-          Result.push(VisualOfElement(Peer as HTMLElement).Label)
+          let Label = LabelOfPeer(Peer)
+          Result.push(Label == null ? '' : Label)
         })
       return Result
     }
@@ -7574,7 +7583,8 @@
       let Result:WAT_Label[] = []
         let Peer = PeerOfVisual(this)
         filtered(Peer.children,'.WAT.Control,.WAT.Compound').forEach(function (Peer) {
-          Result.push(VisualOfElement(Peer as HTMLElement).Label)
+          let Label = LabelOfPeer(Peer)
+          Result.push(Label == null ? '' : Label)
         })
       return Result
     }
