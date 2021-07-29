@@ -4982,16 +4982,28 @@
 
 /**** ScriptOfPeer ****/
 
-  function ScriptOfPeer (Peer:HTMLElement):string {
-    let Candidate = data(Peer,'wat-script')
-    return (ValueIsText(Candidate) ? Candidate : undefined)
+  function ScriptOfPeer (
+    Peer:HTMLElement, newScript?:WAT_Text
+  ):WAT_Text|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-script')
+      return (ValueIsText(Candidate) ? Candidate : undefined)
+    } else {
+      data(Peer,'wat-script',newScript)
+    }
   }
 
 /**** pendingScriptOfPeer ****/
 
-  function pendingScriptOfPeer (Peer:HTMLElement):string {
-    let Candidate = data(Peer,'wat-pending-script')
-    return (ValueIsText(Candidate) ? Candidate : undefined)
+  function pendingScriptOfPeer (
+    Peer:HTMLElement, newPendingScript?:WAT_Text
+  ):WAT_Text|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-pending-script')
+      return (ValueIsText(Candidate) ? Candidate : undefined)
+    } else {
+      data(Peer,'wat-pending-script',newPendingScript)
+    }
   }
 
 /**** StateOfPeer ****/
@@ -5757,17 +5769,17 @@
 
   /**** Script ****/
 
-    get Script () { return data(this.Peer,'wat-script') }
+    get Script () { return ScriptOfPeer(this.Peer) }
     set Script (newScript:any) { throwReadOnlyError('Script') }
 
   /**** pendingScript ****/
 
-    get pendingScript () { return data(this.Peer,'wat-pending-script') }
-    set pendingScript (newPendingScript:WAT_Text) {
+    get pendingScript () { return pendingScriptOfPeer(this.Peer) }
+    set pendingScript (newPendingScript:WAT_Text|undefined) {
       allowText('script',newPendingScript)
 
-      data(
-        this.Peer, 'wat-pending-script',
+      pendingScriptOfPeer(
+        this.Peer,
         (newPendingScript || '').trim() === '' ? undefined : newPendingScript
       )
     }
@@ -5782,7 +5794,7 @@
       let pendingScript = this.pendingScript
       if (pendingScript == null) {
         if ((this.Script || '').trim() !== '') {
-          data(this.Peer,'wat-script',undefined)
+          ScriptOfPeer(this.Peer,undefined)
           refreshVisual(this)         // serialization still done by old script!
         }
       } else {
@@ -5806,8 +5818,8 @@
         }
 
         if (pendingScriptError == null) {
-          data(this.Peer, 'wat-script',pendingScript)
-          data(this.Peer, 'wat-pending-script',undefined)
+          ScriptOfPeer       (this.Peer,pendingScript)
+          pendingScriptOfPeer(this.Peer,undefined)
 
           refreshVisual(this)         // serialization still done by old script!
         }
