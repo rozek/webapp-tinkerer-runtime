@@ -7776,9 +7776,14 @@
         }
     }
     /**** MasterVersionOfPeer ****/
-    function MasterVersionOfPeer(Peer) {
-        var Candidate = data(Peer, 'wat-master-version');
-        return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
+    function MasterVersionOfPeer(Peer, newVersion) {
+        if (arguments.length === 1) {
+            var Candidate = data(Peer, 'wat-master-version');
+            return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
+        }
+        else {
+            data(Peer, 'wat-master-version', newVersion == null ? undefined : serializedVersion(newVersion));
+        }
     }
     /**** NameOfPeer ****/
     function NameOfPeer(Peer) {
