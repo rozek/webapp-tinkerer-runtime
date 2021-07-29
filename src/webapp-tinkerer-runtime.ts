@@ -1642,7 +1642,7 @@
         case ValueIsElement(AppletOrPeer):
           AppletIdOrName = attr(AppletOrPeer as HTMLElement,'id')
           if (! ValueIsId(AppletIdOrName)) {
-            AppletIdOrName = data(AppletOrPeer as HTMLElement, 'wat-name')
+            AppletIdOrName = NameOfPeer(AppletOrPeer as HTMLElement)
             if (! ValueIsName(AppletIdOrName)) { return false }
           }
           break
@@ -1676,7 +1676,7 @@
 
     let AppletIdOrName = attr(Peer,'id')
     if (! ValueIsId(AppletIdOrName)) {
-      AppletIdOrName = data(Peer, 'wat-name')
+      AppletIdOrName = NameOfPeer(Peer)
       if (! ValueIsName(AppletIdOrName)) { AppletIdOrName = undefined }
     }
 
@@ -4110,7 +4110,7 @@
     Applet:WAT_Applet, Visual:WAT_Visual
   ):void {
     let globalVisualSet = InternalsOfVisual(Applet).globalVisualSet as WAT_KeySet
-      let globalName = Visual.Name
+      let globalName = Visual.Name as WAT_Name
       if (globalName in globalVisualSet) {
         throwError(
           'VisualExists: a visual with the global name "' + globalName + '" ' +
@@ -4125,7 +4125,7 @@
   function unregisterGlobalVisualOfApplet (
     Applet:WAT_Applet, Visual:WAT_Visual
   ):void {
-    let globalName = Visual.Name
+    let globalName = Visual.Name as WAT_Name
     delete (InternalsOfVisual(Applet).globalVisualSet as WAT_KeySet)[globalName]
   }
 
@@ -4960,9 +4960,13 @@
 
 /**** NameOfPeer ****/
 
-  function NameOfPeer (Peer:HTMLElement):WAT_Name {
-    let Candidate = data(Peer,'wat-name')
-    return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
+  function NameOfPeer (Peer:HTMLElement, newName?:WAT_Name):WAT_Name|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-name')
+      return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
+    } else {
+      data(Peer,'wat-name',newName)
+    }
   }
 
 /**** ScriptOfPeer ****/
@@ -5460,28 +5464,28 @@
   /**** Name ****/
 
     get Name () {
-      let Candidate = data(PeerOfVisual(this),'wat-name')
+      let Candidate = NameOfPeer(PeerOfVisual(this))
       return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
     }
 
-    set Name (newName:string) {
+    set Name (newName:string | undefined) {
       allowUniversalName('name',newName)
 
       let Peer = PeerOfVisual(this)
 
-      let oldName = data(Peer,'wat-name')
+      let oldName = NameOfPeer(Peer)
       if (newName == oldName) { return }
 
       let Applet = this.Applet
 
-      if (oldName.startsWith('#')) {
-        unregisterGlobalVisualOfApplet(Applet,oldName)
+      if ((oldName != null) && oldName.startsWith('#')) {
+        unregisterGlobalVisualOfApplet(Applet,this)
         InternalsOfVisual(this.Applet)?.ReactivityContext
           ?.clearReactiveVariable(oldName)
       }
 
-      data(Peer,'wat-name',newName || undefined)
-      if (newName.startsWith('#')) {
+      NameOfPeer(Peer,newName || undefined)
+      if ((newName != null) && newName.startsWith('#')) {
         registerGlobalVisualOfApplet(Applet,this)
         InternalsOfVisual(this.Applet)?.ReactivityContext
           ?.setReactiveVariable(newName,this.Value)
@@ -6745,11 +6749,11 @@
   /**** Name ****/
 
     get Name () {
-      let Candidate = data(PeerOfVisual(this),'wat-name')
+      let Candidate = NameOfPeer(PeerOfVisual(this))
       return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
     }
 
-    set Name (newName:string) { throwReadOnlyError('Name') }
+    set Name (newName:string | undefined) { throwReadOnlyError('Name') }
 
   /**** globalVisual ****/
 
