@@ -7853,6 +7853,15 @@
             data(Peer, 'wat-designability', newDesignability === false ? 'false' : undefined);
         }
     }
+    /**** DeletabilityOfPeer ****/
+    function DeletabilityOfPeer(Peer, newDeletability) {
+        if (arguments.length === 1) {
+            return (data(Peer, 'wat-deletability') !== 'false');
+        }
+        else {
+            data(Peer, 'wat-deletability', newDeletability === false ? 'false' : undefined);
+        }
+    }
     /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
     function VisualBuiltFromPeer(Peer, allowedCategory) {
         var Category = CategoryOfPeer(Peer, allowedCategory);
@@ -8416,12 +8425,10 @@
         });
         Object.defineProperty(WAT_Visual.prototype, "mayBeDeleted", {
             /**** mayBeDeleted ****/
-            get: function () {
-                return (data(this.Peer, 'wat-deletability') !== 'false');
-            },
+            get: function () { return DeletabilityOfPeer(this.Peer); },
             set: function (newDeletability) {
                 expectBoolean('deletability', newDeletability);
-                data(this.Peer, 'wat-deletability', newDeletability === false ? 'false' : undefined);
+                DeletabilityOfPeer(this.Peer, newDeletability);
             },
             enumerable: false,
             configurable: true
@@ -9573,6 +9580,13 @@
             /**** Name ****/
             get: function () { return NameOfPeer(PeerOfVisual(this)); },
             set: function (newName) { throwReadOnlyError('Name'); },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(WAT_Applet.prototype, "mayBeDeleted", {
+            /**** mayBeDeleted ****/
+            get: function () { return false; },
+            set: function (newDeletability) { throwReadOnlyError('mayBeDeleted'); },
             enumerable: false,
             configurable: true
         });
