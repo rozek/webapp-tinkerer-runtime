@@ -5487,6 +5487,7 @@ function serializedVisual(Visual, withUniqueId, withPendingSettings) {
     if (withUniqueId) {
         preserveUniqueIdIn(Visual.Peer);
     }
+    StateOfPeer(Visual.Peer, Visual.State);
     var Serialization = Visual.Peer.outerHTML;
     if (withUniqueId) {
         removeUniqueIdFrom(Visual.Peer);
@@ -7815,16 +7816,21 @@ function pendingScriptOfPeer(Peer, newPendingScript) {
     }
 }
 /**** StateOfPeer ****/
-function StateOfPeer(Peer) {
-    var Candidate = data(Peer, 'wat-state');
-    if (Candidate == null) {
-        return null;
+function StateOfPeer(Peer, newState) {
+    if (arguments.length === 1) {
+        var Candidate = data(Peer, 'wat-state');
+        if (Candidate == null) {
+            return undefined;
+        }
+        try {
+            return JSON.parse(Candidate);
+        }
+        catch (Signal) {
+            return null;
+        }
     }
-    try {
-        return JSON.parse(Candidate);
-    }
-    catch (Signal) {
-        return null;
+    else {
+        data(Peer, 'wat-state', newState == null ? undefined : JSON.stringify(newState));
     }
 }
 /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
