@@ -4944,9 +4944,18 @@
 
 /**** MasterVersionOfPeer ****/
 
-  function MasterVersionOfPeer (Peer:HTMLElement):WAT_Version|undefined {
-    let Candidate = data(Peer,'wat-master-version')
-    return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined)
+  function MasterVersionOfPeer (
+    Peer:HTMLElement, newVersion?:WAT_Version
+  ):WAT_Version|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-master-version')
+      return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined)
+    } else {
+      data(
+        Peer,'wat-master-version',
+        newVersion == null ? undefined : serializedVersion(newVersion)
+      )
+    }
   }
 
 /**** NameOfPeer ****/
