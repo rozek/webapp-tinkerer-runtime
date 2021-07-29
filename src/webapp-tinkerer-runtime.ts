@@ -4920,13 +4920,6 @@
     }
   }
 
-/**** VersionOfPeer ****/
-
-  function VersionOfPeer (Peer:HTMLElement):WAT_Version|undefined {
-    let Candidate = data(Peer,'wat-master-version')
-    return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined)
-  }
-
 /**** MasterOfPeer ****/
 
   function MasterOfPeer (Peer:HTMLElement, Category?:WAT_Category):WAT_Name {
@@ -4936,6 +4929,13 @@
     } else {
       return (Category == null ? 'plainVisual' : 'plain'+Category)
     }
+  }
+
+/**** MasterVersionOfPeer ****/
+
+  function MasterVersionOfPeer (Peer:HTMLElement):WAT_Version|undefined {
+    let Candidate = data(Peer,'wat-master-version')
+    return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined)
   }
 
 /**** NameOfPeer ****/
@@ -5055,8 +5055,11 @@
         return Visual
       }
 
-      let Version = VersionOfPeer(Peer)
-      if ((Version != null) && ! VersionAmatchesB(Version,MasterInfo.Version as WAT_normalizedVersion)) {
+      let MasterVersion = MasterVersionOfPeer(Peer)
+      if (
+        (MasterVersion != null) &&
+        ! VersionAmatchesB(MasterVersion,MasterInfo.Version as WAT_normalizedVersion)
+      ) {
         setErrorInfoOfVisual(Visual,{
           Title:       'Inappropriate Version',
           longMessage: 'This visual requires a different version of master ' +
