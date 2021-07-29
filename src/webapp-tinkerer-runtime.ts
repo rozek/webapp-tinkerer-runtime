@@ -1991,6 +1991,7 @@
 
     triggerRecursively('before-serialization')
       if (withUniqueId) { preserveUniqueIdIn(Visual.Peer) }
+        StateOfPeer(Visual.Peer,Visual.State)
         let Serialization = Visual.Peer.outerHTML
       if (withUniqueId) { removeUniqueIdFrom(Visual.Peer) }
     triggerRecursively('after-serialization')
@@ -5008,14 +5009,21 @@
 
 /**** StateOfPeer ****/
 
-  function StateOfPeer (Peer:HTMLElement):any {
-    let Candidate = data(Peer,'wat-state')
-    if (Candidate == null) { return null }
+  function StateOfPeer (Peer:HTMLElement, newState?:any):any {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-state')
+      if (Candidate == null) { return undefined }
 
-    try {
-      return JSON.parse(Candidate)
-    } catch (Signal) {
-      return null
+      try {
+        return JSON.parse(Candidate)
+      } catch (Signal) {
+        return null
+      }
+    } else {
+      data(
+        Peer,'wat-state',
+        newState == null ? undefined : JSON.stringify(newState)
+      )
     }
   }
 
