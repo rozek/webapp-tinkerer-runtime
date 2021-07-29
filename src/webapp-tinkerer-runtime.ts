@@ -5513,7 +5513,7 @@
     get Master () {
       let Peer = PeerOfVisual(this)
 
-      let Master = data(Peer,'wat-master')
+      let Master = MasterOfPeer(Peer)
       if (ValueIsName(Master)) {
         return Master             // independent of whether master exists or not
       } else {
@@ -5535,12 +5535,17 @@
 
       let Peer = PeerOfVisual(this)
 
-      let oldMaster = data(Peer,'wat-master')
+      let oldMaster = MasterOfPeer(Peer)
       if (newMaster == oldMaster) { return }
 
       data(Peer,'wat-master',newMaster)
       refreshVisual(this)
     }
+
+  /**** MasterVersion ****/
+
+    get MasterVersion () { return MasterVersionOfPeer(PeerOfVisual(this)) }
+    set MasterVersion (newMasterVersion:any) { throwReadOnlyError('MasterVersion') }
 
   /**** ErrorInfo ****/
 
