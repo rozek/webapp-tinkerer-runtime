@@ -4920,6 +4920,13 @@
     }
   }
 
+/**** uniqueIdOfPeer ****/
+
+  function uniqueIdOfPeer (Peer:HTMLElement):number|undefined {
+    let Candidate = data(Peer,'wat-unique-id')
+    return (ValueIsUniqueId(Candidate) ? parseInt(Candidate,10) : undefined)
+  }
+
 /**** MasterOfPeer ****/
 
   function MasterOfPeer (Peer:HTMLElement, Category?:WAT_Category):WAT_Name {
@@ -4949,6 +4956,13 @@
 
   function ScriptOfPeer (Peer:HTMLElement):string {
     let Candidate = data(Peer,'wat-script')
+    return (ValueIsText(Candidate) ? Candidate : undefined)
+  }
+
+/**** pendingScriptOfPeer ****/
+
+  function pendingScriptOfPeer (Peer:HTMLElement):string {
+    let Candidate = data(Peer,'wat-pending-script')
     return (ValueIsText(Candidate) ? Candidate : undefined)
   }
 
