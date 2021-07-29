@@ -5027,6 +5027,18 @@
     }
   }
 
+/**** DesignabilityOfPeer ****/
+
+  function DesignabilityOfPeer (
+    Peer:HTMLElement, newDesignability?:boolean
+  ):boolean | undefined {
+    if (arguments.length === 1) {
+      return (data(Peer,'wat-designability') !== 'false')
+    } else {
+      data(Peer,'wat-designability',newDesignability === false ? 'false' : undefined)
+    }
+  }
+
 /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
 
   function VisualBuiltFromPeer (
@@ -5619,15 +5631,10 @@
 
   /**** mayBeDesigned ****/
 
-    get mayBeDesigned () {
-      return (data(this.Peer,'wat-designability') !== 'false')
-    }
-
+    get mayBeDesigned () { return DesignabilityOfPeer(this.Peer) as boolean }
     set mayBeDesigned (newDesignability:boolean) {
       expectBoolean('designability',newDesignability)
-      data(
-        this.Peer, 'wat-designability', newDesignability === false ? 'false' : undefined
-      )
+      DesignabilityOfPeer(this.Peer,newDesignability)
     }
 
   /**** mayBeDeleted ****/
