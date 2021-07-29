@@ -4342,7 +4342,7 @@
     var allowContainer = ValidatorForClassifier(ValueIsContainer, acceptNil, 'WAT container'), allowedContainer = allowContainer;
     var expectContainer = ValidatorForClassifier(ValueIsContainer, rejectNil, 'WAT container'), expectedContainer = expectContainer;
     /**** ValueIsUniqueId ****/
-    var uniqueIdPattern = /^wat-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
+    var uniqueIdPattern = /^[0-9]+$/i;
     function ValueIsUniqueId(Value) {
         return (ValueIsString(Value) && uniqueIdPattern.test(Value));
     }
@@ -7012,7 +7012,7 @@
         }
         return MasterList;
     }
-    /**** Masters ****/
+    /**** [registered]Masters ****/
     function Masters() {
         var Result = [];
         for (var Master in MasterRegistry) {
@@ -7020,6 +7020,7 @@
         }
         return Result;
     }
+    var registeredMasters = Masters;
     /**** instantiableMasters - i.e., all without Applet masters ****/
     function instantiableMasters() {
         var Result = [];
@@ -11220,6 +11221,7 @@
     exports.registerDesigner = registerDesigner;
     exports.registerMasterFromSerialization = registerMasterFromSerialization;
     exports.registerResources = registerResources;
+    exports.registeredMasters = registeredMasters;
     exports.removeBackupOfApplet = removeBackupOfApplet;
     exports.removePropertyOfMaster = removePropertyOfMaster;
     exports.renameMaster = renameMaster;
