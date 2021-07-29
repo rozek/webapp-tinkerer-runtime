@@ -1619,7 +1619,7 @@
 
     return (
       AppletsMayBePreserved() &&
-      ValueIsName(Applet.Name) &&
+      (ValueIsId(Applet.Id) || ValueIsName(Applet.Name)) &&
       (InternalsOfVisual(Applet) != null) &&
       (InternalsOfVisual(Applet).BackupStatus == null)
     )
@@ -1630,15 +1630,21 @@
   export async function AppletHasBackup (
     AppletOrPeer:WAT_Applet|HTMLElement
   ):Promise<boolean> {
-    let AppletName
+    let AppletIdOrName
       switch (true) {
         case ValueIsApplet(AppletOrPeer):
-          AppletName = (AppletOrPeer as WAT_Applet).Name
-          if (AppletName == null) { return false }
+          AppletIdOrName = (AppletOrPeer as WAT_Applet).Id
+          if (! ValueIsId(AppletIdOrName)) {
+            AppletIdOrName = (AppletOrPeer as WAT_Applet).Name
+            if (! ValueIsName(AppletIdOrName)) { return false }
+          }
           break
         case ValueIsElement(AppletOrPeer):
-          let Candidate = data(AppletOrPeer as HTMLElement,'wat-name')
-          if (ValueIsName(Candidate)) { AppletName = Candidate } else { return false }
+          AppletIdOrName = attr(AppletOrPeer as HTMLElement,'id')
+          if (! ValueIsId(AppletIdOrName)) {
+            AppletIdOrName = data(AppletOrPeer as HTMLElement, 'wat-name')
+            if (! ValueIsName(AppletIdOrName)) { return false }
+          }
           break
         default: throwError(
           'InvalidArgument: applet or applet name expected'
@@ -1648,13 +1654,14 @@
 
     try {
       let normalizedAppletName = (
-        AppletName.startsWith('#') ? AppletName.slice(1) : AppletName
+        AppletIdOrName.startsWith('#') ? AppletIdOrName.slice(1) : AppletIdOrName
       )
 
       return ValueIsString(await AppletStore.getItem(normalizedAppletName))
     } catch (Signal) {
       console.error(
-        'backup of applet "' + AppletName + ' could not be checked, reason: ', Signal
+        'backup of applet "' + AppletIdOrName + ' could not be checked, ' +
+        'reason: ', Signal
       )
       return false
     }
@@ -1667,20 +1674,25 @@
   ):Promise<WAT_Applet> {
     expectElement('applet peer',Peer)
 
-    let AppletName = data(Peer,'wat-name')
-    if (! ValueIsName(AppletName)) throwError(
+    let AppletIdOrName = attr(Peer,'id')
+    if (! ValueIsId(AppletIdOrName)) {
+      AppletIdOrName = data(Peer, 'wat-name')
+      if (! ValueIsName(AppletIdOrName)) { AppletIdOrName = undefined }
+    }
+
+    if (AppletIdOrName == null) throwError(
       'InvalidArgument: the given applet peer does not have a valid name'
     )
 
     let Serialization
       try {
         let normalizedAppletName = (
-          AppletName.startsWith('#') ? AppletName.slice(1) : AppletName
+          AppletIdOrName.startsWith('#') ? AppletIdOrName.slice(1) : AppletIdOrName
         )
         Serialization = await AppletStore.getItem(normalizedAppletName)
       } catch (Signal) {
         console.error(
-          'applet "' + AppletName + ' could not be restored, reason: ', Signal
+          'applet "' + AppletIdOrName + ' could not be restored, reason: ', Signal
         )
         throwError('applet could not be restored (see browser console)')
       }
@@ -1700,12 +1712,12 @@
   export async function preserveApplet (Applet:WAT_Applet):Promise<void> {
     expectApplet('applet',Applet)
 
-    validateBackupAccessForApplet(Applet)
+    let BackupName = validateBackupNameForApplet(Applet)
 
     let AppletInternals = InternalsOfVisual(Applet)
     try {
       let normalizedAppletName = (
-        Applet.Name.startsWith('#') ? Applet.Name.slice(1) : Applet.Name
+        BackupName.startsWith('#') ? BackupName.slice(1) : BackupName
       )
 
       AppletInternals.BackupStatus = 'isBeingPreserved'
@@ -1717,7 +1729,7 @@
     } catch (Signal) {
       delete AppletInternals.BackupStatus
       console.error(
-        'applet "' + Applet.Name + ' could not be preserved, reason: ', Signal
+        'applet "' + BackupName + ' could not be preserved, reason: ', Signal
       )
       throwError('applet could not be preserved (see browser console)')
     }
@@ -1730,14 +1742,13 @@
   ):Promise<void> {
     expectApplet('applet',Applet)
 
-    let AppletName = Applet.Name
-    validateBackupAccessForApplet(Applet)
+    let BackupName = validateBackupNameForApplet(Applet)
 
     let Serialization
       let AppletInternals = InternalsOfVisual(Applet)
       try {
         let normalizedAppletName = (
-          AppletName.startsWith('#') ? AppletName.slice(1) : AppletName
+          BackupName.startsWith('#') ? BackupName.slice(1) : BackupName
         )
 
         AppletInternals.BackupStatus = 'isBeingRestored'
@@ -1746,7 +1757,7 @@
       } catch (Signal) {
         delete AppletInternals.BackupStatus
         console.error(
-          'applet "' + AppletName + ' could not be restored, reason: ', Signal
+          'applet "' + BackupName + ' could not be restored, reason: ', Signal
         )
         throwError('applet could not be restored (see browser console)')
       }
@@ -1758,12 +1769,12 @@
   export async function removeBackupOfApplet (Applet:WAT_Applet):Promise<void> {
     expectApplet('applet',Applet)
 
-    validateBackupAccessForApplet(Applet)
+    let BackupName = validateBackupNameForApplet(Applet)
 
     let AppletInternals = InternalsOfVisual(Applet)
     try {
       let normalizedAppletName = (
-        Applet.Name.startsWith('#') ? Applet.Name.slice(1) : Applet.Name
+        BackupName.startsWith('#') ? BackupName.slice(1) : BackupName
       )
 
       AppletInternals.BackupStatus = 'isBeingRemoved'
@@ -1772,23 +1783,27 @@
     } catch (Signal) {
       delete AppletInternals.BackupStatus
       console.error(
-        'applet "' + Applet.Name + ' could not be removed, reason: ', Signal
+        'applet "' + BackupName + ' could not be removed, reason: ', Signal
       )
       throwError('applet could not be removed (see browser console)')
     }
   }
 
-/**** validateBackupAccessForApplet ****/
+/**** validateBackupNameForApplet ****/
 
-  function validateBackupAccessForApplet (Applet:WAT_Applet):void {
+  function validateBackupNameForApplet (Applet:WAT_Applet):string {
     if (! AppletsMayBePreserved()) throwError(
       'NotSupported: WAT applets can not be preserved in this environment'
     )
 
-    let AppletName = Applet.Name
-    if (! ValueIsName(AppletName)) throwError(
-      'InvalidArgument: the given applet does not have a valid name'
-    )
+    let AppletIdOrName:string | undefined = Applet.Id
+    if (! ValueIsId(AppletIdOrName)) {
+      AppletIdOrName = Applet.Name
+      if (! ValueIsName(AppletIdOrName)) throwError(
+        'InvalidArgument: the given applet neither has a valid HTML id ' +
+        'nor a valid WAT name'
+      )
+    }
 
     switch (InternalsOfVisual(Applet).BackupStatus) {
       case 'isBeingPreserved': throwError(
@@ -1801,6 +1816,8 @@
         'ForbiddenOperation: the backup of this applet is currently being removed'
       )
     }
+
+    return AppletIdOrName as string
   }
 
 //----------------------------------------------------------------------------//
