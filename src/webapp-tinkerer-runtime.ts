@@ -316,7 +316,7 @@
 
 /**** ValueIsUniqueId ****/
 
-  const uniqueIdPattern = /^wat-[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i
+  const uniqueIdPattern = /^[0-9]+$/i
 
   export function ValueIsUniqueId (Value:any):boolean {
     return (ValueIsString(Value) && uniqueIdPattern.test(Value))
@@ -3941,7 +3941,7 @@
     return MasterList
   }
 
-/**** Masters ****/
+/**** [registered]Masters ****/
 
   export function Masters ():WAT_Name[] {
     let Result = []
@@ -3950,6 +3950,7 @@
       }
     return Result
   }
+  export const registeredMasters = Masters
 
 /**** instantiableMasters - i.e., all without Applet masters ****/
 
