@@ -1970,7 +1970,7 @@
 
     function preserveUniqueIdIn (Peer:HTMLElement):void {
       let Visual = VisualForDOMElement.get(Peer)
-      attr(Peer,'data-wat-unique-id',InternalsForVisual.get(Visual).uniqueId)
+      uniqueIdOfPeer(Peer,InternalsForVisual.get(Visual).uniqueId)
 
       filtered(Peer.children,'.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
       .forEach(function (Peer) {
@@ -1981,7 +1981,7 @@
   /**** removeUniqueIdFrom ****/
 
     function removeUniqueIdFrom (Peer:HTMLElement):void {
-      attr(Peer,'data-wat-unique-id',undefined)
+      uniqueIdOfPeer(Peer,undefined)
 
       filtered(Peer.children,'.WAT.Card,.WAT.Overlay,.WAT.Control,.WAT.Compound')
       .forEach(function (Peer) {
@@ -4922,9 +4922,13 @@
 
 /**** uniqueIdOfPeer ****/
 
-  function uniqueIdOfPeer (Peer:HTMLElement):number|undefined {
-    let Candidate = data(Peer,'wat-unique-id')
-    return (ValueIsUniqueId(Candidate) ? parseInt(Candidate,10) : undefined)
+  function uniqueIdOfPeer (Peer:HTMLElement, newValue?:number):number|undefined {
+    if (arguments.length === 1) {
+      let Candidate = data(Peer,'wat-unique-id')
+      return (ValueIsUniqueId(Candidate) ? parseInt(Candidate,10) : undefined)
+    } else {
+      data(Peer,'wat-unique-id', newValue == null ? undefined : newValue+'')
+    }
   }
 
 /**** MasterOfPeer ****/
@@ -5221,17 +5225,16 @@
   ):WAT_Visual {
     let uniqueId
       let oldVisual = VisualForDOMElement.get(Peer)
-      if (oldVisual == null) {                                // deserialization
-        let serializedId = attr(Peer,'data-wat-unique-id')
+      if (oldVisual == null) {     // deserialization, visual does not yet exist
+        let serializedId = uniqueIdOfPeer(Peer)
         if (serializedId != null) {
-          let newId = parseInt(serializedId,10)
           if (
-            ValueIsOrdinal(newId) &&
-            (newId < uniqueIdCounter) &&
-            (VisualRegistry[newId] == null)
-          ) { uniqueId = newId }
+            ValueIsOrdinal(serializedId) &&
+            (serializedId < uniqueIdCounter) &&
+            (VisualRegistry[serializedId] == null)
+          ) { uniqueId = serializedId }           // given unique id may be used
 
-          attr(Peer,'data-wat-unique-id',undefined)
+          uniqueIdOfPeer(Peer,undefined)
         }
       } else {                                                        // refresh
         uniqueId = InternalsForVisual.get(oldVisual).uniqueId
