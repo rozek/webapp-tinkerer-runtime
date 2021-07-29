@@ -7795,9 +7795,24 @@ function LabelOfPeer(Peer, newLabel) {
     }
 }
 /**** ScriptOfPeer ****/
-function ScriptOfPeer(Peer) {
-    var Candidate = data(Peer, 'wat-script');
-    return (ValueIsText(Candidate) ? Candidate : undefined);
+function ScriptOfPeer(Peer, newScript) {
+    if (arguments.length === 1) {
+        var Candidate = data(Peer, 'wat-script');
+        return (ValueIsText(Candidate) ? Candidate : undefined);
+    }
+    else {
+        data(Peer, 'wat-script', newScript);
+    }
+}
+/**** pendingScriptOfPeer ****/
+function pendingScriptOfPeer(Peer, newPendingScript) {
+    if (arguments.length === 1) {
+        var Candidate = data(Peer, 'wat-pending-script');
+        return (ValueIsText(Candidate) ? Candidate : undefined);
+    }
+    else {
+        data(Peer, 'wat-pending-script', newPendingScript);
+    }
 }
 /**** StateOfPeer ****/
 function StateOfPeer(Peer) {
@@ -8521,17 +8536,17 @@ var WAT_Visual = /** @class */ (function () {
     });
     Object.defineProperty(WAT_Visual.prototype, "Script", {
         /**** Script ****/
-        get: function () { return data(this.Peer, 'wat-script'); },
+        get: function () { return ScriptOfPeer(this.Peer); },
         set: function (newScript) { throwReadOnlyError('Script'); },
         enumerable: false,
         configurable: true
     });
     Object.defineProperty(WAT_Visual.prototype, "pendingScript", {
         /**** pendingScript ****/
-        get: function () { return data(this.Peer, 'wat-pending-script'); },
+        get: function () { return pendingScriptOfPeer(this.Peer); },
         set: function (newPendingScript) {
             allowText('script', newPendingScript);
-            data(this.Peer, 'wat-pending-script', (newPendingScript || '').trim() === '' ? undefined : newPendingScript);
+            pendingScriptOfPeer(this.Peer, (newPendingScript || '').trim() === '' ? undefined : newPendingScript);
         },
         enumerable: false,
         configurable: true
@@ -8543,7 +8558,7 @@ var WAT_Visual = /** @class */ (function () {
         var pendingScript = this.pendingScript;
         if (pendingScript == null) {
             if ((this.Script || '').trim() !== '') {
-                data(this.Peer, 'wat-script', undefined);
+                ScriptOfPeer(this.Peer, undefined);
                 refreshVisual(this); // serialization still done by old script!
             }
         }
@@ -8565,8 +8580,8 @@ var WAT_Visual = /** @class */ (function () {
                 Internals.pendingScriptError = pendingScriptError;
             }
             if (pendingScriptError == null) {
-                data(this.Peer, 'wat-script', pendingScript);
-                data(this.Peer, 'wat-pending-script', undefined);
+                ScriptOfPeer(this.Peer, pendingScript);
+                pendingScriptOfPeer(this.Peer, undefined);
                 refreshVisual(this); // serialization still done by old script!
             }
         }
