@@ -8290,16 +8290,7 @@ var WAT_Visual = /** @class */ (function () {
     });
     Object.defineProperty(WAT_Visual.prototype, "Master", {
         /**** Master ****/
-        get: function () {
-            var Peer = PeerOfVisual(this);
-            var Master = MasterOfPeer(Peer);
-            if (ValueIsName(Master)) {
-                return Master; // independent of whether master exists or not
-            }
-            else {
-                throwError('InvalidVisual: the given visual does not have a master');
-            }
-        },
+        get: function () { return MasterOfPeer(PeerOfVisual(this)); },
         set: function (newMaster) {
             allowName('master', newMaster);
             if (newMaster == null) {
