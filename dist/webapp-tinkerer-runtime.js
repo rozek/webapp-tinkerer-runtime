@@ -8289,7 +8289,7 @@
             /**** Master ****/
             get: function () {
                 var Peer = PeerOfVisual(this);
-                var Master = data(Peer, 'wat-master');
+                var Master = MasterOfPeer(Peer);
                 if (ValueIsName(Master)) {
                     return Master; // independent of whether master exists or not
                 }
@@ -8309,13 +8309,20 @@
                             quoted(this.Category));
                 }
                 var Peer = PeerOfVisual(this);
-                var oldMaster = data(Peer, 'wat-master');
+                var oldMaster = MasterOfPeer(Peer);
                 if (newMaster == oldMaster) {
                     return;
                 }
                 data(Peer, 'wat-master', newMaster);
                 refreshVisual(this);
             },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(WAT_Visual.prototype, "MasterVersion", {
+            /**** MasterVersion ****/
+            get: function () { return MasterVersionOfPeer(PeerOfVisual(this)); },
+            set: function (newMasterVersion) { throwReadOnlyError('MasterVersion'); },
             enumerable: false,
             configurable: true
         });
