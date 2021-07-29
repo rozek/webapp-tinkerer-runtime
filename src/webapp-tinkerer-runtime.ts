@@ -5474,11 +5474,7 @@
 
   /**** Name ****/
 
-    get Name () {
-      let Candidate = NameOfPeer(PeerOfVisual(this))
-      return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
-    }
-
+    get Name () { return NameOfPeer(PeerOfVisual(this)) }
     set Name (newName:string | undefined) {
       allowUniversalName('name',newName)
 
@@ -5495,7 +5491,7 @@
           ?.clearReactiveVariable(oldName)
       }
 
-      NameOfPeer(Peer,newName || undefined)
+      NameOfPeer(Peer,newName)
       if ((newName != null) && newName.startsWith('#')) {
         registerGlobalVisualOfApplet(Applet,this)
         InternalsOfVisual(this.Applet)?.ReactivityContext
@@ -6755,11 +6751,7 @@
   export class WAT_Applet extends WAT_Visual {
   /**** Name ****/
 
-    get Name () {
-      let Candidate = NameOfPeer(PeerOfVisual(this))
-      return (ValueIsUniversalName(Candidate) ? Candidate : undefined)
-    }
-
+    get Name () { return NameOfPeer(PeerOfVisual(this)) }
     set Name (newName:string | undefined) { throwReadOnlyError('Name') }
 
   /**** globalVisual ****/
