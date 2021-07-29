@@ -7795,6 +7795,16 @@
             data(Peer, 'wat-name', newName);
         }
     }
+    /**** LabelOfPeer ****/
+    function LabelOfPeer(Peer, newLabel) {
+        if (arguments.length === 1) {
+            var Candidate = data(Peer, 'wat-label');
+            return (ValueIsLabel(Candidate) ? Candidate : undefined);
+        }
+        else {
+            data(Peer, 'wat-label', newLabel);
+        }
+    }
     /**** ScriptOfPeer ****/
     function ScriptOfPeer(Peer) {
         var Candidate = data(Peer, 'wat-script');
@@ -8267,13 +8277,10 @@
         });
         Object.defineProperty(WAT_Visual.prototype, "Label", {
             /**** Label ****/
-            get: function () {
-                var Candidate = data(PeerOfVisual(this), 'wat-label');
-                return (ValueIsLabel(Candidate) ? Candidate : undefined);
-            },
+            get: function () { return LabelOfPeer(PeerOfVisual(this)); },
             set: function (newLabel) {
                 allowLabel('label', newLabel);
-                data(PeerOfVisual(this), 'wat-label', newLabel || undefined);
+                LabelOfPeer(PeerOfVisual(this), newLabel);
             },
             enumerable: false,
             configurable: true
@@ -9613,7 +9620,8 @@
                 var Result = [];
                 var Peer = PeerOfVisual(this);
                 filtered(Peer.children, '.WAT.Card').forEach(function (Peer) {
-                    Result.push(VisualOfElement(Peer).Label);
+                    var Label = LabelOfPeer(Peer);
+                    Result.push(Label == null ? '' : Label);
                 });
                 return Result;
             },
@@ -9941,7 +9949,8 @@
                 var Result = [];
                 var Peer = PeerOfVisual(this);
                 filtered(Peer.children, '.WAT.Overlay').forEach(function (Peer) {
-                    Result.push(VisualOfElement(Peer).Label);
+                    var Label = LabelOfPeer(Peer);
+                    Result.push(Label == null ? '' : Label);
                 });
                 return Result;
             },
@@ -10229,7 +10238,8 @@
                 var Result = [];
                 var Peer = PeerOfVisual(this);
                 filtered(Peer.children, '.WAT.Control,.WAT.Compound').forEach(function (Peer) {
-                    Result.push(VisualOfElement(Peer).Label);
+                    var Label = LabelOfPeer(Peer);
+                    Result.push(Label == null ? '' : Label);
                 });
                 return Result;
             },
