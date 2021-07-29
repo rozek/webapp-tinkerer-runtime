@@ -5039,6 +5039,18 @@
     }
   }
 
+/**** DeletabilityOfPeer ****/
+
+  function DeletabilityOfPeer (
+    Peer:HTMLElement, newDeletability?:boolean
+  ):boolean | undefined {
+    if (arguments.length === 1) {
+      return (data(Peer,'wat-deletability') !== 'false')
+    } else {
+      data(Peer,'wat-deletability',newDeletability === false ? 'false' : undefined)
+    }
+  }
+
 /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
 
   function VisualBuiltFromPeer (
@@ -5639,15 +5651,10 @@
 
   /**** mayBeDeleted ****/
 
-    get mayBeDeleted () {
-      return (data(this.Peer,'wat-deletability') !== 'false')
-    }
-
+    get mayBeDeleted () { return DeletabilityOfPeer(this.Peer) as boolean }
     set mayBeDeleted (newDeletability:boolean) {
       expectBoolean('deletability',newDeletability)
-      data(
-        this.Peer, 'wat-deletability', newDeletability === false ? 'false' : undefined
-      )
+      DeletabilityOfPeer(this.Peer,newDeletability)
     }
 
   /**** isVisible ****/
@@ -6771,6 +6778,11 @@
 
     get Name () { return NameOfPeer(PeerOfVisual(this)) }
     set Name (newName:string | undefined) { throwReadOnlyError('Name') }
+
+  /**** mayBeDeleted ****/
+
+    get mayBeDeleted () { return false }
+    set mayBeDeleted (newDeletability:boolean) { throwReadOnlyError('mayBeDeleted') }
 
   /**** globalVisual ****/
 
