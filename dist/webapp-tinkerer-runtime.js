@@ -7844,6 +7844,15 @@
             data(Peer, 'wat-state', newState == null ? undefined : JSON.stringify(newState));
         }
     }
+    /**** DesignabilityOfPeer ****/
+    function DesignabilityOfPeer(Peer, newDesignability) {
+        if (arguments.length === 1) {
+            return (data(Peer, 'wat-designability') !== 'false');
+        }
+        else {
+            data(Peer, 'wat-designability', newDesignability === false ? 'false' : undefined);
+        }
+    }
     /**** VisualBuiltFromPeer - extremely forgiving (not to break an applet) ****/
     function VisualBuiltFromPeer(Peer, allowedCategory) {
         var Category = CategoryOfPeer(Peer, allowedCategory);
@@ -8397,12 +8406,10 @@
         });
         Object.defineProperty(WAT_Visual.prototype, "mayBeDesigned", {
             /**** mayBeDesigned ****/
-            get: function () {
-                return (data(this.Peer, 'wat-designability') !== 'false');
-            },
+            get: function () { return DesignabilityOfPeer(this.Peer); },
             set: function (newDesignability) {
                 expectBoolean('designability', newDesignability);
-                data(this.Peer, 'wat-designability', newDesignability === false ? 'false' : undefined);
+                DesignabilityOfPeer(this.Peer, newDesignability);
             },
             enumerable: false,
             configurable: true
