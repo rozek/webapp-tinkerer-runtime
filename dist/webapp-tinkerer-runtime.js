@@ -5179,31 +5179,34 @@
     function AppletMayBePreserved(Applet) {
         expectApplet('applet', Applet);
         return (AppletsMayBePreserved() &&
-            ValueIsName(Applet.Name) &&
+            (ValueIsId(Applet.Id) || ValueIsName(Applet.Name)) &&
             (InternalsOfVisual(Applet) != null) &&
             (InternalsOfVisual(Applet).BackupStatus == null));
     }
     /**** AppletHasBackup ****/
     function AppletHasBackup(AppletOrPeer) {
         return __awaiter(this, void 0, void 0, function () {
-            var AppletName, Candidate, normalizedAppletName, _a, Signal_1;
+            var AppletIdOrName, normalizedAppletName, _a, Signal_1;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         switch (true) {
                             case ValueIsApplet(AppletOrPeer):
-                                AppletName = AppletOrPeer.Name;
-                                if (AppletName == null) {
-                                    return [2 /*return*/, false];
+                                AppletIdOrName = AppletOrPeer.Id;
+                                if (!ValueIsId(AppletIdOrName)) {
+                                    AppletIdOrName = AppletOrPeer.Name;
+                                    if (!ValueIsName(AppletIdOrName)) {
+                                        return [2 /*return*/, false];
+                                    }
                                 }
                                 break;
                             case ValueIsElement(AppletOrPeer):
-                                Candidate = data(AppletOrPeer, 'wat-name');
-                                if (ValueIsName(Candidate)) {
-                                    AppletName = Candidate;
-                                }
-                                else {
-                                    return [2 /*return*/, false];
+                                AppletIdOrName = attr(AppletOrPeer, 'id');
+                                if (!ValueIsId(AppletIdOrName)) {
+                                    AppletIdOrName = data(AppletOrPeer, 'wat-name');
+                                    if (!ValueIsName(AppletIdOrName)) {
+                                        return [2 /*return*/, false];
+                                    }
                                 }
                                 break;
                             default: throwError('InvalidArgument: applet or applet name expected');
@@ -5214,13 +5217,14 @@
                         _b.label = 1;
                     case 1:
                         _b.trys.push([1, 3, , 4]);
-                        normalizedAppletName = (AppletName.startsWith('#') ? AppletName.slice(1) : AppletName);
+                        normalizedAppletName = (AppletIdOrName.startsWith('#') ? AppletIdOrName.slice(1) : AppletIdOrName);
                         _a = ValueIsString;
                         return [4 /*yield*/, AppletStore.getItem(normalizedAppletName)];
                     case 2: return [2 /*return*/, _a.apply(void 0, [_b.sent()])];
                     case 3:
                         Signal_1 = _b.sent();
-                        console.error('backup of applet "' + AppletName + ' could not be checked, reason: ', Signal_1);
+                        console.error('backup of applet "' + AppletIdOrName + ' could not be checked, ' +
+                            'reason: ', Signal_1);
                         return [2 /*return*/, false];
                     case 4: return [2 /*return*/];
                 }
@@ -5230,25 +5234,31 @@
     /**** AppletRestoredIntoPeer (during startup: applet does not yet exist) ****/
     function AppletRestoredIntoPeer(Peer) {
         return __awaiter(this, void 0, void 0, function () {
-            var AppletName, Serialization, normalizedAppletName, Signal_2;
+            var AppletIdOrName, Serialization, normalizedAppletName, Signal_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         expectElement('applet peer', Peer);
-                        AppletName = data(Peer, 'wat-name');
-                        if (!ValueIsName(AppletName))
+                        AppletIdOrName = attr(Peer, 'id');
+                        if (!ValueIsId(AppletIdOrName)) {
+                            AppletIdOrName = data(Peer, 'wat-name');
+                            if (!ValueIsName(AppletIdOrName)) {
+                                AppletIdOrName = undefined;
+                            }
+                        }
+                        if (AppletIdOrName == null)
                             throwError('InvalidArgument: the given applet peer does not have a valid name');
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        normalizedAppletName = (AppletName.startsWith('#') ? AppletName.slice(1) : AppletName);
+                        normalizedAppletName = (AppletIdOrName.startsWith('#') ? AppletIdOrName.slice(1) : AppletIdOrName);
                         return [4 /*yield*/, AppletStore.getItem(normalizedAppletName)];
                     case 2:
                         Serialization = _a.sent();
                         return [3 /*break*/, 4];
                     case 3:
                         Signal_2 = _a.sent();
-                        console.error('applet "' + AppletName + ' could not be restored, reason: ', Signal_2);
+                        console.error('applet "' + AppletIdOrName + ' could not be restored, reason: ', Signal_2);
                         throwError('applet could not be restored (see browser console)');
                         return [3 /*break*/, 4];
                     case 4:
@@ -5261,17 +5271,17 @@
     /**** preserveApplet ****/
     function preserveApplet(Applet) {
         return __awaiter(this, void 0, void 0, function () {
-            var AppletInternals, normalizedAppletName, Serialization, Signal_3;
+            var BackupName, AppletInternals, normalizedAppletName, Serialization, Signal_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         expectApplet('applet', Applet);
-                        validateBackupAccessForApplet(Applet);
+                        BackupName = validateBackupNameForApplet(Applet);
                         AppletInternals = InternalsOfVisual(Applet);
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        normalizedAppletName = (Applet.Name.startsWith('#') ? Applet.Name.slice(1) : Applet.Name);
+                        normalizedAppletName = (BackupName.startsWith('#') ? BackupName.slice(1) : BackupName);
                         AppletInternals.BackupStatus = 'isBeingPreserved';
                         Serialization = serializedVisuals([Applet], undefined, 'withPendingSettings', 'withAllMasters');
                         return [4 /*yield*/, AppletStore.setItem(normalizedAppletName, Serialization)];
@@ -5282,7 +5292,7 @@
                     case 3:
                         Signal_3 = _a.sent();
                         delete AppletInternals.BackupStatus;
-                        console.error('applet "' + Applet.Name + ' could not be preserved, reason: ', Signal_3);
+                        console.error('applet "' + BackupName + ' could not be preserved, reason: ', Signal_3);
                         throwError('applet could not be preserved (see browser console)');
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
@@ -5293,18 +5303,17 @@
     /**** restoreApplet (while applet is running) ****/
     function restoreApplet(Applet, CollisionHandling) {
         return __awaiter(this, void 0, void 0, function () {
-            var AppletName, Serialization, AppletInternals, normalizedAppletName, Signal_4;
+            var BackupName, Serialization, AppletInternals, normalizedAppletName, Signal_4;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         expectApplet('applet', Applet);
-                        AppletName = Applet.Name;
-                        validateBackupAccessForApplet(Applet);
+                        BackupName = validateBackupNameForApplet(Applet);
                         AppletInternals = InternalsOfVisual(Applet);
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        normalizedAppletName = (AppletName.startsWith('#') ? AppletName.slice(1) : AppletName);
+                        normalizedAppletName = (BackupName.startsWith('#') ? BackupName.slice(1) : BackupName);
                         AppletInternals.BackupStatus = 'isBeingRestored';
                         return [4 /*yield*/, AppletStore.getItem(normalizedAppletName)];
                     case 2:
@@ -5314,7 +5323,7 @@
                     case 3:
                         Signal_4 = _a.sent();
                         delete AppletInternals.BackupStatus;
-                        console.error('applet "' + AppletName + ' could not be restored, reason: ', Signal_4);
+                        console.error('applet "' + BackupName + ' could not be restored, reason: ', Signal_4);
                         throwError('applet could not be restored (see browser console)');
                         return [3 /*break*/, 4];
                     case 4:
@@ -5327,17 +5336,17 @@
     /**** removeBackupOfApplet ****/
     function removeBackupOfApplet(Applet) {
         return __awaiter(this, void 0, void 0, function () {
-            var AppletInternals, normalizedAppletName, Signal_5;
+            var BackupName, AppletInternals, normalizedAppletName, Signal_5;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         expectApplet('applet', Applet);
-                        validateBackupAccessForApplet(Applet);
+                        BackupName = validateBackupNameForApplet(Applet);
                         AppletInternals = InternalsOfVisual(Applet);
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 3, , 4]);
-                        normalizedAppletName = (Applet.Name.startsWith('#') ? Applet.Name.slice(1) : Applet.Name);
+                        normalizedAppletName = (BackupName.startsWith('#') ? BackupName.slice(1) : BackupName);
                         AppletInternals.BackupStatus = 'isBeingRemoved';
                         return [4 /*yield*/, AppletStore.removeItem(normalizedAppletName)];
                     case 2:
@@ -5347,7 +5356,7 @@
                     case 3:
                         Signal_5 = _a.sent();
                         delete AppletInternals.BackupStatus;
-                        console.error('applet "' + Applet.Name + ' could not be removed, reason: ', Signal_5);
+                        console.error('applet "' + BackupName + ' could not be removed, reason: ', Signal_5);
                         throwError('applet could not be removed (see browser console)');
                         return [3 /*break*/, 4];
                     case 4: return [2 /*return*/];
@@ -5355,18 +5364,23 @@
             });
         });
     }
-    /**** validateBackupAccessForApplet ****/
-    function validateBackupAccessForApplet(Applet) {
+    /**** validateBackupNameForApplet ****/
+    function validateBackupNameForApplet(Applet) {
         if (!AppletsMayBePreserved())
             throwError('NotSupported: WAT applets can not be preserved in this environment');
-        var AppletName = Applet.Name;
-        if (!ValueIsName(AppletName))
-            throwError('InvalidArgument: the given applet does not have a valid name');
+        var AppletIdOrName = Applet.Id;
+        if (!ValueIsId(AppletIdOrName)) {
+            AppletIdOrName = Applet.Name;
+            if (!ValueIsName(AppletIdOrName))
+                throwError('InvalidArgument: the given applet neither has a valid HTML id ' +
+                    'nor a valid WAT name');
+        }
         switch (InternalsOfVisual(Applet).BackupStatus) {
             case 'isBeingPreserved': throwError('ForbiddenOperation: this applet is currently being backed-up');
             case 'isBeingRestored': throwError('ForbiddenOperation: this applet is currently being restored from its backup');
             case 'isBeingRemoved': throwError('ForbiddenOperation: the backup of this applet is currently being removed');
         }
+        return AppletIdOrName;
     }
     //----------------------------------------------------------------------------//
     //                       Serialization/Deserialization                        //
