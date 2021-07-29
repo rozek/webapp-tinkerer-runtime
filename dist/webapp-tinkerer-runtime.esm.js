@@ -5192,7 +5192,7 @@ function AppletHasBackup(AppletOrPeer) {
                         case ValueIsElement(AppletOrPeer):
                             AppletIdOrName = attr(AppletOrPeer, 'id');
                             if (!ValueIsId(AppletIdOrName)) {
-                                AppletIdOrName = data(AppletOrPeer, 'wat-name');
+                                AppletIdOrName = NameOfPeer(AppletOrPeer);
                                 if (!ValueIsName(AppletIdOrName)) {
                                     return [2 /*return*/, false];
                                 }
@@ -5230,7 +5230,7 @@ function AppletRestoredIntoPeer(Peer) {
                     expectElement('applet peer', Peer);
                     AppletIdOrName = attr(Peer, 'id');
                     if (!ValueIsId(AppletIdOrName)) {
-                        AppletIdOrName = data(Peer, 'wat-name');
+                        AppletIdOrName = NameOfPeer(Peer);
                         if (!ValueIsName(AppletIdOrName)) {
                             AppletIdOrName = undefined;
                         }
@@ -7775,9 +7775,14 @@ function MasterVersionOfPeer(Peer, newVersion) {
     }
 }
 /**** NameOfPeer ****/
-function NameOfPeer(Peer) {
-    var Candidate = data(Peer, 'wat-name');
-    return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
+function NameOfPeer(Peer, newName) {
+    if (arguments.length === 1) {
+        var Candidate = data(Peer, 'wat-name');
+        return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
+    }
+    else {
+        data(Peer, 'wat-name', newName);
+    }
 }
 /**** ScriptOfPeer ****/
 function ScriptOfPeer(Peer) {
@@ -8224,24 +8229,24 @@ var WAT_Visual = /** @class */ (function () {
     Object.defineProperty(WAT_Visual.prototype, "Name", {
         /**** Name ****/
         get: function () {
-            var Candidate = data(PeerOfVisual(this), 'wat-name');
+            var Candidate = NameOfPeer(PeerOfVisual(this));
             return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
         },
         set: function (newName) {
             var _a, _b, _c, _d;
             allowUniversalName('name', newName);
             var Peer = PeerOfVisual(this);
-            var oldName = data(Peer, 'wat-name');
+            var oldName = NameOfPeer(Peer);
             if (newName == oldName) {
                 return;
             }
             var Applet = this.Applet;
-            if (oldName.startsWith('#')) {
-                unregisterGlobalVisualOfApplet(Applet, oldName);
+            if ((oldName != null) && oldName.startsWith('#')) {
+                unregisterGlobalVisualOfApplet(Applet, this);
                 (_b = (_a = InternalsOfVisual(this.Applet)) === null || _a === void 0 ? void 0 : _a.ReactivityContext) === null || _b === void 0 ? void 0 : _b.clearReactiveVariable(oldName);
             }
-            data(Peer, 'wat-name', newName || undefined);
-            if (newName.startsWith('#')) {
+            NameOfPeer(Peer, newName || undefined);
+            if ((newName != null) && newName.startsWith('#')) {
                 registerGlobalVisualOfApplet(Applet, this);
                 (_d = (_c = InternalsOfVisual(this.Applet)) === null || _c === void 0 ? void 0 : _c.ReactivityContext) === null || _d === void 0 ? void 0 : _d.setReactiveVariable(newName, this.Value);
             }
@@ -9533,7 +9538,7 @@ var WAT_Applet = /** @class */ (function (_super) {
     Object.defineProperty(WAT_Applet.prototype, "Name", {
         /**** Name ****/
         get: function () {
-            var Candidate = data(PeerOfVisual(this), 'wat-name');
+            var Candidate = NameOfPeer(PeerOfVisual(this));
             return (ValueIsUniversalName(Candidate) ? Candidate : undefined);
         },
         set: function (newName) { throwReadOnlyError('Name'); },
