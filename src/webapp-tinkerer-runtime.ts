@@ -5526,17 +5526,8 @@
 
   /**** Master ****/
 
-    get Master () {
-      let Peer = PeerOfVisual(this)
-
-      let Master = MasterOfPeer(Peer)
-      if (ValueIsName(Master)) {
-        return Master             // independent of whether master exists or not
-      } else {
-        throwError('InvalidVisual: the given visual does not have a master')
-      }
-    }
-    set Master (newMaster:any) {
+    get Master () { return MasterOfPeer(PeerOfVisual(this)) }
+    set Master (newMaster:WAT_Name) {
       allowName('master',newMaster)
 
       if (newMaster == null) {
