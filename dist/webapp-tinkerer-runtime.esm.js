@@ -7744,11 +7744,6 @@ function CategoryOfPeer(Peer, DefaultCategory) {
         }
     }
 }
-/**** VersionOfPeer ****/
-function VersionOfPeer(Peer) {
-    var Candidate = data(Peer, 'wat-master-version');
-    return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
-}
 /**** MasterOfPeer ****/
 function MasterOfPeer(Peer, Category) {
     var Candidate = data(Peer, 'wat-master');
@@ -7758,6 +7753,11 @@ function MasterOfPeer(Peer, Category) {
     else {
         return (Category == null ? 'plainVisual' : 'plain' + Category);
     }
+}
+/**** MasterVersionOfPeer ****/
+function MasterVersionOfPeer(Peer) {
+    var Candidate = data(Peer, 'wat-master-version');
+    return (ValueIsSemVer(Candidate) ? parsedVersion(Candidate) : undefined);
 }
 /**** NameOfPeer ****/
 function NameOfPeer(Peer) {
@@ -7862,8 +7862,9 @@ function VisualBuiltFromPeer(Peer, allowedCategory) {
             buildInnerVisuals();
             return Visual;
         }
-        var Version_1 = VersionOfPeer(Peer);
-        if ((Version_1 != null) && !VersionAmatchesB(Version_1, MasterInfo.Version)) {
+        var MasterVersion = MasterVersionOfPeer(Peer);
+        if ((MasterVersion != null) &&
+            !VersionAmatchesB(MasterVersion, MasterInfo.Version)) {
             setErrorInfoOfVisual(Visual, {
                 Title: 'Inappropriate Version',
                 longMessage: 'This visual requires a different version of master ' +
